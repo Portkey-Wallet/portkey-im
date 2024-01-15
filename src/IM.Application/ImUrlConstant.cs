@@ -25,7 +25,7 @@ public class ImUrlConstant
    
     public static readonly string UserInfo = "api/v1/userInfo";
     public static readonly string AddressList = "api/v1/listAddress";
-    public static readonly string AddressToken = "api/v1/verify/aelf";
+    public static readonly string AddressToken = "api/v1/verify/portkey";
     public static readonly string AuthToken = "api/v1/auth";
     
     public static readonly string ChannelInfo = "api/v1/channel/info";
