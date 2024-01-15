@@ -1,0 +1,156 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\common.props" />
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <RootNamespace>IM</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IM.Domain.Shared\IM.Domain.Shared.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AElf.CSharp.Core" Version="1.2.3" />
+        <PackageReference Include="AElf.Sdk.CSharp" Version="1.2.3" />
+        <PackageReference Include="AutoMapper" Version="12.0.0" />
+        <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" Version="3.6.5">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Orleans.Core.Abstractions" Version="3.6.5" />
+        <PackageReference Include="NEST" Version="7.17.1" />
+        <PackageReference Include="Orleans.Providers.MongoDB" Version="3.8.0" />
+        <PackageReference Include="AElf.Cryptography" Version="1.2.3" />
+        <PackageReference Include="StackExchange.Redis" Version="2.2.4" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.25.1" />
+        <PackageReference Include="Volo.Abp.Ddd.Domain" Version="7.0.0" />
+        <PackageReference Include="Volo.Abp.ObjectExtending" Version="7.0.0" />
+        <PackageReference Include="Volo.Abp.Account.Application.Contracts" Version="7.0.0" />
+        <PackageReference Include="Volo.Abp.Identity.Application.Contracts" Version="7.0.0" />
+        <PackageReference Include="Volo.Abp.PermissionManagement.Application.Contracts" Version="7.0.0" />
+        <PackageReference Include="Volo.Abp.TenantManagement.Application.Contracts" Version="7.0.0" />
+        <PackageReference Include="Volo.Abp.FeatureManagement.Application.Contracts" Version="7.0.0" />
+        <PackageReference Include="Volo.Abp.SettingManagement.Application.Contracts" Version="7.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="IM.Application">
+            <HintPath>..\..\test\IM.Application.Tests\bin\Debug\net7.0\IM.Application.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Orleans_CodeGenInputs Remove="AppleMigrate\Dtos\AppleMigrateRequestDto.cs" />
+      <Orleans_CodeGenInputs Remove="AppleMigrate\Dtos\AppleMigrateResponseDto.cs" />
+      <Orleans_CodeGenInputs Remove="AppleMigrate\IAppleMigrateAppService.cs" />
+      <Orleans_CodeGenInputs Remove="Switch\Dtos\SwitchDto.cs" />
+      <Orleans_CodeGenInputs Remove="Switch\ISwitchAppService.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\Dtos\GetNFTItemsDto.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\Dtos\GetNFTProtocolsDto.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\Dtos\GetRecentTransactionUsersDto.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\Dtos\GetTokenDto.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\Dtos\IndexerChainIds.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\Dtos\IndexerNftInfo.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\Dtos\IndexerTokenInfo.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\Dtos\SearchUserAssetsDto.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\Dtos\SymbolImagesDto.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\GetAssetsBase.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\GetNftItemsRequestDto.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\GetNFTProtocolsRequestDto.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\GetRecentTransactionUsersRequestDto.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\GetTokenRequestDto.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\IUserAssetsAppService.cs" />
+      <Orleans_CodeGenInputs Remove="UserAssets\SearchUserAssetsRequestDto.cs" />
+      <Orleans_CodeGenInputs Remove="UserExtraInfo\Dtos\AddAppleUserExtraInfoDto.cs" />
+      <Orleans_CodeGenInputs Remove="UserExtraInfo\Dtos\AddAppleUserExtraInfoResultDto.cs" />
+      <Orleans_CodeGenInputs Remove="UserExtraInfo\Dtos\UserExtraInfoResultDto.cs" />
+      <Orleans_CodeGenInputs Remove="UserExtraInfo\IUserExtraInfoAppService.cs" />
+      <Orleans_CodeGenInputs Remove="QrCode\Dtos\QrCodeRequestDto.cs" />
+      <Orleans_CodeGenInputs Remove="QrCode\IQrCodeAppService.cs" />
+      <Orleans_CodeGenInputs Remove="Notify\Dtos\CmsNotifyDto.cs" />
+      <Orleans_CodeGenInputs Remove="Notify\Dtos\CreateNotifyDto.cs" />
+      <Orleans_CodeGenInputs Remove="Notify\Dtos\NotifyBaseDto.cs" />
+      <Orleans_CodeGenInputs Remove="Notify\Dtos\NotifyResultDto.cs" />
+      <Orleans_CodeGenInputs Remove="Notify\Dtos\PullNotifyDto.cs" />
+      <Orleans_CodeGenInputs Remove="Notify\Dtos\PullNotifyResultDto.cs" />
+      <Orleans_CodeGenInputs Remove="Notify\Dtos\UpdateNotifyDto.cs" />
+      <Orleans_CodeGenInputs Remove="Notify\Etos\DeleteNotifyEto.cs" />
+      <Orleans_CodeGenInputs Remove="Notify\Etos\NotifyEto.cs" />
+      <Orleans_CodeGenInputs Remove="Notify\INotifyAppService.cs" />
+      <Orleans_CodeGenInputs Remove="Notify\NotifyBase.cs" />
+      <Orleans_CodeGenInputs Remove="Notify\NotifyRulesBase.cs" />
+      <Orleans_CodeGenInputs Remove="IpWhiteList\Dtos\AddUserIpToWhiteListRequestDto.cs" />
+      <Orleans_CodeGenInputs Remove="IpWhiteList\Dtos\CheckUserIpInWhiteListRequestDto.cs" />
+      <Orleans_CodeGenInputs Remove="IpWhiteList\IIpWhiteListAppService.cs" />
+      <Orleans_CodeGenInputs Remove="Google\IGoogleAppService.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\Acs0.c.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\Acs0.g.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\Acs1.g.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\Acs11.c.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\Acs11.g.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\Acs3.c.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\Acs3.g.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\Acs7.c.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\Acs7.g.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\AuthorityInfo.g.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\CaContract.g.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\CrossChainContract.c.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\CrossChainContract.g.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\TokenClaimContract.c.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\TokenClaimContract.g.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\TokenContract.c.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\TokenContract.g.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\TokenContractImpl.c.cs" />
+      <Orleans_CodeGenInputs Remove="Contracts\TokenContractImpl.g.cs" />
+      <Orleans_CodeGenInputs Remove="Contacts\Dtos\ContactAddressDto.cs" />
+      <Orleans_CodeGenInputs Remove="Contacts\Dtos\ContactDto.cs" />
+      <Orleans_CodeGenInputs Remove="Contacts\Dtos\ContactResultDto.cs" />
+      <Orleans_CodeGenInputs Remove="Contacts\Dtos\ContractExistDto.cs" />
+      <Orleans_CodeGenInputs Remove="Contacts\Dtos\CreateUpdateContactDto.cs" />
+      <Orleans_CodeGenInputs Remove="Contacts\Dtos\ValidAddressesAttribute.cs" />
+      <Orleans_CodeGenInputs Remove="Contacts\Etos\ContactAddressEto.cs" />
+      <Orleans_CodeGenInputs Remove="Contacts\Etos\ContactCreateEto.cs" />
+      <Orleans_CodeGenInputs Remove="Contacts\Etos\ContactDeleteEto.cs" />
+      <Orleans_CodeGenInputs Remove="Contacts\Etos\ContactUpdateEto.cs" />
+      <Orleans_CodeGenInputs Remove="Contacts\Etos\CreateCAHolderEto.cs" />
+      <Orleans_CodeGenInputs Remove="Contacts\Etos\CreateUserEto.cs" />
+      <Orleans_CodeGenInputs Remove="Contacts\Etos\UpdateNicknameEto.cs" />
+      <Orleans_CodeGenInputs Remove="Contacts\IContactAppService.cs" />
+      <Orleans_CodeGenInputs Remove="Chain\Dtos\ChainDto.cs" />
+      <Orleans_CodeGenInputs Remove="Chain\Dtos\ChainResultDto.cs" />
+      <Orleans_CodeGenInputs Remove="Chain\Dtos\CreateUpdateChainDto.cs" />
+      <Orleans_CodeGenInputs Remove="Chain\Etos\ChainCreateEto.cs" />
+      <Orleans_CodeGenInputs Remove="Chain\Etos\ChainDeleteEto.cs" />
+      <Orleans_CodeGenInputs Remove="Chain\Etos\ChainUpdateEto.cs" />
+      <Orleans_CodeGenInputs Remove="Chain\IChainAppService.cs" />
+      <Orleans_CodeGenInputs Remove="CAActivity\ActivityConstants.cs" />
+      <Orleans_CodeGenInputs Remove="CAActivity\Dtos\ActivityBase.cs" />
+      <Orleans_CodeGenInputs Remove="CAActivity\Dtos\GetActivitiesRequestDto.cs" />
+      <Orleans_CodeGenInputs Remove="CAActivity\Dtos\GetActivityDto.cs" />
+      <Orleans_CodeGenInputs Remove="CAActivity\Dtos\GetActivityRequestDto.cs" />
+      <Orleans_CodeGenInputs Remove="CAActivity\Dtos\GetTwoCaTransactionRequestDto.cs" />
+      <Orleans_CodeGenInputs Remove="CAActivity\Dtos\IndexerTransactions.cs" />
+      <Orleans_CodeGenInputs Remove="CAActivity\Dtos\Token.cs" />
+      <Orleans_CodeGenInputs Remove="CAActivity\Dtos\TransactionType.cs" />
+      <Orleans_CodeGenInputs Remove="CAActivity\IUserActivityService.cs" />
+      <Orleans_CodeGenInputs Remove="Bookmark\Dtos\BookmarkResultDto.cs" />
+      <Orleans_CodeGenInputs Remove="Bookmark\Dtos\CreateBookmarkDto.cs" />
+      <Orleans_CodeGenInputs Remove="Bookmark\Dtos\DeleteBookmarkDto.cs" />
+      <Orleans_CodeGenInputs Remove="Bookmark\Dtos\GetBookmarksDto.cs" />
+      <Orleans_CodeGenInputs Remove="Bookmark\Dtos\SortBookmarksDto.cs" />
+      <Orleans_CodeGenInputs Remove="Bookmark\Etos\BookmarkCreateEto.cs" />
+      <Orleans_CodeGenInputs Remove="Bookmark\Etos\BookmarkDeleteEto.cs" />
+      <Orleans_CodeGenInputs Remove="Bookmark\Etos\BookmarkMultiDeleteEto.cs" />
+      <Orleans_CodeGenInputs Remove="Bookmark\Etos\BookmarkSortEto.cs" />
+      <Orleans_CodeGenInputs Remove="Bookmark\IBookmarkAppService.cs" />
+      <Orleans_CodeGenInputs Remove="AccountValidator\EmailValidator.cs" />
+      <Orleans_CodeGenInputs Remove="AccountValidator\IAccountValidator.cs" />
+      <Orleans_CodeGenInputs Remove="AccountValidator\PhoneValidator.cs" />
+      <Orleans_CodeGenInputs Remove="Search\GetListInput.cs" />
+      <Orleans_CodeGenInputs Remove="Search\ISearchAppService.cs" />
+      <Orleans_CodeGenInputs Remove="RelationOne\Dtos\Contact\FollowRequestDto.cs" />
+      <Orleans_CodeGenInputs Remove="RelationOne\Dtos\Contact\FollowResponseDto.cs" />
+    </ItemGroup>
+</Project>
