@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <RootNamespace>IM.EntityEventHandler.Core</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+<!--        <ProjectReference Include="..\IM.Application.Contracts\IM.Application.Contracts.csproj" />-->
+        <ProjectReference Include="..\IM.Application\IM.Application.csproj" />
+        <ProjectReference Include="..\IM.Domain\IM.Domain.csproj" />
+    </ItemGroup>
+
+</Project>
