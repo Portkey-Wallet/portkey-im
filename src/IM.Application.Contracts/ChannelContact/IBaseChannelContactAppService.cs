@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.JavaScript;
 using System.Threading.Tasks;
 using IM.ChannelContact.Dto;
 
@@ -21,7 +20,7 @@ public interface IBaseChannelContactAppService
 
     Task<string> ChannelOwnerTransferAsync(OwnerTransferRequestDto ownerTransferRequestDto);
 
-    Task<bool> IsAdminAsync();
+    Task<bool> IsAdminAsync(string id);
 
     Task<AnnouncementResponseDto> ChannelAnnouncementAsync(ChannelAnnouncementRequestDto requestDto);
 

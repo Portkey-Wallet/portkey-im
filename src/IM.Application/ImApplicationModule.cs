@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
-using IM.Grains;
+﻿using IM.Grains;
 using IM.Options;
+using IM.Repository;
 using IM.Signature;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Account;
 using Volo.Abp.AutoMapper;
@@ -42,11 +41,15 @@ public class ImApplicationModule : AbpModule
         Configure<RelationOneOptions>(configuration.GetSection("RelationOne"));
         context.Services.AddHttpClient();
         context.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+        context.Services.AddSingleton(typeof(IRefreshRepository<,>), typeof(RefreshRepository<,>));
         
         Configure<AWSThumbnailOptions>(configuration.GetSection("AWSThumbnail"));
         Configure<CAServerOptions>(configuration.GetSection("CAServer"));
         Configure<VariablesOptions>(configuration.GetSection("Variables"));
         Configure<MessagePushOptions>(configuration.GetSection("MessagePush"));
         context.Services.AddHttpContextAccessor();
+        Configure<PinMessageOptions>(configuration.GetSection("PinMessageOptions"));
+        Configure<UserAddressOptions>(configuration.GetSection("UserAddress"));
+        
     }
 }

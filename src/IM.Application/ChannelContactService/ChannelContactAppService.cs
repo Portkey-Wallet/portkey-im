@@ -98,9 +98,9 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
         return await _proxyChannelContactAppService.ChannelOwnerTransferAsync(ownerTransferRequestDto);
     }
 
-    public async Task<bool> IsAdminAsync()
+    public async Task<bool> IsAdminAsync(string id)
     {
-        return await _proxyChannelContactAppService.IsAdminAsync();
+        return await _proxyChannelContactAppService.IsAdminAsync(id);
     }
 
     public async Task<AnnouncementResponseDto> ChannelAnnouncementAsync(ChannelAnnouncementRequestDto requestDto)

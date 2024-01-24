@@ -32,7 +32,7 @@ public class RedPackageDetailDto
     public UserViewStatus ViewStatus { get; set; } = UserViewStatus.Init;
     public List<GrabItemDto> Items { get; set; }
     public string CurrentUserGrabbedAmount { get; set; } = "0";
-
+    public int TotalCount { get; set; }
 }
 
 public class GrabItemDto

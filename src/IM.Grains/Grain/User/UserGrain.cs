@@ -1,4 +1,5 @@
 using IM.Commons;
+using IM.Entities.Es;
 using IM.Grains.Grain.User;
 using IM.Grains.State.User;
 using Volo.Abp.ObjectMapping;
@@ -66,6 +67,27 @@ public class UserGrain : Grain<UserState>, IUserGrain
         return result;
     }
 
+    public async Task<GrainResultDto<UserGrainDto>> AddAddress(CaAddressInfo caAddressInfo)
+    {
+        var result = new GrainResultDto<UserGrainDto>();
+        if (State.Id == Guid.Empty || (State.Id != Guid.Empty && State.IsDeleted))
+        {
+            result.Code = CommonResult.UserNotExistCode;
+            return result;
+        }
+
+        if (State.CaAddresses.Count == CommonConstant.RegisterChainCount)
+        {
+            State.CaAddresses.Add(caAddressInfo);
+        }
+
+        State.LastModifyTime = TimeHelper.GetTimeStampInMilliseconds();
+        await WriteStateAsync();
+
+        result.Data = _objectMapper.Map<UserState, UserGrainDto>(State);
+        return result;
+    }
+
     public async Task<GrainResultDto<UserGrainDto>> DeleteUser()
     {
         var result = new GrainResultDto<UserGrainDto>();
@@ -94,10 +116,5 @@ public class UserGrain : Grain<UserState>, IUserGrain
         }
 
         return Task.FromResult(State.CaAddresses == null || State.CaAddresses.Count < 2);
-    }
-
-    public Task<UserGrainDto> GetUser()
-    {
-        return Task.FromResult(_objectMapper.Map<UserState, UserGrainDto>(State));
     }
 }

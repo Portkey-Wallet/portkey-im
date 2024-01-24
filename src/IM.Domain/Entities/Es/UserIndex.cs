@@ -13,7 +13,7 @@ public class UserIndex : ImEsEntity<Guid>, IIndexBuild
     [Keyword] public string RelationId { get; set; }
     [Keyword] public string Name { get; set; }
     [Keyword] public string Avatar { get; set; }
-    [Keyword] public long CreateTime { get; set; }
+    public long CreateTime { get; set; }
 }
 
 public class CaAddressInfo

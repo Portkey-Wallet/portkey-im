@@ -1,3 +1,4 @@
+using IM.Entities.Es;
 using IM.Grains.Grain.User;
 using Orleans;
 
@@ -10,5 +11,5 @@ public interface IUserGrain : IGrainWithGuidKey
     Task<GrainResultDto<UserGrainDto>> DeleteUser();
     Task<bool> Exist();
     Task<bool> NeedUpdate();
-    Task<UserGrainDto> GetUser();
+    Task<GrainResultDto<UserGrainDto>> AddAddress(CaAddressInfo caAddressInfo);
 }

@@ -15,4 +15,5 @@ public class SendMessageRequestDto
     public string QuoteId { get; set; }
 
     public string[] MentionedUser { get; set; }
+    
 }

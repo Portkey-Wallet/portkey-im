@@ -18,4 +18,7 @@ public class CAServerConstant
     public const string GetRedPackageDetail = "api/app/redpackage/detail";
     public const string GetRedPackageConfig = "api/app/redpackage/config";
     public const string GrabRedPackage = "api/app/redpackage/grab";
+    
+    public const string SendTransfer = "api/app/imTransfer/send";
+    public const string GetTransferResult = "api/app/imTransfer/getResult";
 }

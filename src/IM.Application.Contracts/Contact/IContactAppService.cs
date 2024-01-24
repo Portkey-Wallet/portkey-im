@@ -9,4 +9,5 @@ public interface IContactAppService : IBaseContactAppService
     Task<ContactInfoDto> GetContactProfileAsync(ContactProfileRequestDto input);
     Task<PagedResultDto<ContactProfileDto>> GetListAsync(ContactGetListRequestDto input);
     Task<AddStrangerResultDto> AddStrangerAsync(AddStrangerDto input);
+    Task<HolderInfoResultDto> GetHolderInfoAsync(string portkeyId);
 }
