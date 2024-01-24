@@ -140,6 +140,8 @@ public class FeedAppService : ImAppService, IFeedAppService
         var result = await FetchFeedListAsync(input, headers);
         foreach (var listFeedResponseItemDto in result.List)
         {
+            var content = listFeedResponseItemDto.LastMessageContent;
+            
             if (listFeedResponseItemDto.LastMessageType == RedPackageConstant.RedPackageCardType)
             {
                 await BuildRedPackageLastMessageAsync(listFeedResponseItemDto);

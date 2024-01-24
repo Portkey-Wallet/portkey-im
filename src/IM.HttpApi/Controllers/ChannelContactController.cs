@@ -61,9 +61,9 @@ public class ChannelContactController : ImController
     }
 
     [HttpGet("isAdmin")]
-    public async Task<bool> IsAdminAsync()
+    public async Task<bool> IsAdminAsync(string channelUuid)
     {
-        return await _channelContactAppAppService.IsAdminAsync();
+        return await _channelContactAppAppService.IsAdminAsync(channelUuid);
     }
 
     [HttpGet("announcement")]

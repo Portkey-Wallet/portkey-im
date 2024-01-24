@@ -36,13 +36,13 @@ public class MessageController : ImController
 
 
     [HttpPost("hide")]
-    public async Task<object> HideMessageAsync(HideMessageRequestDto input)
-    {
-        return await _messageAppService.HideMessageAsync(input);
+    public async Task HideMessageAsync(HideMessageRequestDto input)
+    { 
+        await _messageAppService.HideMessageAsync(input);
     }
 
 
-    [HttpGet("list")]
+    [Authorize, HttpGet("list")]
     public async Task<List<ListMessageResponseDto>> ListMessageAsync(
         ListMessageRequestDto input)
     {

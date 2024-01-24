@@ -15,6 +15,7 @@ public static class RelationOneConstant
     {
         { "0", new ImResponseMapping("20000", "") },
         { "-1", new ImResponseMapping("40001", "error") },
+        { "10002", new ImResponseMapping("10002", "The operation failed. Please try again later.") },
         { "10111", new ImResponseMapping("40111", "daily limit") },
         { "10100", new ImResponseMapping("40100", "token expired") },
         { "10101", new ImResponseMapping("40101", "token error") },

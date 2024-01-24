@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using IM.Common;
 using IM.Commons;
 using IM.Contact.Dtos;
-using IM.Entities.Es;
 using IM.Options;
 using IM.RelationOne;
 using IM.RelationOne.Dtos.Contact;
@@ -14,9 +13,8 @@ using IM.User;
 using IM.User.Dtos;
 using IM.User.Provider;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MongoDB.Driver.Linq;
-using Serilog;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Auditing;
@@ -61,7 +59,7 @@ public class ContactAppService : ImAppService, IContactAppService
         {
             { CommonConstant.AuthHeader, token }
         };
-        
+
         if (input.Id != Guid.Empty)
         {
             contactProfileDto = await GetContactByContactIdAsync(input.Id, headers);
@@ -75,13 +73,31 @@ public class ContactAppService : ImAppService, IContactAppService
             contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
         }
 
+        Logger.LogDebug(
+            "contact address count:{count}, contactId:{contactId}, portkeyId:{portkeyId}, relationId:{relationId}",
+            contactProfileDto.Addresses.Count, input.Id, input.PortkeyId, input.RelationId ?? string.Empty);
+
+        var caHash = contactProfileDto.CaHolderInfo?.CaHash;
+        if (contactProfileDto.Addresses.Count == CommonConstant.RegisterChainCount && !caHash.IsNullOrEmpty())
+        {
+            Logger.LogDebug(
+                "contact have only one address, contactId:{contactId}, portkeyId:{portkeyId}, relationId:{relationId}, caHash:{caHash}",
+                contactProfileDto.Id, input.PortkeyId, input.RelationId ?? string.Empty, caHash);
+
+            var holderInfo = await _userProvider.GetCaHolderInfoAsync(caHash);
+            contactProfileDto.Addresses =
+                ObjectMapper.Map<List<GuardianDto>, List<ContactAddressDto>>(holderInfo.CaHolderInfo);
+        }
+
         var imageMap = _variablesOptions.ImageMap;
 
-        foreach (var contactAddressDto in contactProfileDto.Addresses.Where(contactAddressDto => !contactAddressDto.ChainName.IsNullOrWhiteSpace()))
+        foreach (var contactAddressDto in contactProfileDto.Addresses.Where(contactAddressDto =>
+                     !contactAddressDto.ChainName.IsNullOrWhiteSpace()))
         {
             contactAddressDto.Image = imageMap.GetOrDefault(contactAddressDto.ChainName?.ToLowerInvariant());
         }
-        
+
+        contactProfileDto.Addresses = contactProfileDto.Addresses.OrderBy(t => t.ChainId).ToList();
         return ObjectMapper.Map<ContactProfileDto, ContactInfoDto>(contactProfileDto);
     }
 
@@ -106,20 +122,21 @@ public class ContactAppService : ImAppService, IContactAppService
         var contactProfileDto = await _httpClientProvider.GetAsync<ContactProfileDto>(
             _caServerOptions.BaseUrl + CAServerConstant.ContactsGet + contactId, headers);
 
-        if (contactProfileDto.CaHolderInfo.UserId == Guid.Empty)
+        if (contactProfileDto.CaHolderInfo == null || contactProfileDto.CaHolderInfo.UserId == Guid.Empty)
         {
             return contactProfileDto;
         }
 
-        contactProfileDto.LoginAccounts = await GetPermissionsAsync(contactProfileDto.CaHolderInfo.UserId.ToString(), headers);
+        contactProfileDto.LoginAccounts =
+            await GetPermissionsAsync(contactProfileDto.CaHolderInfo.UserId.ToString(), headers);
 
         return contactProfileDto;
     }
-    
+
     private async Task<ContactProfileDto> GetContactByPortkeyIdAsync(Guid portkeyId, Dictionary<string, string> headers)
     {
         var contactProfileDto = new ContactProfileDto();
-        
+
         var contact = await _userAppService.GetContactAsync(portkeyId);
 
         if (contact != null)
@@ -130,8 +147,8 @@ public class ContactAppService : ImAppService, IContactAppService
         if (contactProfileDto.Id == Guid.Empty)
         {
             var user = await _userProvider.GetUserInfoByIdAsync(portkeyId);
-            var holderInfo = await GetHolderInfo(portkeyId.ToString());
-            
+            var holderInfo = await GetHolderInfoAsync(portkeyId.ToString());
+
             contactProfileDto = ObjectMapper.Map<HolderInfoResultDto, ContactProfileDto>(holderInfo);
 
             contactProfileDto.CaHolderInfo = new Dtos.CaHolderInfoDto
@@ -140,7 +157,7 @@ public class ContactAppService : ImAppService, IContactAppService
                 UserId = holderInfo.UserId,
                 CaHash = holderInfo.CaHash
             };
-            
+
             contactProfileDto.ImInfo = new ImInfoDto
             {
                 RelationId = user.RelationId,
@@ -148,13 +165,9 @@ public class ContactAppService : ImAppService, IContactAppService
             };
 
             contactProfileDto.Index = IndexHelper.GetIndex(holderInfo.WalletName);
+            contactProfileDto.Addresses =
+                ObjectMapper.Map<List<AddressResultDto>, List<ContactAddressDto>>(holderInfo.AddressInfos);
 
-            var chainAddressMap = holderInfo.AddressInfos.ToDictionary(i => i.Address, i => i.ChainId);
-
-            foreach (var contactAddressDto in contactProfileDto.Addresses)
-            {
-                contactAddressDto.ChainId = chainAddressMap.GetOrDefault(contactAddressDto.Address);
-            }
             //this means remark,stranger do not have remark
             contactProfileDto.Name = "";
         }
@@ -167,8 +180,9 @@ public class ContactAppService : ImAppService, IContactAppService
         contactProfileDto.LoginAccounts = await GetPermissionsAsync(portkeyId.ToString(), headers);
         return contactProfileDto;
     }
-    
-    private async Task<ContactProfileDto> GetContactByRelationIdAsync(string relationId, Dictionary<string, string> headers)
+
+    private async Task<ContactProfileDto> GetContactByRelationIdAsync(string relationId,
+        Dictionary<string, string> headers)
     {
         var contactProfileDto = new ContactProfileDto();
         var loginAccounts = new List<PermissionSetting>();
@@ -204,7 +218,7 @@ public class ContactAppService : ImAppService, IContactAppService
         {
             contactProfileDto = await StrangeContactDataAsync(userInfo);
         }
-        
+
         contactProfileDto.LoginAccounts = loginAccounts;
         return contactProfileDto;
     }
@@ -213,7 +227,7 @@ public class ContactAppService : ImAppService, IContactAppService
     {
         var contactProfileDto = ObjectMapper.Map<UserInfoDto, ContactProfileDto>(userInfo);
 
-        var holderInfo = await GetHolderInfo(contactProfileDto.ImInfo.PortkeyId);
+        var holderInfo = await GetHolderInfoAsync(contactProfileDto.ImInfo.PortkeyId);
 
         if (holderInfo == null)
         {
@@ -228,14 +242,9 @@ public class ContactAppService : ImAppService, IContactAppService
         };
 
         contactProfileDto.Index = IndexHelper.GetIndex(holderInfo.WalletName);
+        contactProfileDto.Addresses =
+            ObjectMapper.Map<List<AddressResultDto>, List<ContactAddressDto>>(holderInfo.AddressInfos);
 
-        var chainAddressMap = holderInfo.AddressInfos.ToDictionary(i => i.Address, i => i.ChainId);
-
-        foreach (var contactAddressDto in contactProfileDto.Addresses)
-        {
-            contactAddressDto.ChainId = chainAddressMap.GetOrDefault(contactAddressDto.Address);
-        }
-        
         //this means remark,stranger do not have remark
         contactProfileDto.Name = "";
         contactProfileDto.Avatar = holderInfo.Avatar;
@@ -243,7 +252,7 @@ public class ContactAppService : ImAppService, IContactAppService
         return contactProfileDto;
     }
 
-    private async Task<HolderInfoResultDto> GetHolderInfo(string portkeyId)
+    public async Task<HolderInfoResultDto> GetHolderInfoAsync(string portkeyId)
     {
         if (string.IsNullOrWhiteSpace(portkeyId))
         {

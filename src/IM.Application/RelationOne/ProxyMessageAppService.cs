@@ -37,13 +37,12 @@ public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
         return result;
     }
 
-    public async Task<object> HideMessageAsync(HideMessageRequestDto input)
+    public async Task HideMessageAsync(HideMessageRequestDto input)
     {
         var result =
             await _proxyRequestProvider.PostAsync<object>(
                 "api/v1/message/hide", input, null);
 
-        return result;
     }
 
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)

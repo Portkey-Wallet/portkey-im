@@ -148,9 +148,17 @@ public class RedPackageAppService : ImAppService, IRedPackageAppService
             throw new UserFriendlyException("user not exist");
         }
 
-        //set ca address here，because did server get ca address is difficult
-        input.UserCaAddress = user.CaAddresses.Where(x => x.ChainId == detail.ChainId).Select(x => x.Address)
+        var address = user.CaAddresses.Where(x => x.ChainId == detail.ChainId).Select(x => x.Address)
             .FirstOrDefault();
+
+        if (address.IsNullOrEmpty())
+        {
+            var holderInfo = await _userProvider.GetCaHolderInfoAsync(user.CaHash);
+            address = holderInfo?.CaHolderInfo?.Where(t => t.ChainId == detail.ChainId).Select(f => f.CaAddress)
+                .FirstOrDefault();
+        }
+
+        input.UserCaAddress = address;
         if (string.IsNullOrEmpty(input.UserCaAddress))
         {
             throw new UserFriendlyException("user do not have ca address in chain " + detail.ChainId);

@@ -43,10 +43,9 @@ public class ImEntityEventHandlerModule : AbpModule
     {
         var configuration = context.Services.GetConfiguration();
         ConfigureTokenCleanupService();
-        //ConfigureEsIndexCreation();
+        ConfigureEsIndexCreation();
         context.Services.AddHostedService<ImHostedService>();
         ConfigureCache(configuration);
-        //ConfigureGraphQl(context, configuration);
         AddProxyClient(context, configuration);
         ConfigureDistributedLocking(context, configuration);
         ConfigureGraphQl(context, configuration);
@@ -82,7 +81,7 @@ public class ImEntityEventHandlerModule : AbpModule
             new NewtonsoftJsonSerializer()));
         context.Services.AddScoped<IGraphQLClient>(sp => sp.GetRequiredService<GraphQLHttpClient>());
     }
-    
+
     private void AddProxyClient(ServiceConfigurationContext context, IConfiguration configuration)
     {
         context.Services.AddHttpClient(RelationOneConstant.ClientName, httpClient =>
@@ -140,7 +139,7 @@ public class ImEntityEventHandlerModule : AbpModule
     {
         Configure<TokenCleanupOptions>(x => x.IsCleanupEnabled = false);
     }
-    
+
     private void AddMessagePushService(ServiceConfigurationContext context, IConfiguration configuration)
     {
         var baseUrl = configuration["MessagePush:BaseUrl"];
