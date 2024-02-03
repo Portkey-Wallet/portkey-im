@@ -325,6 +325,8 @@ public class UserAppService : ImAppService, IUserAppService
             all.AddRange(dto.ToList());
         }
 
+        // remove self
+        all.RemoveAll(t => t.RelationId == currentUser?.RelationId);
         //get contact's remark
         var contactProfileDtos = await GetContactListAsync(portKeyIds, input.Keywords);
 
