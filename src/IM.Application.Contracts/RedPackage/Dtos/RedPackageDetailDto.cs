@@ -33,6 +33,10 @@ public class RedPackageDetailDto
     public List<GrabItemDto> Items { get; set; }
     public string CurrentUserGrabbedAmount { get; set; } = "0";
     public int TotalCount { get; set; }
+    public int AssetType { get; set; }
+    public string Alias { get; set; }
+    public string TokenId { get; set; }
+    public string ImageUrl { get; set; }
 }
 
 public class GrabItemDto
