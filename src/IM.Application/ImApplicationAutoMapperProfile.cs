@@ -85,5 +85,7 @@ public class ImApplicationAutoMapperProfile : Profile
             .ForMember(t => t.Address, m => m.MapFrom(f => f.CaAddress))
             .ForMember(t => t.ChainName,
                 m => m.MapFrom(f => CommonConstant.DefaultChainName));
+        
+        CreateMap<MemberQueryDto, MemberInfo>();
     }
 }
