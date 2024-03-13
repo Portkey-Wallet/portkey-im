@@ -267,12 +267,12 @@ public class ImHttpApiHostModule : AbpModule
         app.UseUnitOfWork();
         app.UseConfiguredEndpoints();
 
-        StartOrleans(context.ServiceProvider);
+      //  StartOrleans(context.ServiceProvider);
     }
 
     public override void OnApplicationShutdown(ApplicationShutdownContext context)
     {
-        StopOrleans(context.ServiceProvider);
+       // StopOrleans(context.ServiceProvider);
     }
 
     private static void StartOrleans(IServiceProvider serviceProvider)
