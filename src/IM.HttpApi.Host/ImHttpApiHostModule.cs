@@ -258,7 +258,7 @@ public class ImHttpApiHostModule : AbpModule
         app.UseAuthentication();
 
         app.UseAuthorization();
-        //if (env.IsDevelopment())
+        if (env.IsDevelopment())
         {
             app.UseSwagger();
             app.UseAbpSwaggerUI(options => { options.SwaggerEndpoint("/swagger/v1/swagger.json", "IM API"); });
@@ -267,12 +267,12 @@ public class ImHttpApiHostModule : AbpModule
         app.UseUnitOfWork();
         app.UseConfiguredEndpoints();
 
-      //  StartOrleans(context.ServiceProvider);
+        StartOrleans(context.ServiceProvider);
     }
 
     public override void OnApplicationShutdown(ApplicationShutdownContext context)
     {
-       // StopOrleans(context.ServiceProvider);
+        StopOrleans(context.ServiceProvider);
     }
 
     private static void StartOrleans(IServiceProvider serviceProvider)
