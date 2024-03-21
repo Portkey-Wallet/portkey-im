@@ -8,5 +8,5 @@ public interface IChannelContactV2AppService
 {
     Task<MembersInfoResponseDto> GetChannelMembersAsync(ChannelMembersRequestDto requestDto);
     Task<ChannelDetailResponseDto> GetChannelDetailInfoAsync(ChannelDetailInfoRequestDto requestDto);
-    Task<List<MemberInfo>> SearchMembersAsync(SearchMembersRequestDto requestDto);
+    Task<MembersInfoResponseDto> SearchMembersAsync(SearchMembersRequestDto requestDto);
 }

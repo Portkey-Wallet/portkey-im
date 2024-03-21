@@ -7,4 +7,5 @@ public class SearchMembersRequestDto : PagedResultRequestDto
 {
     [Required] public string ChannelUuid { get; set; }
     [Required] public string Keyword { get; set; }
+    public string FilteredMember { get; set; }
 }

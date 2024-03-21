@@ -87,10 +87,19 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         };
     }
 
-    public async Task<List<MemberInfo>> SearchMembersAsync(SearchMembersRequestDto requestDto)
+    public async Task<MembersInfoResponseDto> SearchMembersAsync(SearchMembersRequestDto requestDto)
     {
+        var result = new MembersInfoResponseDto();
         var keyword = requestDto.Keyword.Trim();
-        var result = new List<MemberInfo>();
+        if (keyword.IsNullOrWhiteSpace())
+        {
+            return await GetChannelMembersAsync(new ChannelMembersRequestDto()
+            {
+                ChannelUuid = requestDto.ChannelUuid,
+                SkipCount = requestDto.SkipCount,
+                MaxResultCount = requestDto.MaxResultCount
+            });
+        }
 
         // userId
         if (Guid.TryParse(keyword, out var userId))
@@ -102,7 +111,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
             }
 
             var imUserInfo = await GetMemberAsync(requestDto.ChannelUuid, userInfo.RelationId);
-            result.Add(imUserInfo);
+            result.Members.Add(imUserInfo);
             return result;
         }
 
@@ -117,7 +126,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
             }
 
             var imUserInfo = await GetMemberAsync(requestDto.ChannelUuid, user.RelationId);
-            result.Add(imUserInfo);
+            result.Members.Add(imUserInfo);
             return result;
         }
 
@@ -141,6 +150,12 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         //
         //
         // result.AddRange(c_members);
+
+        if (!requestDto.FilteredMember.IsNullOrWhiteSpace())
+        {
+            result.Members.RemoveAll(t => t.RelationId == requestDto.FilteredMember);
+        }
+
         return result;
     }
 

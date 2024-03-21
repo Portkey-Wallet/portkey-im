@@ -36,8 +36,8 @@ public class ChannelController: ImController
         return await _channelContactAppService.GetChannelDetailInfoAsync(requestDto);
     }
     
-    [HttpGet,Route("/api/v1/searchMembers")]
-    public async Task<List<MemberInfo>> SearchMembersAsync(SearchMembersRequestDto requestDto)
+    [HttpGet,Route("/api/v1/channelContacts/searchMembers")]
+    public async Task<MembersInfoResponseDto> SearchMembersAsync(SearchMembersRequestDto requestDto)
     {
     
         throw new NotImplementedException();

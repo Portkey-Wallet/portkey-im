@@ -4,6 +4,6 @@ namespace IM.ChannelContact.Dto;
 
 public class MembersInfoResponseDto
 {
-    public List<MemberInfo> Members { get; set; }
+    public List<MemberInfo> Members { get; set; } = new();
     public int TotalCount { get; set; }
 }
