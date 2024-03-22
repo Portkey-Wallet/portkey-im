@@ -7,7 +7,7 @@ namespace IM.ChannelContact.Dto;
 public class ContactResultDto
 {
     public int TotalCount { get; set; }
-    public List<ContactDto> Contacts { get; set; }
+    public List<ContactDto> Contacts { get; set; } = new();
 }
 public class ContactDto
 {
