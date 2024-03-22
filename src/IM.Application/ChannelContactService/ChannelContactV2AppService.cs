@@ -182,33 +182,39 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         //get all contact name or remark
         var contactDtos = await GetContactsAsync(currentUserId);
         contactDtos = contactDtos.Where(t => t.ImInfo != null && t.CaHolderInfo != null).ToList();
-        // if (!requestDto.Keyword.IsNullOrWhiteSpace())
-        // {
-        //     var keyword = requestDto.Keyword.Trim();
-        //     if (Guid.TryParse(keyword, out var userId))
-        //     {
-        //         var userInfo = contactDtos.FirstOrDefault(t => t.CaHolderInfo.UserId == userId);
-        //         if (userInfo == null)
-        //         {
-        //             return result;
-        //         }
-        //
-        //         contacts.Add(userInfo);
-        //     }
-        //
-        //     // address
-        //     var isAddress = CheckIsAddress(keyword);
-        //     if (isAddress)
-        //     {
-        //         var user = contactDtos.FirstOrDefault(t => t.Addresses.Any(f => f.Address == keyword));
-        //         if (user == null)
-        //         {
-        //             return result;
-        //         }
-        //
-        //         contacts.Add(user);
-        //     }
-        // }
+        if (!requestDto.Keyword.IsNullOrWhiteSpace())
+        {
+            var keyword = requestDto.Keyword.Trim();
+            if (Guid.TryParse(keyword, out var userId))
+            {
+                var userInfo = contactDtos.FirstOrDefault(t => t.CaHolderInfo.UserId == userId);
+                if (userInfo == null)
+                {
+                    return result;
+                }
+
+                contacts.Add(userInfo);
+                result.Contacts = contacts;
+                result.TotalCount = contacts.Count;
+                return result;
+            }
+
+            // address
+            var isAddress = CheckIsAddress(keyword);
+            if (isAddress)
+            {
+                var user = contactDtos.FirstOrDefault(t => t.Addresses.Any(f => f.Address == keyword));
+                if (user == null)
+                {
+                    return result;
+                }
+
+                contacts.Add(user);
+                result.Contacts = contacts;
+                result.TotalCount = contacts.Count;
+                return result;
+            }
+        }
 
         var relationIds = contactDtos.Select(t => t.ImInfo.RelationId).ToList();
         var members = await GetMembersAsync(requestDto.ChannelUuid, relationIds);
@@ -220,6 +226,12 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         var contactMembers = contactDtos.Where(t => members.Select(f => f.RelationId).Contains(t.ImInfo.RelationId))
             .ToList();
         contactMembers.ForEach(t => t.IsGroupMember = true);
+
+        if (!requestDto.Keyword.IsNullOrWhiteSpace())
+        {
+            var keyword = requestDto.Keyword.Trim();
+            contactMembers = contactMembers.Where(t => t.Name.ToUpper().Contains(keyword.ToUpper())).ToList();
+        }
 
         result.Contacts = contactMembers.Skip(requestDto.SkipCount).Take(requestDto.MaxResultCount).ToList();
         result.TotalCount = contactMembers.Count;
