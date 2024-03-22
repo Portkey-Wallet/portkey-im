@@ -41,4 +41,10 @@ public class ChannelController : ImController
     {
         return await _channelContactAppService.SearchMembersAsync(requestDto);
     }
+    
+    [HttpGet, Route("/api/v1/channelContacts/contacts")]
+    public async Task<List<ContactDto>> GetContactsAsync(string channelUuid)
+    {
+        return await _channelContactAppService.GetContactsAsync(channelUuid);
+    }
 }

@@ -11,6 +11,7 @@ public class CAServerConstant
     public const string PrivacyPermissionGet = "api/app/privacypermission/";
     public const string HolderInfoList = "api/app/imUsers/holder/list";
     public const string GetContactsRemark = "api/app/contacts/getContactList";
+    public const string GetContactsByUserId = "api/app/contacts/getContactsByUserId";
     
     public const string GenerateRedPackage = "api/app/redpackage/generate";
     public const string SendRedPackage = "api/app/redpackage/send";

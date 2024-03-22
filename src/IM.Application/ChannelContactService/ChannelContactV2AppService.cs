@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using AElf;
 using IM.ChannelContact;
@@ -130,33 +131,68 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
             return result;
         }
 
-        // // name or remark
-        // var currentUserId = CurrentUser.GetId();
-        // //get all contact name or remark
-        // var contactProfileDtos = await GetContactListAsync(new List<Guid>(), string.Empty);
-        // var contacts = contactProfileDtos?.Where(t => t.Name == keyword || t.CaHolderInfo.WalletName == keyword)
-        //     .ToList();
-        // if (contacts.IsNullOrEmpty())
-        // {
-        //     return result;
-        // }
-        //
-        // // get all relation id from db where groupid
-        // // get userindex where relation ids
-        // // name
-        // var relationIds = contacts.Select(t => t.CaHolderInfo.UserId.ToString()).ToList();
-        //
-        // var c_members = await GetMembersAsync(requestDto.ChannelUuid,relationIds);
-        //
-        //
-        // result.AddRange(c_members);
+        // name or remark
+        var currentUserId = CurrentUser.GetId();
+        //get all contact name or remark
+        var contactsDto = await GetContactsAsync(currentUserId);
+        contactsDto = contactsDto?.Where(t => t.CaHolderInfo != null && t.ImInfo != null).ToList();
+        var contacts = contactsDto?.Where(t => t.Name.Contains(keyword) || t.CaHolderInfo.WalletName.Contains(keyword))
+            .ToList();
+        if (contacts.IsNullOrEmpty())
+        {
+            return result;
+        }
+
+        // get all relation id from db where groupid
+        // get userindex where relation ids
+        var relationIds = contacts.Select(t => t.CaHolderInfo.UserId.ToString()).ToList();
+
+        var c_members = await GetMembersAsync(requestDto.ChannelUuid, relationIds);
+        result.Members.AddRange(c_members);
+
 
         if (!requestDto.FilteredMember.IsNullOrWhiteSpace())
         {
             result.Members.RemoveAll(t => t.RelationId == requestDto.FilteredMember);
+            result.TotalCount -= 1;
         }
 
         return result;
+    }
+
+    public async Task<List<ContactDto>> GetContactsAsync(string channelUuid)
+    {
+        var currentUserId = CurrentUser.GetId();
+        //get all contact name or remark
+        var contactDtos = await GetContactsAsync(currentUserId);
+        contactDtos = contactDtos.Where(t => t.ImInfo != null && t.CaHolderInfo != null).ToList();
+        var relationIds = contactDtos.Select(t => t.ImInfo.RelationId).ToList();
+        var members = await GetMembersAsync(channelUuid, relationIds);
+        if (members.IsNullOrEmpty())
+        {
+            return contactDtos;
+        }
+
+        var contactMembers = contactDtos.Where(t => members.Select(f => f.RelationId).Contains(t.ImInfo.RelationId))
+            .ToList();
+        contactMembers.ForEach(t => t.IsGroupMember = true);
+
+        return contactDtos;
+    }
+
+    private async Task<List<ContactDto>> GetContactsAsync(Guid userId)
+    {
+        var hasAuthToken = _httpContextAccessor.HttpContext.Request.Headers.TryGetValue(CommonConstant.AuthHeader,
+            out var authToken);
+
+        var header = new Dictionary<string, string>();
+        if (hasAuthToken)
+        {
+            header.Add(CommonConstant.AuthHeader, authToken);
+        }
+
+        var url = $"{_caServerOptions.BaseUrl}{CAServerConstant.GetContactsByUserId}?userId={userId.ToString()}";
+        return await _httpClientProvider.GetAsync<List<ContactDto>>(url, header);
     }
 
     private async Task<List<ContactProfileDto>> GetContactListAsync(List<Guid> contactIds, string keywords)
@@ -191,12 +227,25 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
 
     private async Task<List<MemberInfo>> GetMembersAsync(string channelUuid, List<string> relationIds)
     {
-        var sql =
-            $"select relation_id as RelationId,is_admin as IsAdmin from im_channel_member where channel_uuid='{channelUuid}' and status=0 and relation_id in '{relationIds}' limit 1;";
-        var imUserInfo = await _imRepository.QueryAsync<MemberInfo>(sql);
-        await _proxyChannelContactAppService.BuildUserNameAsync(imUserInfo.ToList(), null);
+        var builder = new StringBuilder("(");
+        foreach (var relationId in relationIds)
+        {
+            builder.Append($"'{relationId}',");
+        }
 
-        return imUserInfo?.ToList();
+        var inStr = builder.ToString();
+        inStr.TrimEnd(',');
+        inStr += ")";
+
+        var sql =
+            $"select relation_id as RelationId,is_admin as IsAdmin from im_channel_member where channel_uuid='{channelUuid}' and status=0 and relation_id in {inStr};";
+        var imUserInfo = await _imRepository.QueryAsync<MemberInfo>(sql);
+        var userList = imUserInfo?.ToList();
+        if (userList.IsNullOrEmpty()) return new List<MemberInfo>();
+
+        await _proxyChannelContactAppService.BuildUserNameAsync(userList, null);
+
+        return userList;
     }
 
     private bool CheckIsAddress(string keyword)
