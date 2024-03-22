@@ -91,8 +91,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
     public async Task<MembersInfoResponseDto> SearchMembersAsync(SearchMembersRequestDto requestDto)
     {
         var result = new MembersInfoResponseDto();
-        var keyword = requestDto.Keyword.Trim();
-        if (keyword.IsNullOrWhiteSpace())
+        if (requestDto.Keyword.IsNullOrWhiteSpace())
         {
             return await GetChannelMembersAsync(new ChannelMembersRequestDto()
             {
@@ -102,6 +101,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
             });
         }
 
+        var keyword = requestDto.Keyword.Trim();
         // userId
         if (Guid.TryParse(keyword, out var userId))
         {
@@ -160,14 +160,14 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         return result;
     }
 
-    public async Task<List<ContactDto>> GetContactsAsync(string channelUuid)
+    public async Task<List<ContactDto>> GetContactsAsync(ContactRequestDto requestDto)
     {
         var currentUserId = CurrentUser.GetId();
         //get all contact name or remark
         var contactDtos = await GetContactsAsync(currentUserId);
         contactDtos = contactDtos.Where(t => t.ImInfo != null && t.CaHolderInfo != null).ToList();
         var relationIds = contactDtos.Select(t => t.ImInfo.RelationId).ToList();
-        var members = await GetMembersAsync(channelUuid, relationIds);
+        var members = await GetMembersAsync(requestDto.ChannelUuid, relationIds);
         if (members.IsNullOrEmpty())
         {
             return contactDtos;
