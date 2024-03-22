@@ -4,6 +4,11 @@ using IM.Contact.Dtos;
 
 namespace IM.ChannelContact.Dto;
 
+public class ContactResultDto
+{
+    public int TotalCount { get; set; }
+    public List<ContactDto> Contacts { get; set; }
+}
 public class ContactDto
 {
     public Guid Id { get; set; }
