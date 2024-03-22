@@ -164,6 +164,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
             return result;
         }
 
+        result.Members.AddRange(memInfo);
         if (!requestDto.FilteredMember.IsNullOrWhiteSpace() &&
             memInfo.FirstOrDefault(t => t.RelationId == requestDto.FilteredMember) != null)
         {
