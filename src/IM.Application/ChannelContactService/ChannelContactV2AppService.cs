@@ -113,6 +113,8 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
 
             var imUserInfo = await GetMemberAsync(requestDto.ChannelUuid, userInfo.RelationId);
             result.Members.Add(imUserInfo);
+
+            result.TotalCount = 1;
             return result;
         }
 
@@ -128,6 +130,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
 
             var imUserInfo = await GetMemberAsync(requestDto.ChannelUuid, user.RelationId);
             result.Members.Add(imUserInfo);
+            result.TotalCount = 1;
             return result;
         }
 
@@ -157,6 +160,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
             MaxResultCount = requestDto.MaxResultCount
         });
 
+
         var memInfo = allMembers.Members.Where(t => t.Name.ToUpper().Contains(keyword.ToUpper())).ToList();
 
         if (memInfo.IsNullOrEmpty())
@@ -165,6 +169,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         }
 
         result.Members.AddRange(memInfo);
+        result.TotalCount = result.Members.Count;
         if (!requestDto.FilteredMember.IsNullOrWhiteSpace() &&
             memInfo.FirstOrDefault(t => t.RelationId == requestDto.FilteredMember) != null)
         {
@@ -221,7 +226,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         var members = await GetMembersAsync(requestDto.ChannelUuid, relationIds);
         if (members.IsNullOrEmpty())
         {
-            return result;
+            members = new List<MemberInfo>();
         }
 
         var contactMembers = contactDtos.Where(t => members.Select(f => f.RelationId).Contains(t.ImInfo.RelationId))
@@ -231,11 +236,11 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         if (!requestDto.Keyword.IsNullOrWhiteSpace())
         {
             var keyword = requestDto.Keyword.Trim();
-            contactMembers = contactMembers.Where(t => t.Name.ToUpper().Contains(keyword.ToUpper())).ToList();
+            contactDtos = contactDtos.Where(t => t.Name.ToUpper().Contains(keyword.ToUpper())).ToList();
         }
 
-        result.Contacts = contactMembers.Skip(requestDto.SkipCount).Take(requestDto.MaxResultCount).ToList();
-        result.TotalCount = contactMembers.Count;
+        result.Contacts = contactDtos.Skip(requestDto.SkipCount).Take(requestDto.MaxResultCount).ToList();
+        result.TotalCount = contactDtos.Count;
 
         return result;
     }
