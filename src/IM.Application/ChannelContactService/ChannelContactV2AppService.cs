@@ -234,7 +234,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         }
 
         var inStr = builder.ToString();
-        inStr.TrimEnd(',');
+        inStr = inStr.TrimEnd(',');
         inStr += ")";
 
         var sql =
