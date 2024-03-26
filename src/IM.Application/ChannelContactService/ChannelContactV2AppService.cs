@@ -7,6 +7,7 @@ using IM.ChannelContact;
 using IM.ChannelContact.Dto;
 using IM.ChannelContactService.Provider;
 using IM.User.Provider;
+using Microsoft.Extensions.Logging;
 using Volo.Abp;
 using Volo.Abp.Auditing;
 using Volo.Abp.Users;
@@ -83,7 +84,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         }
 
         var keyword = requestDto.Keyword.Trim();
-        // userId
+        // userId or address
         var memberInfo = await GetMemberInfoByKeywordAsync(keyword, requestDto.ChannelUuid);
         if (memberInfo != null)
         {
@@ -91,7 +92,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
             result.TotalCount = result.Members.Count;
             return result;
         }
-        
+
         // name or remark
         // var currentUserId = CurrentUser.GetId();
         // //get all contact name or remark
@@ -135,6 +136,12 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
             result.TotalCount -= 1;
         }
 
+        if (!requestDto.Keyword.IsNullOrWhiteSpace())
+        {
+            result.Members = result.Members.Skip(0).Take(20).ToList();
+            result.TotalCount = result.Members.Count;
+        }
+
         return result;
     }
 
@@ -152,7 +159,8 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         }
 
         // address
-        if (CheckIsAddress(keyword))
+        var address = GetAddress(keyword);
+        if (!address.IsNullOrEmpty())
         {
             var user = await _userProvider.GetUserInfoAsync(Guid.Empty, keyword);
             if (user == null)
@@ -176,7 +184,11 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         contactDtos = contactDtos.Where(t => t.ImInfo != null && t.CaHolderInfo != null).ToList();
         if (!requestDto.Keyword.IsNullOrWhiteSpace())
         {
-            return GetContactByKeyword(requestDto.Keyword.Trim(), contactDtos);
+            var contactResult = GetContactByKeyword(requestDto.Keyword.Trim(), contactDtos);
+            if (contactResult.TotalCount > 0)
+            {
+                return contactResult;
+            }
         }
 
         var relationIds = contactDtos.Select(t => t.ImInfo.RelationId).ToList();
@@ -218,7 +230,8 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         }
 
         // address
-        if (CheckIsAddress(keyword))
+        var address = GetAddress(keyword);
+        if (!address.IsNullOrEmpty())
         {
             var user = contactDtos.FirstOrDefault(t => t.Addresses.Any(f => f.Address == keyword));
             if (user != null)
@@ -232,6 +245,35 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
             Contacts = contacts,
             TotalCount = contacts.Count
         };
+    }
+
+    private string GetAddress(string keyword)
+    {
+        try
+        {
+            if (!keyword.Contains('_'))
+            {
+                return CheckIsAddress(keyword) ? keyword : string.Empty;
+            }
+
+            var address = string.Empty;
+            foreach (var item in keyword.Split('_'))
+            {
+                if (item.Length < address.Length)
+                {
+                    continue;
+                }
+
+                address = item;
+            }
+
+            return CheckIsAddress(address) ? address : string.Empty;
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "get address error, keyword:{keyword}", keyword);
+            return string.Empty;
+        }
     }
 
     private bool CheckIsAddress(string keyword)
