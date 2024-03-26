@@ -162,7 +162,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         var address = GetAddress(keyword);
         if (!address.IsNullOrEmpty())
         {
-            var user = await _userProvider.GetUserInfoAsync(Guid.Empty, keyword);
+            var user = await _userProvider.GetUserInfoAsync(Guid.Empty, address);
             if (user == null)
             {
                 return null;
@@ -233,7 +233,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         var address = GetAddress(keyword);
         if (!address.IsNullOrEmpty())
         {
-            var user = contactDtos.FirstOrDefault(t => t.Addresses.Any(f => f.Address == keyword));
+            var user = contactDtos.FirstOrDefault(t => t.Addresses.Any(f => f.Address == address));
             if (user != null)
             {
                 contacts.Add(user);
