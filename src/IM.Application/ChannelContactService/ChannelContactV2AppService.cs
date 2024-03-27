@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AElf;
 using IM.ChannelContact;
@@ -210,6 +211,8 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
                 t.CaHolderInfo.WalletName.ToUpper().Contains(keyword.ToUpper())).ToList();
         }
 
+
+        contactDtos = SortContacts(contactDtos);
         result.Contacts = contactDtos.Skip(requestDto.SkipCount).Take(requestDto.MaxResultCount).ToList();
         result.TotalCount = contactDtos.Count;
 
@@ -291,5 +294,16 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         {
             return false;
         }
+    }
+
+    private List<ContactDto> SortContacts(List<ContactDto> contacts)
+    {
+        var regNum = new Regex("^[0-9]");
+        var regChar = new Regex("^[a-zA-Z]");
+
+        var charContacts = contacts.Where(t => regChar.IsMatch(t.Name)).OrderBy(t => t.Name).ToList();
+        var numContacts = contacts.Where(t => regNum.IsMatch(t.Name)).OrderBy(t => t.Name).ToList();
+        var otherContacts = contacts.Except(charContacts).Except(numContacts).OrderBy(t => t.Name).ToList();
+        return charContacts.Union(numContacts).Union(otherContacts).ToList();
     }
 }
