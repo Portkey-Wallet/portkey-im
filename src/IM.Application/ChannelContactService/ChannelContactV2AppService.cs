@@ -191,7 +191,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
 
         var relationIds = contactDtos.Select(t => t.ImInfo.RelationId).ToList();
         var members = await _channelProvider.GetMembersAsync(requestDto.ChannelUuid, relationIds);
-        
+
         var contactMembers = contactDtos.Where(t => members.Select(f => f.RelationId).Contains(t.ImInfo.RelationId))
             .ToList();
         contactMembers.ForEach(t => t.IsGroupMember = true);
@@ -291,14 +291,10 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
 
     private List<ContactDto> SortContacts(List<ContactDto> contacts)
     {
-        // var numContacts = contacts.Where(t => t.Index == "#").OrderBy(h => h.Name)
-        //     .ThenBy(f => f.CaHolderInfo.WalletName).ToList();
-        // var charContacts = contacts.Where(t => t.Index != "#").OrderBy(h => h.Name)
-        //     .ThenBy(f => f.CaHolderInfo.WalletName).ToList();
-        
         var numContacts = contacts.Where(t => t.Index == "#").OrderBy(h => h.ModificationTime).ToList();
-        var charContacts = contacts.Where(t => t.Index != "#").OrderBy(h => h.ModificationTime).ToList();
-        
+        var charContacts = contacts.Where(t => t.Index != "#").OrderBy(f => f.Index).ThenBy(h => h.ModificationTime)
+            .ToList();
+
         return charContacts.Union(numContacts).ToList();
     }
 }
