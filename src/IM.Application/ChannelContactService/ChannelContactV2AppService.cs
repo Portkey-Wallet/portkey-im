@@ -298,12 +298,11 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
 
     private List<ContactDto> SortContacts(List<ContactDto> contacts)
     {
-        var regNum = new Regex("^[0-9]");
-        var regChar = new Regex("^[a-zA-Z]");
-
-        var charContacts = contacts.Where(t => regChar.IsMatch(t.Name)).OrderBy(t => t.Name).ToList();
-        var numContacts = contacts.Where(t => regNum.IsMatch(t.Name)).OrderBy(t => t.Name).ToList();
-        var otherContacts = contacts.Except(charContacts).Except(numContacts).OrderBy(t => t.Name).ToList();
-        return charContacts.Union(numContacts).Union(otherContacts).ToList();
+        var numContacts = contacts.Where(t => t.Index == "#").OrderBy(h => h.Name)
+            .ThenBy(f => f.CaHolderInfo.WalletName).ToList();
+        var charContacts = contacts.Where(t => t.Index != "#").OrderBy(h => h.Name)
+            .ThenBy(f => f.CaHolderInfo.WalletName).ToList();
+        
+        return charContacts.Union(numContacts).ToList();
     }
 }
