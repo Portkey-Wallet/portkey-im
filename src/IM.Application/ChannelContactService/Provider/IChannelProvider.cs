@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Dapper;
 using IM.ChannelContact;
 using IM.ChannelContact.Dto;
 using IM.Common;
@@ -18,7 +19,6 @@ namespace IM.ChannelContactService.Provider;
 public interface IChannelProvider
 {
     Task<List<ContactDto>> GetContactsAsync(Guid userId);
-    Task<MemberInfo> GetMemberInfoAsync(string channelId, string relationId);
     Task<List<MemberInfo>> GetMembersAsync(string channelUuid, List<string> relationIds);
     Task<MemberInfo> GetMemberAsync(string channelUuid, string relationId);
 
@@ -47,27 +47,32 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
         _caServerOptions = caServerOptions.Value;
     }
 
-    public Task<MemberInfo> GetMemberInfoAsync(string channelId, string relationId)
-    {
-        throw new System.NotImplementedException();
-    }
-
     public async Task<(IEnumerable<MemberQueryDto> data, int totalCount)> GetChannelMembersAsync(
         ChannelMembersRequestDto requestDto)
     {
-        var sql =
-            $"select relation_id as RelationId,is_admin as IsAdmin,`index` from im_channel_member where channel_uuid='{requestDto.ChannelUuid}' and status=0 order by `index` limit {requestDto.SkipCount}, {requestDto.MaxResultCount}; select count(*) from im_channel_member where channel_uuid='{requestDto.ChannelUuid}' and status=0;";
+        var parameters = new DynamicParameters();
+        parameters.Add("@channelUuid", requestDto.ChannelUuid);
+        parameters.Add("@skipCount", requestDto.SkipCount);
+        parameters.Add("@maxResultCount", requestDto.MaxResultCount);
 
-        return await _imRepository.QueryPageAsync<MemberQueryDto>(sql);
+        var sql =
+            "select relation_id as RelationId,is_admin as IsAdmin,`index` from im_channel_member where channel_uuid=@channelUuid and status=0 order by `index` limit @skipCount, @maxResultCount; select count(*) from im_channel_member where channel_uuid=@channelUuid and status=0;";
+
+        return await _imRepository.QueryPageAsync<MemberQueryDto>(sql, parameters);
     }
 
     public async Task<ChannelDetailResponseDto> GetChannelDetailInfoAsync(string relationId, string channelUuid)
     {
+        var parameters = new DynamicParameters();
+        parameters.Add("@relationId", relationId);
+        parameters.Add("@channelUuid", channelUuid);
+
         var sql =
             "select channel.uuid,channel.name,channel.icon,channel.announcement,channel.pin_announcement as PinAnnouncement,channel.open_access as OpenAccess,channel.type,im_user.mute,im_user.pin from im_channel channel join " +
-            $"im_user_channel im_user on channel.uuid=im_user.channel_uuid where im_user.relation_id = '{relationId}' and channel.uuid = '{channelUuid}' and channel.status=0;";
+            "im_user_channel im_user on channel.uuid=im_user.channel_uuid where im_user.relation_id = @relationId and channel.uuid = @channelUuid and channel.status=0;";
 
-        return await _imRepository.QueryFirstOrDefaultAsync<ChannelDetailResponseDto>(sql);
+        return await _imRepository.QueryFirstOrDefaultAsync<ChannelDetailResponseDto>(sql,
+            parameters);
     }
 
     public async Task<List<MemberInfo>> GetMembersAsync(string channelUuid, List<string> relationIds)
@@ -82,9 +87,12 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
         inStr = inStr.TrimEnd(',');
         inStr += ")";
 
+        var parameters = new DynamicParameters();
+        parameters.Add("@channelUuid", channelUuid);
+
         var sql =
-            $"select relation_id as RelationId,is_admin as IsAdmin from im_channel_member where channel_uuid='{channelUuid}' and status=0 and relation_id in {inStr};";
-        var imUserInfo = await _imRepository.QueryAsync<MemberInfo>(sql);
+            $"select relation_id as RelationId,is_admin as IsAdmin from im_channel_member where channel_uuid=@channelUuid and status=0 and relation_id in {inStr};";
+        var imUserInfo = await _imRepository.QueryAsync<MemberInfo>(sql, parameters);
         var userList = imUserInfo?.ToList();
         if (userList.IsNullOrEmpty()) return new List<MemberInfo>();
 
@@ -95,9 +103,13 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
 
     public async Task<MemberInfo> GetMemberAsync(string channelUuid, string relationId)
     {
+        var parameters = new DynamicParameters();
+        parameters.Add("@relationId", relationId);
+        parameters.Add("@channelUuid", channelUuid);
+
         var sql =
-            $"select relation_id as RelationId,is_admin as IsAdmin from im_channel_member where channel_uuid='{channelUuid}' and status=0 and relation_id='{relationId}' limit 1;";
-        var imUserInfo = await _imRepository.QueryFirstOrDefaultAsync<MemberInfo>(sql);
+            "select relation_id as RelationId,is_admin as IsAdmin from im_channel_member where channel_uuid=@channelUuid and status=0 and relation_id=@relationId limit 1;";
+        var imUserInfo = await _imRepository.QueryFirstOrDefaultAsync<MemberInfo>(sql, parameters);
         await _proxyChannelContactAppService.BuildUserNameAsync(new List<MemberInfo>() { imUserInfo }, null);
 
         return imUserInfo;
