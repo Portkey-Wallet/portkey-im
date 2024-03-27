@@ -97,7 +97,6 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
         if (userList.IsNullOrEmpty()) return new List<MemberInfo>();
 
         await _proxyChannelContactAppService.BuildUserNameAsync(userList, null);
-
         return userList;
     }
 
