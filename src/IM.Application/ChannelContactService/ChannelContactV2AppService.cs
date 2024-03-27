@@ -177,10 +177,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
 
     public async Task<ContactResultDto> GetContactsAsync(ContactRequestDto requestDto)
     {
-        var result = new ContactResultDto();
-        var contacts = new List<ContactDto>();
         var currentUserId = CurrentUser.GetId();
-        //get all contact name or remark
         var contactDtos = await _channelProvider.GetContactsAsync(currentUserId);
         contactDtos = contactDtos.Where(t => t.ImInfo != null && t.CaHolderInfo != null).ToList();
         if (!requestDto.Keyword.IsNullOrWhiteSpace())
@@ -194,11 +191,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
 
         var relationIds = contactDtos.Select(t => t.ImInfo.RelationId).ToList();
         var members = await _channelProvider.GetMembersAsync(requestDto.ChannelUuid, relationIds);
-        if (members.IsNullOrEmpty())
-        {
-            members = new List<MemberInfo>();
-        }
-
+        
         var contactMembers = contactDtos.Where(t => members.Select(f => f.RelationId).Contains(t.ImInfo.RelationId))
             .ToList();
         contactMembers.ForEach(t => t.IsGroupMember = true);
@@ -211,12 +204,12 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
                 t.CaHolderInfo.WalletName.ToUpper().Contains(keyword.ToUpper())).ToList();
         }
 
-
         contactDtos = SortContacts(contactDtos);
-        result.Contacts = contactDtos.Skip(requestDto.SkipCount).Take(requestDto.MaxResultCount).ToList();
-        result.TotalCount = contactDtos.Count;
-
-        return result;
+        return new ContactResultDto()
+        {
+            Contacts = contactDtos.Skip(requestDto.SkipCount).Take(requestDto.MaxResultCount).ToList(),
+            TotalCount = contactDtos.Count
+        };
     }
 
     private ContactResultDto GetContactByKeyword(string keyword, List<ContactDto> contactDtos)
@@ -298,10 +291,13 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
 
     private List<ContactDto> SortContacts(List<ContactDto> contacts)
     {
-        var numContacts = contacts.Where(t => t.Index == "#").OrderBy(h => h.Name)
-            .ThenBy(f => f.CaHolderInfo.WalletName).ToList();
-        var charContacts = contacts.Where(t => t.Index != "#").OrderBy(h => h.Name)
-            .ThenBy(f => f.CaHolderInfo.WalletName).ToList();
+        // var numContacts = contacts.Where(t => t.Index == "#").OrderBy(h => h.Name)
+        //     .ThenBy(f => f.CaHolderInfo.WalletName).ToList();
+        // var charContacts = contacts.Where(t => t.Index != "#").OrderBy(h => h.Name)
+        //     .ThenBy(f => f.CaHolderInfo.WalletName).ToList();
+        
+        var numContacts = contacts.Where(t => t.Index == "#").OrderBy(h => h.ModificationTime).ToList();
+        var charContacts = contacts.Where(t => t.Index != "#").OrderBy(h => h.ModificationTime).ToList();
         
         return charContacts.Union(numContacts).ToList();
     }
