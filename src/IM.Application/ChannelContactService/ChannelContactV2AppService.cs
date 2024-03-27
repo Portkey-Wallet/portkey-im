@@ -116,8 +116,8 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         var allMembers = await GetChannelMembersAsync(new ChannelMembersRequestDto()
         {
             ChannelUuid = requestDto.ChannelUuid,
-            SkipCount = 0,
-            MaxResultCount = 500
+            SkipCount = requestDto.SkipCount,
+            MaxResultCount = requestDto.MaxResultCount
         });
 
 
