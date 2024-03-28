@@ -258,7 +258,7 @@ public class ImHttpApiHostModule : AbpModule
         app.UseAuthentication();
 
         app.UseAuthorization();
-        //if (env.IsDevelopment())
+        if (env.IsDevelopment())
         {
             app.UseSwagger();
             app.UseAbpSwaggerUI(options => { options.SwaggerEndpoint("/swagger/v1/swagger.json", "IM API"); });

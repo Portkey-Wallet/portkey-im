@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using IM.ChannelContact;
 using IM.ChannelContact.Dto;
@@ -192,9 +193,10 @@ public class ProxyChannelContactAppService : ImAppService, IProxyChannelContactA
     public async Task BuildUserNameAsync(List<MemberInfo> memberInfos, string caToken = null)
     {
         var userIds = new List<Guid>();
+        var userIndices = await _userProvider.GetUserInfosByRelationIdsAsync(memberInfos.Select(t=>t.RelationId).ToList());
         foreach (var memberInfo in memberInfos)
         {
-            var userIndex = await _userProvider.GetUserInfoAsync(memberInfo.RelationId);
+            var userIndex = userIndices.FirstOrDefault(t => t.RelationId == memberInfo.RelationId);
             if (userIndex == null)
             {
                 continue;
