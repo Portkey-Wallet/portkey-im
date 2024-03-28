@@ -111,7 +111,6 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
 
         if (contactMemberInfos.Count > requestDto.MaxResultCount)
         {
-            // need to optimize
             result.Members.AddRange(contactMemberInfos.Skip(requestDto.SkipCount).Take(requestDto.MaxResultCount));
             result.TotalCount = requestDto.MaxResultCount;
             return result;
