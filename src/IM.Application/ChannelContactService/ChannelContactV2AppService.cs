@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AElf;
 using IM.ChannelContact;
 using IM.ChannelContact.Dto;
 using IM.ChannelContactService.Provider;
+using IM.Commons;
 using IM.User.Provider;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
@@ -135,12 +135,6 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         {
             result.Members.RemoveAll(t => t.RelationId == requestDto.FilteredMember);
             result.TotalCount -= 1;
-        }
-
-        if (!requestDto.Keyword.IsNullOrWhiteSpace())
-        {
-            result.Members = result.Members.Skip(0).Take(20).ToList();
-            result.TotalCount = result.Members.Count;
         }
 
         return result;
@@ -274,7 +268,7 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
 
     private bool CheckIsAddress(string keyword)
     {
-        if (keyword.Length <= 35)
+        if (keyword.Length <= CommonConstant.AddressLengthCount)
         {
             return false;
         }
@@ -285,14 +279,16 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         }
         catch (Exception e)
         {
+            Logger.LogError(e, "verify address error, address:{address}", keyword);
             return false;
         }
     }
 
     private List<ContactDto> SortContacts(List<ContactDto> contacts)
     {
-        var numContacts = contacts.Where(t => t.Index == "#").OrderBy(h => h.Name).ToList();
-        var charContacts = contacts.Where(t => t.Index != "#").OrderBy(f => f.Index).ThenBy(h => h.Name)
+        var numContacts = contacts.Where(t => t.Index == CommonConstant.NumberSign).OrderBy(h => h.Name).ToList();
+        var charContacts = contacts.Where(t => t.Index != CommonConstant.NumberSign).OrderBy(f => f.Index)
+            .ThenBy(h => h.Name)
             .ThenBy(g => g.ModificationTime)
             .ToList();
 
