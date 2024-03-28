@@ -7,6 +7,10 @@ using IM.ChannelContact;
 using IM.ChannelContact.Dto;
 using IM.ChannelContactService.Provider;
 using IM.Commons;
+using IM.Contact.Dtos;
+using IM.Entities.Es;
+using IM.User.Dtos;
+using IM.User.Etos;
 using IM.User.Provider;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
@@ -94,62 +98,36 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
             return result;
         }
 
-        // name or remark
-        // var currentUserId = CurrentUser.GetId();
-        // //get all contact name or remark
-        // var contactsDto = await GetContactsAsync(currentUserId);
-        // contactsDto = contactsDto?.Where(t => t.CaHolderInfo != null && t.ImInfo != null).ToList();
-        // var contacts = contactsDto?.Where(t => t.Name.ToUpper().Contains(keyword.ToUpper()) || t.CaHolderInfo.WalletName.Contains(keyword))
-        //     .ToList();
-        // if (contacts.IsNullOrEmpty())
-        // {
-        //     return result;
-        // }
-        //
-        // // get all relation id from db where groupid
-        // // get userindex where relation ids
-        // var relationIds = contacts.Select(t => t.CaHolderInfo.UserId.ToString()).ToList();
-        //
-        // var c_members = await GetMembersAsync(requestDto.ChannelUuid, relationIds);
-        // result.Members.AddRange(c_members);
-
-
         var currentUserId = CurrentUser.GetId();
         var contactDtos = await _channelProvider.GetContactsAsync(currentUserId);
         contactDtos = contactDtos.Where(t =>
             t.ImInfo != null && t.CaHolderInfo != null &&
-            (t.Name.Contains(keyword) || t.CaHolderInfo.WalletName.Contains(keyword))).ToList();
+            (t.Name.ToUpper().Contains(keyword.ToUpper()) ||
+             t.CaHolderInfo.WalletName.ToUpper().Contains(keyword.ToUpper()))).ToList();
         var relationIds = contactDtos.Select(t => t.ImInfo.RelationId).ToList();
 
         var contactMemberInfos = await _channelProvider.GetMembersAsync(requestDto.ChannelUuid, relationIds);
+        await BuildUserInfoAsync(contactMemberInfos, contactDtos);
+
         if (contactMemberInfos.Count > requestDto.MaxResultCount)
         {
-            await _proxyChannelContactAppService.BuildUserNameAsync(contactMemberInfos, null);
+            // need to optimize
             result.Members.AddRange(contactMemberInfos.Skip(requestDto.SkipCount).Take(requestDto.MaxResultCount));
             result.TotalCount = requestDto.MaxResultCount;
             return result;
         }
 
-        var members = await _channelProvider.GetMembersAsync(requestDto.ChannelUuid, requestDto.FilteredMember, 0, 100);
-        //var membs = members.Where(t => t.RelationId)
+        result.Members.AddRange(contactMemberInfos);
+        var nextResultCount = requestDto.MaxResultCount - contactMemberInfos.Count;
+        var excludes = contactMemberInfos.Select(t => t.RelationId).ToList();
+        if (!requestDto.FilteredMember.IsNullOrEmpty()) excludes.Add(requestDto.FilteredMember);
 
+        var memInfos =
+            await _channelProvider.GetMembersAsync(requestDto.ChannelUuid, keyword, excludes, 0,
+                nextResultCount);
 
-        var allMembers = await GetChannelMembersAsync(new ChannelMembersRequestDto()
-        {
-            ChannelUuid = requestDto.ChannelUuid,
-            SkipCount = requestDto.SkipCount,
-            MaxResultCount = requestDto.MaxResultCount
-        });
-
-
-        var memInfo = allMembers.Members.Where(t => t.Name.ToUpper().Contains(keyword.ToUpper())).ToList();
-
-        if (memInfo.IsNullOrEmpty())
-        {
-            return result;
-        }
-
-        result.Members.AddRange(memInfo);
+        await BuildUserInfoAsync(memInfos, false);
+        result.Members.AddRange(memInfos);
         result.TotalCount = result.Members.Count;
 
         return result;
@@ -324,5 +302,69 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
             .ToList();
 
         return charContacts.Union(numContacts).ToList();
+    }
+
+    private async Task BuildUserInfoAsync(List<MemberInfo> memberInfos, bool buildName)
+    {
+        var users = await _userProvider.GetUserInfosByRelationIdsAsync(memberInfos.Select(t => t.RelationId).ToList());
+        foreach (var memberInfo in memberInfos)
+        {
+            try
+            {
+                var user = users.FirstOrDefault(t => t.RelationId == memberInfo.RelationId);
+                if (user == null)
+                {
+                    Logger.LogWarning("user not exist, relationId:{relationId}", memberInfo.RelationId);
+                    continue;
+                }
+
+                memberInfo.UserId = user.Id;
+                if (user.CaAddresses.Count == CommonConstant.RegisterChainCount)
+                {
+                    Logger.LogDebug("user has only one address, userId:{userId}, relationId:{relationId}, caHash:{caHash}",
+                        user.Id, user.RelationId, user.CaHash);
+
+                    var holder = await _userProvider.GetCaHolderInfoAsync(user.CaHash);
+                    memberInfo.Addresses =
+                        ObjectMapper.Map<List<GuardianDto>, List<CaAddressInfoDto>>(holder.CaHolderInfo);
+                }
+                else
+                {
+                    memberInfo.Addresses =
+                        ObjectMapper.Map<List<CaAddressInfo>, List<CaAddressInfoDto>>(user.CaAddresses);
+                }
+
+                if (buildName)
+                {
+                    memberInfo.Name = user.Name;
+                }
+
+                memberInfo.Avatar = user.Avatar;
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, "set user name error, relationId:{relationId}", memberInfo.RelationId);
+            }
+        }
+    }
+
+    private async Task BuildUserInfoAsync(List<MemberInfo> memberInfos, List<ContactDto> contactDtos)
+    {
+        foreach (var memberInfo in memberInfos)
+        {
+            var contact = contactDtos.FirstOrDefault(t => t.ImInfo.RelationId == memberInfo.RelationId);
+            if (contact == null)
+            {
+                Logger.LogWarning("contact not exist, relationId:{relationId}", memberInfo.RelationId);
+                continue;
+            }
+
+            memberInfo.UserId = contact.CaHolderInfo.UserId;
+            memberInfo.Addresses =
+                ObjectMapper.Map<List<ContactAddressDto>, List<CaAddressInfoDto>>(contact.Addresses);
+
+            memberInfo.Name = contact.Name == string.Empty ? contact.CaHolderInfo.WalletName : contact.Name;
+            memberInfo.Avatar = contact.Avatar;
+        }
     }
 }

@@ -20,7 +20,10 @@ public interface IChannelProvider
 {
     Task<List<ContactDto>> GetContactsAsync(Guid userId);
     Task<List<MemberInfo>> GetMembersAsync(string channelUuid, List<string> relationIds);
-    Task<List<MemberInfo>> GetMembersAsync(string channelUuid, string exclude, int skipCount, int maxResultCount);
+
+    Task<List<MemberInfo>> GetMembersAsync(string channelUuid, string keyword, List<string> excludes, int skipCount,
+        int maxResultCount);
+
     Task<MemberInfo> GetMemberAsync(string channelUuid, string relationId);
 
     Task<(IEnumerable<MemberQueryDto> data, int totalCount)> GetChannelMembersAsync(
@@ -100,23 +103,37 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
         return userList;
     }
 
-    public async Task<List<MemberInfo>> GetMembersAsync(string channelUuid, string exclude, int skipCount, int maxResultCount)
+    public async Task<List<MemberInfo>> GetMembersAsync(string channelUuid, string keyword, List<string> excludes, int skipCount,
+        int maxResultCount)
     {
         var excludeStr = string.Empty;
-        if (!exclude.IsNullOrEmpty())
+        if (!excludes.IsNullOrEmpty())
         {
-            excludeStr = $" and relation_id<>'{exclude}'";
+            excludeStr = " and channel.relation_id not in ";
+            var builder = new StringBuilder("(");
+            foreach (var relationId in excludes)
+            {
+                builder.Append($"'{relationId}',");
+            }
+
+            var inStr = builder.ToString();
+            inStr = inStr.TrimEnd(',');
+            inStr += ")";
+
+            excludeStr += inStr;
         }
 
         var parameters = new DynamicParameters();
         parameters.Add("@channelUuid", channelUuid);
         parameters.Add("@skipCount", skipCount);
         parameters.Add("@maxResultCount", maxResultCount);
-
+        parameters.Add("@keyword", $"%{keyword}%");
+        
         var sql =
-            $"select relation_id as RelationId,is_admin as IsAdmin from im_channel_member where channel_uuid=@channelUuid and status=0{excludeStr} limit @skipCount,@maxResultCount;";
+            $"select channel.relation_id as RelationId,channel.is_admin as IsAdmin, user.name as Name from im_channel_member channel left join pk_user.uc_user user on channel.relation_id=user.relation_id  where channel.channel_uuid=@channelUuid and channel.status=0{excludeStr} and user.name like @keyword order by channel.index limit @skipCount,@maxResultCount;";
+
         var imUserInfo = await _imRepository.QueryAsync<MemberInfo>(sql, parameters);
-        return imUserInfo?.ToList();
+        return imUserInfo == null ? new List<MemberInfo>() : imUserInfo.ToList();
     }
 
     public async Task<MemberInfo> GetMemberAsync(string channelUuid, string relationId)
