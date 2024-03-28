@@ -16,6 +16,7 @@ public interface IUserProvider
 {
     Task<CaHolderInfoDto> GetCaHolderInfoAsync(string caHash);
     Task<UserIndex> GetUserInfoAsync(string relationId);
+    Task<List<UserIndex>> GetUserInfosByRelationIdsAsync(List<string> relationIds);
     Task<UserIndex> GetUserInfoAsync(Guid userId, string caAddress);
     Task<List<UserIndex>> ListUserInfoAsync(List<Guid> userIds, string caAddress);
     Task<UserIndex> GetUserInfoByIdAsync(Guid userId);
@@ -58,6 +59,18 @@ public class UserProvider : IUserProvider, ISingletonDependency
 
         QueryContainer Filter(QueryContainerDescriptor<UserIndex> f) => f.Bool(b => b.Must(mustQuery));
         return await _userRepository.GetAsync(Filter);
+    }
+
+    public async Task<List<UserIndex>> GetUserInfosByRelationIdsAsync(List<string> relationIds)
+    {
+        if (relationIds.IsNullOrEmpty()) return new List<UserIndex>();
+        var mustQuery = new List<Func<QueryContainerDescriptor<UserIndex>, QueryContainer>>()
+        {
+            descriptor => descriptor.Terms(i => i.Field(f => f.RelationId).Terms(relationIds))
+        };
+        QueryContainer Filter(QueryContainerDescriptor<UserIndex> f) => f.Bool(b => b.Must(mustQuery));
+        var (totalCount, data) = await _userRepository.GetListAsync(Filter);
+        return data;
     }
 
     public async Task<UserIndex> GetUserInfoAsync(Guid userId, string caAddress)

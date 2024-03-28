@@ -19,7 +19,7 @@ public static class CommonConstant
     public const string RedPackageTypeName = "REDPACKAGE_CARD";
     public const string TransferMessageName = "TRANSFER-CARD";
     public const string TransferTypeName = "TRANSFER_CARD";
-    public const string PinSysMessageName= "PIN-SYS";
+    public const string PinSysMessageName = "PIN-SYS";
     public const string PinSysTypeName = "PIN_SYS";
     public const string PinSysMessage = "[PinSys]";
     public const string PinSysName = "PIN-SYS";
@@ -42,4 +42,6 @@ public static class CommonConstant
         "Pinned Message has reached its limit. Please unpin some messages and try again.";
 
     public const int RegisterChainCount = 1;
+    public const string NumberSign = "#";
+    public const int AddressLengthCount = 35;
 }

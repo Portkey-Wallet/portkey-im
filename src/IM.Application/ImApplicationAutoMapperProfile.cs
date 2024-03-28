@@ -29,6 +29,7 @@ public class ImApplicationAutoMapperProfile : Profile
         CreateMap<UserGrainDto, AddUserEto>();
         CreateMap<UserInfoDto, ImUserDto>().ReverseMap();
         CreateMap<AddressWithChain, ContactAddressDto>();
+        CreateMap<ContactAddressDto, CaAddressInfoDto>();
         CreateMap<UserInfoDto, ContactProfileDto>()
             .ForMember(t => t.CreateTime, m => m.MapFrom(u => u.CreatedAt))
             .ForMember(t => t.Addresses, m => m.MapFrom(u => u.AddressWithChain))
@@ -85,7 +86,7 @@ public class ImApplicationAutoMapperProfile : Profile
             .ForMember(t => t.Address, m => m.MapFrom(f => f.CaAddress))
             .ForMember(t => t.ChainName,
                 m => m.MapFrom(f => CommonConstant.DefaultChainName));
-        
+
         CreateMap<MemberQueryDto, MemberInfo>();
     }
 }
