@@ -113,6 +113,30 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
 
         return imUserInfo;
     }
+    
+    public async Task<ChannelDetailResponseDto> GetFriendInfoAsync(string relationId, List<string> groupRelationIds)
+    {
+        var builder = new StringBuilder("(");
+        foreach (var gId in groupRelationIds)
+        {
+            builder.Append($"'{gId}',");
+        }
+
+        var inStr = builder.ToString();
+        inStr = inStr.TrimEnd(',');
+        inStr += ")";
+        
+        var parameters = new DynamicParameters();
+        parameters.Add("@relationId", relationId);
+       // parameters.Add("@channelUuid", channelUuid);
+
+        var sql =
+            $"select user.relation_id as RelationId,user.name as Name,friend.friend_relation_id as FriendRelationId,friend.remark as Remark from pk_user.uc_user user join pk_user.uc_friend friend on user.relation_id=friend.relation_id where user.relation_id='ryjl3-tyaaa-aaaaa-aaaba-cai';";
+        var imUserInfo = await _imRepository.QueryAsync<MemberInfo>(sql, parameters);
+
+        return await _imRepository.QueryFirstOrDefaultAsync<ChannelDetailResponseDto>(sql,
+            parameters);
+    }
 
     public async Task<List<ContactDto>> GetContactsAsync(Guid userId)
     {

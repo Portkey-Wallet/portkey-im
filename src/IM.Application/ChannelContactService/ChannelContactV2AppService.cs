@@ -291,8 +291,9 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
 
     private List<ContactDto> SortContacts(List<ContactDto> contacts)
     {
-        var numContacts = contacts.Where(t => t.Index == "#").OrderBy(h => h.ModificationTime).ToList();
-        var charContacts = contacts.Where(t => t.Index != "#").OrderBy(f => f.Index).ThenBy(h => h.ModificationTime)
+        var numContacts = contacts.Where(t => t.Index == "#").OrderBy(h => h.Name).ToList();
+        var charContacts = contacts.Where(t => t.Index != "#").OrderBy(f => f.Index).ThenBy(h => h.Name)
+            .ThenBy(g => g.ModificationTime)
             .ToList();
 
         return charContacts.Union(numContacts).ToList();
