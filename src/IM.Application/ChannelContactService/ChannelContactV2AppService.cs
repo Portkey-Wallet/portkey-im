@@ -113,6 +113,27 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         // var c_members = await GetMembersAsync(requestDto.ChannelUuid, relationIds);
         // result.Members.AddRange(c_members);
 
+
+        var currentUserId = CurrentUser.GetId();
+        var contactDtos = await _channelProvider.GetContactsAsync(currentUserId);
+        contactDtos = contactDtos.Where(t =>
+            t.ImInfo != null && t.CaHolderInfo != null &&
+            (t.Name.Contains(keyword) || t.CaHolderInfo.WalletName.Contains(keyword))).ToList();
+        var relationIds = contactDtos.Select(t => t.ImInfo.RelationId).ToList();
+
+        var contactMemberInfos = await _channelProvider.GetMembersAsync(requestDto.ChannelUuid, relationIds);
+        if (contactMemberInfos.Count > requestDto.MaxResultCount)
+        {
+            await _proxyChannelContactAppService.BuildUserNameAsync(contactMemberInfos, null);
+            result.Members.AddRange(contactMemberInfos.Skip(requestDto.SkipCount).Take(requestDto.MaxResultCount));
+            result.TotalCount = requestDto.MaxResultCount;
+            return result;
+        }
+
+        var members = await _channelProvider.GetMembersAsync(requestDto.ChannelUuid, requestDto.FilteredMember, 0, 100);
+        //var membs = members.Where(t => t.RelationId)
+
+
         var allMembers = await GetChannelMembersAsync(new ChannelMembersRequestDto()
         {
             ChannelUuid = requestDto.ChannelUuid,
@@ -130,12 +151,6 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
 
         result.Members.AddRange(memInfo);
         result.TotalCount = result.Members.Count;
-        if (!requestDto.FilteredMember.IsNullOrWhiteSpace() &&
-            memInfo.FirstOrDefault(t => t.RelationId == requestDto.FilteredMember) != null)
-        {
-            result.Members.RemoveAll(t => t.RelationId == requestDto.FilteredMember);
-            result.TotalCount -= 1;
-        }
 
         return result;
     }
@@ -171,28 +186,33 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
 
     public async Task<ContactResultDto> GetContactsAsync(ContactRequestDto requestDto)
     {
+        var contactResultDto =
+            await GetContactsWithoutMemberInfoAsync(requestDto.Keyword, requestDto.SkipCount,
+                requestDto.MaxResultCount);
+
+        if (!contactResultDto.Contacts.IsNullOrEmpty())
+        {
+            await SetIsGroupMemberAsync(contactResultDto.Contacts, requestDto.ChannelUuid);
+        }
+
+        return contactResultDto;
+    }
+
+    private async Task<ContactResultDto> GetContactsWithoutMemberInfoAsync(string keyword,
+        int skipCount, int maxResultCount)
+    {
         var currentUserId = CurrentUser.GetId();
         var contactDtos = await _channelProvider.GetContactsAsync(currentUserId);
         contactDtos = contactDtos.Where(t => t.ImInfo != null && t.CaHolderInfo != null).ToList();
-        if (!requestDto.Keyword.IsNullOrWhiteSpace())
+        if (!keyword.IsNullOrWhiteSpace())
         {
-            var contactResult = GetContactByKeyword(requestDto.Keyword.Trim(), contactDtos);
+            keyword = keyword.Trim();
+            var contactResult = GetContactByKeyword(keyword, contactDtos);
             if (contactResult.TotalCount > 0)
             {
                 return contactResult;
             }
-        }
 
-        var relationIds = contactDtos.Select(t => t.ImInfo.RelationId).ToList();
-        var members = await _channelProvider.GetMembersAsync(requestDto.ChannelUuid, relationIds);
-
-        var contactMembers = contactDtos.Where(t => members.Select(f => f.RelationId).Contains(t.ImInfo.RelationId))
-            .ToList();
-        contactMembers.ForEach(t => t.IsGroupMember = true);
-
-        if (!requestDto.Keyword.IsNullOrWhiteSpace())
-        {
-            var keyword = requestDto.Keyword.Trim();
             contactDtos = contactDtos.Where(t =>
                 t.Name.ToUpper().Contains(keyword.ToUpper()) || t.ImInfo.Name.ToUpper().Contains(keyword.ToUpper()) ||
                 t.CaHolderInfo.WalletName.ToUpper().Contains(keyword.ToUpper())).ToList();
@@ -201,9 +221,20 @@ public class ChannelContactV2AppService : ImAppService, IChannelContactV2AppServ
         contactDtos = SortContacts(contactDtos);
         return new ContactResultDto()
         {
-            Contacts = contactDtos.Skip(requestDto.SkipCount).Take(requestDto.MaxResultCount).ToList(),
+            Contacts = contactDtos.Skip(skipCount).Take(maxResultCount).ToList(),
             TotalCount = contactDtos.Count
         };
+    }
+
+    private async Task SetIsGroupMemberAsync(List<ContactDto> contactDtos, string channelUuid)
+    {
+        var relationIds = contactDtos.Select(t => t.ImInfo.RelationId).ToList();
+        var members = await _channelProvider.GetMembersAsync(channelUuid, relationIds);
+        await _proxyChannelContactAppService.BuildUserNameAsync(members, null);
+
+        var contactMembers = contactDtos.Where(t => members.Select(f => f.RelationId).Contains(t.ImInfo.RelationId))
+            .ToList();
+        contactMembers.ForEach(t => t.IsGroupMember = true);
     }
 
     private ContactResultDto GetContactByKeyword(string keyword, List<ContactDto> contactDtos)
