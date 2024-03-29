@@ -50,6 +50,7 @@ public class ImApplicationModule : AbpModule
         context.Services.AddHttpContextAccessor();
         Configure<PinMessageOptions>(configuration.GetSection("PinMessageOptions"));
         Configure<UserAddressOptions>(configuration.GetSection("UserAddress"));
+        Configure<ImDbOptions>(configuration.GetSection("ImDb"));
         
     }
 }
