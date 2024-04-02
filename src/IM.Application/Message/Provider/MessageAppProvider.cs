@@ -47,7 +47,7 @@ public class MessageAppProvider : IMessageAppProvider, ISingletonDependency
     }
 
 
-    private async Task<bool> IsMessageInChannelAsync(string channelUuid, string messageId)
+    public async Task<bool> IsMessageInChannelAsync(string channelUuid, string messageId)
     {
         var parameters = new DynamicParameters();
         parameters.Add("@channelUuid", channelUuid);

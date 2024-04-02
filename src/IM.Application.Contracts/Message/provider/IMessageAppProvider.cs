@@ -6,5 +6,7 @@ namespace IM.Message.Provider;
 public interface IMessageAppProvider
 {
     Task HideMessageByLeaderAsync(HideMessageByLeaderRequestDto input);
+
+    Task<bool> IsMessageInChannelAsync(string channelUuid, string messageId);
 }
 
