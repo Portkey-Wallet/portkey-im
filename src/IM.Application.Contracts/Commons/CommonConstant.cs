@@ -37,6 +37,8 @@ public static class CommonConstant
     public const string UserNotExist = "User Not Exist.";
     public const string MessagePinned = "The message has been pinned.";
     public const string PinMessageNotExist = "The message is not exists.";
+    public const string MessageNotExist = "The message is not exists.";
+    
 
     public const string OverPinnedLimit =
         "Pinned Message has reached its limit. Please unpin some messages and try again.";

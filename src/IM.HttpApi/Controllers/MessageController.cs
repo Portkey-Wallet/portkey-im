@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using IM.Message;
 using IM.Message.Dtos;
+using IM.Message.Provider;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
@@ -15,10 +16,12 @@ namespace IM.Controllers;
 public class MessageController : ImController
 {
     private readonly IMessageAppService _messageAppService;
+    private readonly IMessageAppProvider _messageAppProvider;
 
-    public MessageController(IMessageAppService messageAppService)
+    public MessageController(IMessageAppService messageAppService, IMessageAppProvider messageAppProvider)
     {
         _messageAppService = messageAppService;
+        _messageAppProvider = messageAppProvider;
     }
 
     [Authorize, HttpPost("send")]
@@ -61,5 +64,11 @@ public class MessageController : ImController
     {
         return;
         //await _messageAppService.EventProcessAsync(input);
+    }
+    
+    [HttpPost("hideByLeader")]
+    public async Task HideMessageByLeaderAsync(HideMessageByLeaderRequestDto input)
+    { 
+        await _messageAppProvider.HideMessageByLeaderAsync(input);
     }
 }
