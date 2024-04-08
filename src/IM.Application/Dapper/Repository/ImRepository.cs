@@ -17,13 +17,15 @@ public class ImRepository<T> : IImRepository<T> where T : class, ISingletonDepen
 
     public async Task<T> QueryFirstOrDefaultAsync(string sql, object param = null)
     {
-        return await _dapperContext.OpenConnection().QueryFirstOrDefaultAsync<T>(sql, param);
+        using var connection = _dapperContext.OpenConnection();
+        return await connection.QueryFirstOrDefaultAsync<T>(sql, param);
     }
 
     public async Task<IEnumerable<T>> QueryAsync(string sql, object param = null, IDbTransaction transaction = null,
         int? commandTimeout = null, CommandType? commandType = null)
     {
-        return await _dapperContext.OpenConnection()
+        using var connection = _dapperContext.OpenConnection();
+        return await connection
             .QueryAsync<T>(sql, param, transaction, commandTimeout, commandType);
     }
 }
@@ -39,13 +41,15 @@ public class ImRepository : IImRepository, ISingletonDependency
 
     public async Task<T> QueryFirstOrDefaultAsync<T>(string sql, object param = null)
     {
-        return await _dapperContext.OpenConnection().QueryFirstOrDefaultAsync<T>(sql, param);
+        using var connection = _dapperContext.OpenConnection();
+        return await connection.QueryFirstOrDefaultAsync<T>(sql, param);
     }
 
     public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object param = null, IDbTransaction transaction = null,
         int? commandTimeout = null, CommandType? commandType = null)
     {
-        return await _dapperContext.OpenConnection()
+        using var connection = _dapperContext.OpenConnection();
+        return await connection
             .QueryAsync<T>(sql, param, transaction, commandTimeout, commandType);
     }
 
@@ -63,6 +67,7 @@ public class ImRepository : IImRepository, ISingletonDependency
 
     public async Task ExecuteAsync(string sql, object param = null)
     {
-        await _dapperContext.OpenConnection().ExecuteAsync(sql, param);
+        using var connection = _dapperContext.OpenConnection();
+        await connection.ExecuteAsync(sql, param);
     }
 }
