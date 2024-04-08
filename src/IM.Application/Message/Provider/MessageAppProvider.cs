@@ -51,8 +51,8 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
             throw new UserFriendlyException(CommonConstant.NoPermission);
         }
 
-        var isMessageInChannel = await IsMessageInChannelAsync(input.ChannelUuId, input.MessageId);
-        if (!isMessageInChannel)
+        var messageInfo = await GetMessageByIdAsync(input.ChannelUuId, input.MessageId);
+        if (messageInfo == null)
         {
             throw new UserFriendlyException(CommonConstant.MessageNotExist);
         }
@@ -62,6 +62,10 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
 
         if (pinMessageIndex == null && pinMessageIndexQuote.Count == 0)
         {
+            if (messageInfo.Status == 1)
+            {
+                return;
+            }
             await DeleteMessageManuallyAsync(input.MessageId);
         }
 
@@ -145,14 +149,20 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
 
     public async Task<bool> IsMessageInChannelAsync(string channelUuid, string messageId)
     {
+        var messageInfo = await GetMessageByIdAsync(channelUuid,messageId);
+        return messageInfo is { Status: 1 };
+    }
+
+    public async Task<IMMessageInfoDto> GetMessageByIdAsync(string channelUuid, string messageId)
+    {
         var parameters = new DynamicParameters();
         parameters.Add("@channelUuid", channelUuid);
         parameters.Add("@messageId", messageId);
 
         var sql =
             "select id as Id,send_uuid as SendUuid,channel_uuid as ChannelUuid,quote_id as QuoteId , mentioned_user as mentionedUser from im_message where channel_uuid=@channelUuid  and id=@messageId limit 1;";
-        var messageInfo = await _imRepository.QueryFirstOrDefaultAsync<IMMessageInfoDto>(sql, parameters);
-        return messageInfo != null;
+        var imMessageInfoDto = await _imRepository.QueryFirstOrDefaultAsync<IMMessageInfoDto>(sql, parameters);
+        return imMessageInfoDto;
     }
 
 

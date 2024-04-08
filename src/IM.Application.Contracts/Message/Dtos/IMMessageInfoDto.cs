@@ -4,11 +4,12 @@ namespace IM.Message.Dtos;
 
 public class IMMessageInfoDto
 {
-    private long Id { get; set; }
-    private string SendUuid { get; set; }
-    private string ChannelUuid { get; set; }
-    private string From { get; set; }
-    private string Type { get; set; }
-    private long QuoteId { get; set; }
-    private string MentionedUser { get; set; }
+    public long Id { get; set; }
+    public string SendUuid { get; set; }
+    public string ChannelUuid { get; set; }
+    public string From { get; set; }
+    public string Type { get; set; }
+    public long QuoteId { get; set; }
+    public string MentionedUser { get; set; }
+    public int Status { get; set; }
 }
