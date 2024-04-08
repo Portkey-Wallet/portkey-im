@@ -150,7 +150,7 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
         parameters.Add("@messageId", messageId);
 
         var sql =
-            "select id as Id,send_uuid as SendUuid,channel_uuid as ChannelUuid,quote_id as QuoteId , mentioned_user as mentionedUser from im_message where channel_uuid=@channelUuid and status=0 and id=@messageId limit 1;";
+            "select id as Id,send_uuid as SendUuid,channel_uuid as ChannelUuid,quote_id as QuoteId , mentioned_user as mentionedUser from im_message where channel_uuid=@channelUuid  and id=@messageId limit 1;";
         var messageInfo = await _imRepository.QueryFirstOrDefaultAsync<IMMessageInfoDto>(sql, parameters);
         return messageInfo != null;
     }
