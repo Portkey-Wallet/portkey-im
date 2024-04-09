@@ -83,6 +83,7 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
                 throw new UserFriendlyException(CommonConstant.UserNotExist);
             }
 
+            await _pinMessageRepository.DeleteIndexAsync(pinMessageIndex.Id, true);
             var pinMessageType = System.Enum.TryParse<MessageType>(pinMessageIndex.Type, out var messageType)
                 ? messageType
                 : MessageType.TEXT;
