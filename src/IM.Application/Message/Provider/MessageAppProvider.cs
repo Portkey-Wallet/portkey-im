@@ -151,7 +151,7 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
     public async Task<bool> IsMessageInChannelAsync(string channelUuid, string messageId)
     {
         var messageInfo = await GetMessageByIdAsync(channelUuid,messageId);
-        return messageInfo is { Status: 1 };
+        return messageInfo is { Status: 0 };
     }
 
     public async Task<IMMessageInfoDto> GetMessageByIdAsync(string channelUuid, string messageId)
