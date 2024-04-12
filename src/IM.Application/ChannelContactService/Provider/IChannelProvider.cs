@@ -82,6 +82,8 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
 
     public async Task<List<MemberInfo>> GetMembersAsync(string channelUuid, List<string> relationIds)
     {
+        if (relationIds.IsNullOrEmpty()) return new List<MemberInfo>();
+        
         var builder = new StringBuilder("(");
         foreach (var relationId in relationIds)
         {
