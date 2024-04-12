@@ -64,4 +64,10 @@ public class ImRepository : IImRepository, ISingletonDependency
 
         return (data, totalCount);
     }
+
+    public async Task ExecuteAsync(string sql, object param = null)
+    {
+        using var connection = _dapperContext.OpenConnection();
+        await connection.ExecuteAsync(sql, param);
+    }
 }

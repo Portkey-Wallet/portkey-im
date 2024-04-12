@@ -22,4 +22,6 @@ public interface IImRepository
     Task<(IEnumerable<T> data, int totalCount)> QueryPageAsync<T>(string sql, object param = null,
         IDbTransaction transaction = null,
         int? commandTimeout = null, CommandType? commandType = null);
+    
+    Task ExecuteAsync(string sql, object param = null);
 }

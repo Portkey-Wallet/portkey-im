@@ -10,6 +10,7 @@ using IM.Entities.Es;
 using IM.Enum.PinMessage;
 using IM.Message;
 using IM.Message.Dtos;
+using IM.Message.Provider;
 using IM.Options;
 using IM.PinMessage.Dtos;
 using IM.Repository;
@@ -35,13 +36,14 @@ public class PinMessageAppService : ImAppService, IPinMessageAppService
     private readonly IMessageAppService _messageAppService;
     private readonly ILogger<PinMessageAppService> _logger;
     private readonly IContactAppService _contactAppService;
+    private readonly IMessageAppProvider _messageAppProvider;
 
     public PinMessageAppService(
         IObjectMapper objectMapper,
         IOptionsSnapshot<PinMessageOptions> pinMessageOptions, IChannelContactAppService channelContactAppService,
         INESTRepository<UserIndex, Guid> userRepository, IMessageAppService messageAppService,
         ILogger<PinMessageAppService> logger, IContactAppService contactAppService,
-        IRefreshRepository<PinMessageIndex, string> pinMessageRepository)
+        IRefreshRepository<PinMessageIndex, string> pinMessageRepository, IMessageAppProvider messageAppProvider)
     {
         _objectMapper = objectMapper;
         _channelContactAppService = channelContactAppService;
@@ -50,6 +52,7 @@ public class PinMessageAppService : ImAppService, IPinMessageAppService
         _logger = logger;
         _contactAppService = contactAppService;
         _pinMessageRepository = pinMessageRepository;
+        _messageAppProvider = messageAppProvider;
 
         _channelContactAppService = channelContactAppService;
         _userRepository = userRepository;
@@ -78,6 +81,12 @@ public class PinMessageAppService : ImAppService, IPinMessageAppService
         if (!isAdmin)
         {
             throw new UserFriendlyException(CommonConstant.NoPermission);
+        }
+
+        var isMessageExists = await _messageAppProvider.IsMessageInChannelAsync(paramDto.ChannelUuid,paramDto.Id);
+        if (!isMessageExists)
+        {
+            throw new UserFriendlyException(CommonConstant.MessageNotExist);
         }
 
         var pinMessageIndex = await _pinMessageRepository.GetAsync(paramDto.Id);
