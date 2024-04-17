@@ -20,7 +20,6 @@ public class Program
             Log.Information("Starting IM.HttpApi.Host.");
             var builder = WebApplication.CreateBuilder(args);
             builder.Host.AddAppSettingsSecretsJson()
-                //.InitAppConfiguration()
                 .UseApolloForConfigureHostBuilder()
                 .UseAutofac()
                 .UseSerilog();
