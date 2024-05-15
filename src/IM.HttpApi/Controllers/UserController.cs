@@ -17,10 +17,12 @@ namespace IM.Controllers;
 public class UserController : ImController
 {
     private readonly IUserAppService _userAppService;
+    private readonly IBlockUserAppService _blockUserAppService;
 
-    public UserController(IUserAppService userAppService)
+    public UserController(IUserAppService userAppService, IBlockUserAppService blockUserAppService)
     {
         _userAppService = userAppService;
+        _blockUserAppService = blockUserAppService;
     }
 
     [HttpPost("token")]
@@ -71,4 +73,26 @@ public class UserController : ImController
     {
         return await _userAppService.ListUserInfoAsync(input);
     }
+    
+    [HttpPost("block")]
+    public async Task<string> BlockUserAsync(BlockUserRequestDto input)
+    {
+        await _blockUserAppService.BlockUserAsync(input);
+        return "success";
+    }
+    
+    [HttpPost("unBlock")]
+    public async Task<string> UnBlockUserAsync(UnBlockUserRequestDto input)
+    {
+        await _blockUserAppService.UnBlockUserAsync(input);
+        return "success";
+    }
+    
+    [HttpPost("isBlocked")]
+    public async Task<bool> IsBlockedAsync(BlockUserRequestDto input)
+    {
+        await _blockUserAppService.IsBlockedAsync(input);
+        return true;
+    }
+    
 }
