@@ -11,4 +11,5 @@ public interface IUserAppService : IBaseUserAppService
     Task<ImUserDto> GetImUserInfoAsync(string relationId);
     Task<ImUserDto> GetImUserAsync(string address);
     Task<ContactProfileDto> GetContactAsync(Guid contactUserId);
+    Task<List<CAUserDto>> GetCaHolderAsync(List<Guid> userIds, string token = null);
 }

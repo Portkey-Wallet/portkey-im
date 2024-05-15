@@ -1,15 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using IM.ChannelContact;
 using IM.ChannelContact.Dto;
 using IM.Common;
 using IM.Commons;
+using IM.Entities.Es;
 using IM.Options;
 using IM.User.Dtos;
+using IM.User.Etos;
 using IM.User.Provider;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Volo.Abp;
@@ -25,7 +29,6 @@ public class ProxyChannelContactAppService : ImAppService, IProxyChannelContactA
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IHttpClientProvider _httpClientProvider;
     private readonly CAServerOptions _caServerOptions;
-
 
     public ProxyChannelContactAppService(IProxyRequestProvider proxyRequestProvider, IUserProvider userProvider,
         IHttpContextAccessor httpContextAccessor, IHttpClientProvider httpClientProvider,
@@ -49,7 +52,7 @@ public class ProxyChannelContactAppService : ImAppService, IProxyChannelContactA
         {
             return result;
         }
-        
+
         if (result == null || result.ChannelUuid.IsNullOrWhiteSpace())
         {
             return result;
@@ -134,10 +137,10 @@ public class ProxyChannelContactAppService : ImAppService, IProxyChannelContactA
         return await _proxyRequestProvider.PostAsync<String>(url, ownerTransferRequestDto);
     }
 
-    public async Task<bool> IsAdminAsync()
+    public async Task<bool> IsAdminAsync(string id)
     {
         var url = ImUrlConstant.IsAdminChannel;
-        return await _proxyRequestProvider.GetAsync<bool>(url);
+        return await _proxyRequestProvider.GetAsync<bool>(url + "?channelUuid=" + id);
     }
 
     public async Task<AnnouncementResponseDto> ChannelAnnouncementAsync(ChannelAnnouncementRequestDto requestDto)
@@ -190,9 +193,10 @@ public class ProxyChannelContactAppService : ImAppService, IProxyChannelContactA
     public async Task BuildUserNameAsync(List<MemberInfo> memberInfos, string caToken = null)
     {
         var userIds = new List<Guid>();
+        var userIndices = await _userProvider.GetUserInfosByRelationIdsAsync(memberInfos.Select(t=>t.RelationId).ToList());
         foreach (var memberInfo in memberInfos)
         {
-            var userIndex = await _userProvider.GetUserInfoAsync(memberInfo.RelationId);
+            var userIndex = userIndices.FirstOrDefault(t => t.RelationId == memberInfo.RelationId);
             if (userIndex == null)
             {
                 continue;
@@ -200,6 +204,21 @@ public class ProxyChannelContactAppService : ImAppService, IProxyChannelContactA
 
             var id = userIndex.Id;
             memberInfo.UserId = userIndex.Id;
+            if (userIndex.CaAddresses.Count == CommonConstant.RegisterChainCount)
+            {
+                Logger.LogDebug("user has only one address, userId:{userId}, relationId:{relationId}, caHash:{caHash}",
+                    userIndex.Id, userIndex.RelationId, userIndex.CaHash);
+
+                var holder = await _userProvider.GetCaHolderInfoAsync(userIndex.CaHash);
+                memberInfo.Addresses =
+                    ObjectMapper.Map<List<GuardianDto>, List<CaAddressInfoDto>>(holder.CaHolderInfo);
+            }
+            else
+            {
+                memberInfo.Addresses =
+                    ObjectMapper.Map<List<CaAddressInfo>, List<CaAddressInfoDto>>(userIndex.CaAddresses);
+            }
+
             userIds.Add(id);
         }
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using AutoMapper;
 using IM.ChannelContact.Dto;
 using IM.ChannelContact.Etos;
@@ -12,9 +11,12 @@ using IM.Grains.Grain.Mute;
 using IM.Grains.Grain.User;
 using IM.Message.Dtos;
 using IM.Message.Etos;
+using IM.PinMessage;
+using IM.PinMessage.Dtos;
 using IM.User.Dtos;
 using IM.User.Etos;
 using Volo.Abp.AutoMapper;
+using CaHolderInfoDto = IM.Contact.Dtos.CaHolderInfoDto;
 
 namespace IM;
 
@@ -27,6 +29,7 @@ public class ImApplicationAutoMapperProfile : Profile
         CreateMap<UserGrainDto, AddUserEto>();
         CreateMap<UserInfoDto, ImUserDto>().ReverseMap();
         CreateMap<AddressWithChain, ContactAddressDto>();
+        CreateMap<ContactAddressDto, CaAddressInfoDto>();
         CreateMap<UserInfoDto, ContactProfileDto>()
             .ForMember(t => t.CreateTime, m => m.MapFrom(u => u.CreatedAt))
             .ForMember(t => t.Addresses, m => m.MapFrom(u => u.AddressWithChain))
@@ -44,7 +47,7 @@ public class ImApplicationAutoMapperProfile : Profile
 
         CreateMap<UserIndex, ImUserDto>()
             .ForMember(t => t.PortkeyId, m => m.MapFrom(f => f.Id));
-        CreateMap<IM.Contact.Dtos.CaHolderInfoDto, CaHolderDto>()
+        CreateMap<CaHolderInfoDto, CaHolderDto>()
             .ForMember(t => t.UserId, m => m.MapFrom(f => f.UserId == Guid.Empty ? null : f.UserId.ToString()))
             ;
         CreateMap<ContactProfileDto, ContactInfoDto>()
@@ -69,5 +72,21 @@ public class ImApplicationAutoMapperProfile : Profile
         CreateMap<GroupAddOrUpdateEto, GroupIndex>();
         CreateMap<MuteEto, MuteIndex>();
         CreateMap<MuteGrainDto, MuteEto>();
+
+        CreateMap<PinMessageQueryParamDto, PinMessageIndex>();
+        CreateMap<CancelPinMessageParamDto, PinMessageIndex>();
+        CreateMap<PinMessageQueryParamDto, ListPinMessageParam>();
+        CreateMap<PinMessageParamDto, PinMessageIndex>();
+        CreateMap<GuardianDto, CaAddressInfoDto>().ForMember(t => t.ChainId, m => m.MapFrom(f => f.ChainId))
+            .ForMember(t => t.Address, m => m.MapFrom(f => f.CaAddress));
+        CreateMap<PinMessageIndex, PinMessage.Dtos.PinMessage>()
+            .ForMember(t => t.Quote, m => m.MapFrom(f => f.Quote));
+
+        CreateMap<GuardianDto, ContactAddressDto>().ForMember(t => t.ChainId, m => m.MapFrom(f => f.ChainId))
+            .ForMember(t => t.Address, m => m.MapFrom(f => f.CaAddress))
+            .ForMember(t => t.ChainName,
+                m => m.MapFrom(f => CommonConstant.DefaultChainName));
+
+        CreateMap<MemberQueryDto, MemberInfo>();
     }
 }

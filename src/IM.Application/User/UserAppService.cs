@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -20,6 +21,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using Orleans;
 using Volo.Abp;
@@ -74,8 +76,6 @@ public class UserAppService : ImAppService, IUserAppService
 
         var addResult = await AddGrainAsync(CurrentUser.GetId(), authToken.Token, input.Name);
         if (addResult == null || !addResult.Success() || addResult.Data == null) return authToken;
-
-        _ = MergeAsync(addResult.Data.CaAddresses, CurrentUser.GetId(), addResult.Data.RelationId);
 
         await _distributedEventBus.PublishAsync(ObjectMapper.Map<UserGrainDto, AddUserEto>(addResult.Data));
         return authToken;
@@ -174,19 +174,6 @@ public class UserAppService : ImAppService, IUserAppService
         return updateResult;
     }
 
-    private async Task MergeAsync(List<CaAddressInfo> caAddresses, Guid userId, string relationId)
-    {
-        await MergeAsync(new ContactMergeDto()
-        {
-            Addresses = ObjectMapper.Map<List<CaAddressInfo>, List<CaAddressInfoDto>>(caAddresses),
-            ImInfo = new ImUserDto()
-            {
-                PortkeyId = userId,
-                RelationId = relationId
-            }
-        });
-    }
-
     private async Task<UserGrainDto> GetUserInfoAsync(Guid userId, string token, string name)
     {
         var holder = await GetCaHolderAsync(userId);
@@ -276,6 +263,29 @@ public class UserAppService : ImAppService, IUserAppService
             header);
     }
 
+    public async Task<List<CAUserDto>> GetCaHolderAsync(List<Guid> userIds, string token = null)
+    {
+        var authToken = new StringValues();
+        Debug.Assert((_httpContextAccessor.HttpContext != null || !string.IsNullOrEmpty(token)),
+            "_httpContextAccessor.HttpContext != null");
+        var hasAuthToken = _httpContextAccessor.HttpContext?.Request?.Headers.TryGetValue(CommonConstant.AuthHeader,
+            out authToken);
+        if (!token.IsNullOrEmpty())
+        {
+            authToken = token;
+            hasAuthToken = true;
+        }
+
+        var header = new Dictionary<string, string>();
+        if (hasAuthToken == true)
+        {
+            header.Add(CommonConstant.AuthHeader, authToken);
+        }
+
+        return await _httpClientProvider.PostAsync<List<CAUserDto>>(_caServerOptions.BaseUrl + "api/app/imUsers/names",
+            userIds, header);
+    }
+
     public async Task<List<UserInfoListDto>> ListUserInfoAsync(UserInfoListRequestDto input)
     {
         //get holder infos by email/phone/google/apple
@@ -315,6 +325,8 @@ public class UserAppService : ImAppService, IUserAppService
             all.AddRange(dto.ToList());
         }
 
+        // remove self
+        all.RemoveAll(t => t.RelationId == currentUser?.RelationId);
         //get contact's remark
         var contactProfileDtos = await GetContactListAsync(portKeyIds, input.Keywords);
 
@@ -471,30 +483,5 @@ public class UserAppService : ImAppService, IUserAppService
     private async Task UpdateUserAsync(Guid id, string walletName, string avatar)
     {
         await _userProvider.UpdateUserInfoAsync(id, walletName, avatar);
-    }
-
-    private async Task MergeAsync(ContactMergeDto mergeDto)
-    {
-        try
-        {
-            Logger.LogInformation("begin merge: param: {param}", JsonConvert.SerializeObject(mergeDto));
-            var hasAuthToken = _httpContextAccessor.HttpContext.Request.Headers.TryGetValue(CommonConstant.AuthHeader,
-                out var authToken);
-
-
-            var header = new Dictionary<string, string>();
-            if (hasAuthToken)
-            {
-                header.Add(CommonConstant.AuthHeader, authToken);
-            }
-
-            _ = _httpClientProvider.PostAsync<object>(
-                _caServerOptions.BaseUrl + ImUrlConstant.Merge, mergeDto,
-                header);
-        }
-        catch (Exception e)
-        {
-            Logger.LogError(e, "merge contacts fail, portkeyId:{portkeyId}", mergeDto.ImInfo.PortkeyId);
-        }
     }
 }

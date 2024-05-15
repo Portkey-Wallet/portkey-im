@@ -6,7 +6,7 @@ namespace IM.Message;
 
 public interface IBaseMessageAppService
 {
-    Task<object> HideMessageAsync(HideMessageRequestDto input);
+    Task HideMessageAsync(HideMessageRequestDto input);
     Task<int> ReadMessageAsync(ReadMessageRequestDto input);
 
     Task<List<ListMessageResponseDto>> ListMessageAsync(ListMessageRequestDto input);

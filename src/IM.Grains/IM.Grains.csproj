@@ -101,6 +101,7 @@
       <Orleans_CodeGenInputs Remove="Grain\Account\RegisterGrainDto.cs" />
       <Orleans_CodeGenInputs Remove="Grain\Account\RegisterMessage.cs" />
       <Orleans_CodeGenInputs Remove="Grain\Account\SocialRecoveryResultGrainDto.cs" />
+      <Orleans_CodeGenInputs Remove="State\PinMessage\PinMessageState.cs" />
     </ItemGroup>
 
 </Project>

@@ -1,6 +1,9 @@
+using System.ComponentModel.DataAnnotations;
+using Volo.Abp.Application.Dtos;
+
 namespace IM.ChannelContact.Dto;
 
-public class ChannelDetailInfoRequestDto
+public class ChannelDetailInfoRequestDto : PagedResultRequestDto
 {
-    public string ChannelUuid { get; set; }
+    [Required] public string ChannelUuid { get; set; }
 }

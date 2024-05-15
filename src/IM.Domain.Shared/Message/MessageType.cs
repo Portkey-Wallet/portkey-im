@@ -8,5 +8,7 @@ public enum MessageType
     IMAGE,
     EMOJI,
     NFT,
-    REDPACKAGE_CARD
+    REDPACKAGE_CARD,
+    TRANSFER_CARD,
+    PIN_SYS
 }
