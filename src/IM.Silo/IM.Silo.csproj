@@ -21,13 +21,18 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!--        <ProjectReference Include="..\IM.Application\IM.Application.csproj" />-->
+        <ProjectReference Include="..\IM.Application\IM.Application.csproj" />
         <!--        <ProjectReference Include="..\IM.BackGround\IM.BackGround.csproj" />-->
         <ProjectReference Include="..\IM.Grains\IM.Grains.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <None Remove="appsettings.json" />
+        <Content Include="appsettings.apollo.json">
+          <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+          <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        </Content>
         <Content Include="appsettings.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>

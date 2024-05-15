@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Text.Json;
 using System.Threading.Tasks;
-using IM.Hubs;
+using IM.Common;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -15,29 +13,14 @@ public class Program
 {
     public async static Task<int> Main(string[] args)
     {
-        var configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json")
-            .Build();
-        Log.Logger = new LoggerConfiguration()
-#if DEBUG
-            .MinimumLevel.Debug()
-#else
-            .MinimumLevel.Information()
-#endif
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-            .Enrich.FromLogContext()
-            .ReadFrom.Configuration(configuration)
-            
-#if DEBUG
-            .WriteTo.Async(c => c.Console())
-#endif          
-            .CreateLogger();
+        Log.Logger = LogHelper.CreateLogger(LogEventLevel.Debug);
 
         try
         {
             Log.Information("Starting IM.HttpApi.Host.");
             var builder = WebApplication.CreateBuilder(args);
             builder.Host.AddAppSettingsSecretsJson()
+                .UseApolloForConfigureHostBuilder()
                 .UseAutofac()
                 .UseSerilog();
             builder.Services.AddSignalR();

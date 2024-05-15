@@ -3,6 +3,7 @@ using AElf.Indexing.Elasticsearch.Options;
 using GraphQL.Client.Abstractions;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
+using IM.Common;
 using IM.Commons;
 using IM.EntityEventHandler.Core;
 using IM.Grains;
@@ -121,6 +122,11 @@ public class ImEntityEventHandlerModule : AbpModule
     {
         var client = context.ServiceProvider.GetRequiredService<IClusterClient>();
         AsyncHelper.RunSync(async () => await client.Connect());
+    }
+    
+    public override void OnApplicationInitialization(ApplicationInitializationContext context)
+    {
+        ConfigurationProvidersHelper.DisplayConfigurationProviders(context);
     }
 
     public override void OnApplicationShutdown(ApplicationShutdownContext context)
