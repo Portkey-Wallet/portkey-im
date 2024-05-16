@@ -2,14 +2,15 @@ using Dapper;
 using IM.Message;
 using IM.Mysql.Template;
 using IM.User;
+using Volo.Abp.DependencyInjection;
 
 namespace IM.Mysql.ReportMessageInfo;
 
-public class ReportMessageInfoGatewayImpl : IReportUserGateway
+public class ReportMessageInfoRepository : IReportUserGateway, ISingletonDependency
 {
     private readonly IImTemplate _imTemplate;
 
-    public ReportMessageInfoGatewayImpl(IImTemplate imTemplate)
+    public ReportMessageInfoRepository(IImTemplate imTemplate)
     {
         _imTemplate = imTemplate;
     }
