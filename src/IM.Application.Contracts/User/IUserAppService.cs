@@ -8,6 +8,7 @@ namespace IM.User;
 
 public interface IUserAppService : IBaseUserAppService
 {
+    Task ReportUserImMessage(ReportUserImMessageCmd reportUserImMessageCmd);
     Task<ImUserDto> GetImUserInfoAsync(string relationId);
     Task<ImUserDto> GetImUserAsync(string address);
     Task<ContactProfileDto> GetContactAsync(Guid contactUserId);

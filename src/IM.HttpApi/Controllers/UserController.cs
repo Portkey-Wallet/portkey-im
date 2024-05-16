@@ -58,6 +58,13 @@ public class UserController : ImController
     {
         return await _userAppService.GetAddressesAsync(relationId);
     }
+
+    [HttpPost("report")]
+    public async Task<string> ReportUserImMessage(ReportUserImMessageCmd reportUserImMessageCmd)
+    {
+        await _userAppService.ReportUserImMessage(reportUserImMessageCmd);
+        return "success";
+    }
     
     [HttpPost("userInfo/update"), Authorize]
     public async Task<string> UpdateImUserAsync(ImUsrUpdateDto input)
