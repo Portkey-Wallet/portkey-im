@@ -7,4 +7,6 @@ public class ReportedMessage
     public string MessageId {get; set; }
     public string Description {get; set; }
     public long ReportTime { get; set; }
+    public string RelationId { get; set; }
+    public string ChannelUuid { get; set; }
 }

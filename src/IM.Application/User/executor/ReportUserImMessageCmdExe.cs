@@ -23,14 +23,13 @@ public class ReportUserImMessageCmdExe : ApplicationService
     
     public async Task ReportUserImMessage(ReportUserImMessageCmd reportUserImMessageCmd)
     {
-        var user = await _userProvider.GetUserInfoAsync(Guid.Parse(reportUserImMessageCmd.UserId), reportUserImMessageCmd.UserAddress);
+        var user = await _userProvider.GetUserInfoByIdAsync(Guid.Parse(reportUserImMessageCmd.UserId));
         if (user is null)
         {
             throw new UserFriendlyException("user does not exist");
         }
         var imUser = ObjectMapper.Map<UserIndex, ImUser>(user);
-        var reportedUser = await _userProvider.GetUserInfoAsync(Guid.Parse(reportUserImMessageCmd.ReportedUserId),
-            reportUserImMessageCmd.ReportedUserAddress);
+        var reportedUser = await _userProvider.GetUserInfoByIdAsync(Guid.Parse(reportUserImMessageCmd.ReportedUserId));
         if (reportedUser is null)
         {
             throw new UserFriendlyException("reported user does not exist");
