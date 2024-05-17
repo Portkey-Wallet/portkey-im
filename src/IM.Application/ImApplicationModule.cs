@@ -1,4 +1,5 @@
 ﻿using IM.Grains;
+using IM.Mysql;
 using IM.Options;
 using IM.Repository;
 using IM.Signature;
@@ -27,7 +28,8 @@ namespace IM;
     typeof(AbpSettingManagementApplicationModule),
     typeof(ImGrainsModule),
     typeof(ImSignatureModule),
-    typeof(AbpDistributedLockingModule)
+    typeof(AbpDistributedLockingModule),
+    typeof(IMMysqlModule)
 )]
 public class ImApplicationModule : AbpModule
 {

@@ -12,6 +12,7 @@
     <ProjectReference Include="..\IM.Application.Contracts\IM.Application.Contracts.csproj" />
     <ProjectReference Include="..\IM.Grains\IM.Grains.csproj" />
     <ProjectReference Include="..\IM.HttpApi\IM.HttpApi.csproj" />
+    <ProjectReference Include="..\IM.Mysql\IM.Mysql.csproj" />
     <ProjectReference Include="..\IM.Signature\IM.Signature.csproj" />
   </ItemGroup>
 
