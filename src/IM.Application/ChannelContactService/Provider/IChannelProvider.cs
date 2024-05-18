@@ -31,6 +31,8 @@ public interface IChannelProvider
 
     Task<ChannelDetailResponseDto> GetChannelDetailInfoAsync(string relationId, string channelUuid);
     Task<List<FriendInfoDto>> GetFriendInfosAsync(string relationId);
+
+    Task<List<string>> GetMuteMembersAsync(string channelUuid);
 }
 
 public class ChannelProvider : IChannelProvider, ISingletonDependency
@@ -83,7 +85,7 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
     public async Task<List<MemberInfo>> GetMembersAsync(string channelUuid, List<string> relationIds)
     {
         if (relationIds.IsNullOrEmpty()) return new List<MemberInfo>();
-        
+
         var builder = new StringBuilder("(");
         foreach (var relationId in relationIds)
         {
@@ -105,7 +107,8 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
         return userList;
     }
 
-    public async Task<List<MemberInfo>> GetMembersAsync(string channelUuid, string keyword, List<string> excludes, int skipCount,
+    public async Task<List<MemberInfo>> GetMembersAsync(string channelUuid, string keyword, List<string> excludes,
+        int skipCount,
         int maxResultCount)
     {
         var excludeStr = string.Empty;
@@ -130,7 +133,7 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
         parameters.Add("@skipCount", skipCount);
         parameters.Add("@maxResultCount", maxResultCount);
         parameters.Add("@keyword", $"%{keyword}%");
-        
+
         var sql =
             $"select channel.relation_id as RelationId,channel.is_admin as IsAdmin, user.name as Name from im_channel_member channel left join pk_user.uc_user user on channel.relation_id=user.relation_id  where channel.channel_uuid=@channelUuid and channel.status=0{excludeStr} and user.name like @keyword order by channel.index limit @skipCount,@maxResultCount;";
 
@@ -160,6 +163,18 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
             "select user.relation_id as RelationId,user.name as Name,friend.friend_relation_id as FriendRelationId,friend.remark as Remark from pk_user.uc_user user join pk_user.uc_friend friend on user.relation_id=friend.relation_id where user.relation_id=@relationId and friend.remark<>'';";
         var friendInfos = await _imRepository.QueryAsync<FriendInfoDto>(sql, parameters);
         return friendInfos?.ToList();
+    }
+
+    public async Task<List<string>> GetMuteMembersAsync(string channelUuid)
+    {
+        var parameters = new DynamicParameters();
+        parameters.Add("@channelUuid", channelUuid);
+
+        var sql =
+            $"select relation_id from im_user_channel where channel_uuid=@channelUuid and status=0 and mute=1 order by id;";
+
+        var userIds = await _imRepository.QueryAsync<string>(sql, parameters);
+        return userIds == null ? new List<string>() : userIds.ToList();
     }
 
     public async Task<List<ContactDto>> GetContactsAsync(Guid userId)
