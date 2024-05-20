@@ -376,10 +376,12 @@ public class FeedAppService : ImAppService, IFeedAppService
             {
                 continue;
             }
-            
-            
-            var userInfo = await _userProvider.GetUserInfoAsync(feed.ToRelationId);
-            feed.ToUserId = userInfo.Id.ToString();
+
+            if (string.IsNullOrWhiteSpace(feed.ToRelationId))
+            {
+                var userInfo = await _userProvider.GetUserInfoAsync(feed.ToRelationId);
+                feed.ToUserId = userInfo != null ? userInfo.Id.ToString() : "";
+            }
             _logger.LogInformation("add feed channel, id:{id} icon: {icon}", feed.ChannelUuid, memberInfo.Avatar);
             feed.ChannelIcon = memberInfo.Avatar;
         }
