@@ -49,7 +49,8 @@ public class FeedAppService : ImAppService, IFeedAppService
         IHttpContextAccessor httpContextAccessor, IProxyFeedAppService proxyFeedAppService,
         IProxyChannelContactAppService proxyChannelContactAppService, ILogger<FeedAppService> logger,
         IRedPackageAppService redPackageAppService,
-        INESTRepository<FeedInfoIndex, string> feedInfoIndex, IUnreadMessageUpdateProvider unreadMessageUpdateProvider, IUserProvider userProvider)
+        INESTRepository<FeedInfoIndex, string> feedInfoIndex, IUnreadMessageUpdateProvider unreadMessageUpdateProvider,
+        IUserProvider userProvider)
     {
         _clusterClient = clusterClient;
         _distributedEventBus = distributedEventBus;
@@ -145,12 +146,13 @@ public class FeedAppService : ImAppService, IFeedAppService
         foreach (var listFeedResponseItemDto in result.List)
         {
             var content = listFeedResponseItemDto.LastMessageContent;
-            
+
             if (listFeedResponseItemDto.LastMessageType == RedPackageConstant.RedPackageCardType)
             {
                 await BuildRedPackageLastMessageAsync(listFeedResponseItemDto);
             }
         }
+
         return result;
     }
 
@@ -367,6 +369,13 @@ public class FeedAppService : ImAppService, IFeedAppService
 
         foreach (var feed in feedList.List)
         {
+            if (!string.IsNullOrWhiteSpace(feed.ToRelationId))
+            {
+                var userInfo = await _userProvider.GetUserInfoAsync(feed.ToRelationId);
+                _logger.Info("current userInfo is {info}", JsonConvert.SerializeObject(userInfo));
+                feed.ToUserId = userInfo != null ? userInfo.Id.ToString() : "";
+            }
+
             var memberInfo = memberInfoList.Find(x => x.RelationId == feed.ToRelationId);
             if (memberInfo == null)
             {
@@ -378,12 +387,6 @@ public class FeedAppService : ImAppService, IFeedAppService
                 continue;
             }
 
-            if (!string.IsNullOrWhiteSpace(feed.ToRelationId))
-            {
-                var userInfo = await _userProvider.GetUserInfoAsync(feed.ToRelationId);
-                _logger.Info("current userInfo is {info}",JsonConvert.SerializeObject(userInfo));
-                feed.ToUserId = userInfo != null ? userInfo.Id.ToString() : "";
-            }
             _logger.LogInformation("add feed channel, id:{id} icon: {icon}", feed.ChannelUuid, memberInfo.Avatar);
             feed.ChannelIcon = memberInfo.Avatar;
         }
@@ -414,9 +417,10 @@ public class FeedAppService : ImAppService, IFeedAppService
                 _logger.LogError("Parse RedPackageCard error,Content:{Content}", input.LastMessageContent);
                 return;
             }
+
             var grain = _clusterClient.GetGrain<IRedPackageUserGrain>(
                 RedPackageHelper.BuildUserViewKey(CurrentUser.GetId(), content.Data.Id));
-        
+
             input.RedPackage.ViewStatus = (await grain.GetUserViewStatus()).Data;
         }
         catch (Exception e)
@@ -424,7 +428,7 @@ public class FeedAppService : ImAppService, IFeedAppService
             _logger.LogError(e, "BuildRedPackageLastMessageAsync error,Content:{Content}", input.LastMessageContent);
         }
     }
-    
+
     private async Task SendFeedListEventAsync(string relationIdFromToken, int timeoutInSec)
     {
         if (!string.IsNullOrEmpty(relationIdFromToken))
