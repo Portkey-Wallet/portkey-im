@@ -3,11 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AElf.Indexing.Elasticsearch;
+using Dapper;
 using GraphQL;
 using IM.Common;
+using IM.Dapper.Repository;
 using IM.Entities.Es;
+using IM.Message;
 using IM.User.Dtos;
 using Nest;
+using Newtonsoft.Json;
 using Volo.Abp.DependencyInjection;
 
 namespace IM.User.Provider;
@@ -21,17 +25,20 @@ public interface IUserProvider
     Task<List<UserIndex>> ListUserInfoAsync(List<Guid> userIds, string caAddress);
     Task<UserIndex> GetUserInfoByIdAsync(Guid userId);
     Task UpdateUserInfoAsync(Guid userId, string walletName, string avatar);
+    Task ReportUser(ImUser user, ImUser reportedUser, ReportedMessage reportedMessage);
 }
 
 public class UserProvider : IUserProvider, ISingletonDependency
 {
     private readonly IGraphQLHelper _graphQlHelper;
     private readonly INESTRepository<UserIndex, Guid> _userRepository;
+    private readonly IImRepository _imRepository;
 
-    public UserProvider(INESTRepository<UserIndex, Guid> userRepository, IGraphQLHelper graphQlHelper)
+    public UserProvider(INESTRepository<UserIndex, Guid> userRepository, IGraphQLHelper graphQlHelper, IImRepository imRepository)
     {
         _userRepository = userRepository;
         _graphQlHelper = graphQlHelper;
+        _imRepository = imRepository;
     }
 
     public async Task<CaHolderInfoDto> GetCaHolderInfoAsync(string caHash)
@@ -142,5 +149,29 @@ public class UserProvider : IUserProvider, ISingletonDependency
         }
 
         await _userRepository.UpdateAsync(user);
+    }
+    
+    public async Task ReportUser(ImUser user, ImUser reportedUser, ReportedMessage reportedMessage)
+    {
+        long currentTime = DateTime.UtcNow.Ticks;
+        var parameters = new DynamicParameters();
+        parameters.Add("@uid", user.PortkeyId);
+        parameters.Add("@userAddressInfo", JsonConvert.SerializeObject(user.AddressWithChain));
+        parameters.Add("@reportedUserId", reportedUser.PortkeyId);
+        parameters.Add("@reportedUserAddressInfo", JsonConvert.SerializeObject(reportedUser.AddressWithChain));
+        parameters.Add("@messageId", reportedMessage.MessageId);
+        parameters.Add("@reportedType", reportedMessage.ReportType);
+        parameters.Add("@reportedMessage", reportedMessage.Message);
+        parameters.Add("@description", reportedMessage.Description);
+        parameters.Add("@reportedTime", reportedMessage.ReportTime);
+        parameters.Add("@createTime", currentTime);
+        parameters.Add("@updateTime", currentTime);
+        parameters.Add("@relationId", reportedMessage.RelationId);
+        parameters.Add("@channelUuid", reportedMessage.ChannelUuid);
+        var sql = "insert into report_message_info (uid, user_address_info, reported_user_id, reported_user_address_info, " +
+                  "message_id, reported_type, reported_message, description, relation_id, channel_uuid, reported_time, create_time, update_time)" +
+                  " values (@uid, @userAddressInfo, @reportedUserId, @reportedUserAddressInfo, @messageId, @reportedType, " +
+                  "@reportedMessage, @description, @relationId, @channelUuid, @reportedTime, @createTime, @updateTime)";
+        await _imRepository.ExecuteAsync(sql, parameters);
     }
 }
