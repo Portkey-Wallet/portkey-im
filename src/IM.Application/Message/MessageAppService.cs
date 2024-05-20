@@ -20,6 +20,7 @@ using IM.PinMessage.Dtos;
 using IM.RedPackage;
 using IM.Repository;
 using IM.User;
+using IM.User.Provider;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -53,6 +54,8 @@ public class MessageAppService : ImAppService, IMessageAppService
     private readonly IGroupProvider _groupProvider;
     private readonly MessagePushOptions _messagePushOptions;
     private readonly IUserAppService _userAppService;
+    private readonly IBlockUserProvider _blockUserProvider;
+    private readonly IUserProvider _userProvider;
 
     public MessageAppService(IProxyMessageAppService proxyMessageAppService,
         IStringEncryptionService encryptionService,
@@ -67,7 +70,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         IOptionsSnapshot<PinMessageOptions> pinMessageOptions,
         INESTRepository<UserIndex, Guid> userRepository,
         IRefreshRepository<PinMessageIndex, string> pinMessageRepository,
-        IUserAppService userAppService)
+        IUserAppService userAppService, IBlockUserProvider blockUserProvider, IUserProvider userProvider)
     {
         _proxyMessageAppService = proxyMessageAppService;
         _encryptionService = encryptionService;
@@ -84,6 +87,8 @@ public class MessageAppService : ImAppService, IMessageAppService
         _groupProvider = groupProvider;
         _messagePushOptions = messagePushOptions.Value;
         _userAppService = userAppService;
+        _blockUserProvider = blockUserProvider;
+        _userProvider = userProvider;
     }
 
     public async Task<int> ReadMessageAsync(ReadMessageRequestDto input)
@@ -93,12 +98,26 @@ public class MessageAppService : ImAppService, IMessageAppService
 
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)
     {
+        
+        var relationId = input.ToRelationId;
+        var userInfo = await _userProvider.GetUserInfoAsync(relationId);
+        var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(CurrentUser.GetId().ToString(), userInfo.Id.ToString());
+        if (blockUserInfo is { IsEffective: 0 })
+        {
+            input.IsBlocked = 1;
+        }
+        
         var responseDto = await _proxyMessageAppService.SendMessageAsync(input);
         if (responseDto == null || responseDto.ChannelUuid.IsNullOrEmpty())
         {
             return responseDto;
         }
-
+        
+        if (blockUserInfo is { IsEffective: 0 })
+        {
+            return responseDto;
+        }
+       
         var authToken = GetAuthFromHeader();
         _ = PublishMessageAsync(input, CurrentUser.GetId(), authToken);
         return responseDto;

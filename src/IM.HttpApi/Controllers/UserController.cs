@@ -19,12 +19,15 @@ namespace IM.Controllers;
 public class UserController : ImController
 {
     private readonly IUserAppService _userAppService;
+    private readonly IBlockUserAppService _blockUserAppService;
     private readonly ILogger<UserController> _logger;
 
-    public UserController(IUserAppService userAppService, ILogger<UserController> logger)
+    public UserController(IUserAppService userAppService, IBlockUserAppService blockUserAppService， ILogger<UserController> logger)
+
     {
         _userAppService = userAppService;
         _logger = logger;
+        _blockUserAppService = blockUserAppService;
     }
 
     [HttpPost("token")]
@@ -83,4 +86,32 @@ public class UserController : ImController
     {
         return await _userAppService.ListUserInfoAsync(input);
     }
+    
+    [HttpPost("block")]
+    public async Task<string> BlockUserAsync(BlockUserRequestDto input)
+    {
+        await _blockUserAppService.BlockUserAsync(input);
+        return "success";
+    }
+    
+    [HttpPost("unBlock")]
+    public async Task<string> UnBlockUserAsync(UnBlockUserRequestDto input)
+    {
+        await _blockUserAppService.UnBlockUserAsync(input);
+        return "success";
+    }
+    
+    [HttpPost("isBlocked")]
+    public async Task<bool> IsBlockedAsync(BlockUserRequestDto input)
+    {
+        await _blockUserAppService.IsBlockedAsync(input);
+        return true;
+    }
+    
+    [HttpGet("BlockList")]
+    public async Task<List<string>> BlockListAsync()
+    {
+        return await _blockUserAppService.BlockListAsync();
+    }
+    
 }

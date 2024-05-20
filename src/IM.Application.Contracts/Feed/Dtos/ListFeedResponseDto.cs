@@ -23,6 +23,7 @@ public class ListFeedResponseItemDto
     public string LastMessageContent { get; set; }
     public string LastPostAt { get; set; }
     public string ToRelationId { get; set; }
+    public string ToUserId { get; set; }
     public bool Mute { get; set; }
     public bool Pin { get; set; }
     public string PinAt { get; set; }
