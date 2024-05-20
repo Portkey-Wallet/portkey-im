@@ -66,7 +66,6 @@ public class UserController : ImController
     [HttpPost("report")]
     public async Task<string> ReportUserImMessage(ReportUserImMessageCmd reportUserImMessageCmd)
     {
-        _logger.LogInformation("report user api input parameters={0}", JsonConvert.SerializeObject(reportUserImMessageCmd));
         await _userAppService.ReportUserImMessage(reportUserImMessageCmd);
         return "success";
     }
