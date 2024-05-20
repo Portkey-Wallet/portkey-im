@@ -5,6 +5,8 @@ using IM.User;
 using IM.User.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Volo.Abp;
 
 namespace IM.Controllers;
@@ -13,14 +15,16 @@ namespace IM.Controllers;
 [Area("app")]
 [ControllerName("ImUser")]
 [Route("api/v1/users")]
-[Authorize]
+// [Authorize] todo remove before online
 public class UserController : ImController
 {
     private readonly IUserAppService _userAppService;
+    private readonly ILogger<UserController> _logger;
 
-    public UserController(IUserAppService userAppService)
+    public UserController(IUserAppService userAppService, ILogger<UserController> logger)
     {
         _userAppService = userAppService;
+        _logger = logger;
     }
 
     [HttpPost("token")]
@@ -57,6 +61,14 @@ public class UserController : ImController
     public async Task<List<AddressInfoDto>> GetAddressesAsync([Required] string relationId)
     {
         return await _userAppService.GetAddressesAsync(relationId);
+    }
+
+    [HttpPost("report")]
+    public async Task<string> ReportUserImMessage(ReportUserImMessageCmd reportUserImMessageCmd)
+    {
+        _logger.LogInformation("report user api input parameters={0}", JsonConvert.SerializeObject(reportUserImMessageCmd));
+        await _userAppService.ReportUserImMessage(reportUserImMessageCmd);
+        return "success";
     }
     
     [HttpPost("userInfo/update"), Authorize]

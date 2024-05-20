@@ -8,6 +8,7 @@ using IM.Commons;
 using IM.Grains;
 using IM.Hub;
 using IM.MongoDB;
+using IM.Mysql;
 using IM.Redis;
 using Medallion.Threading;
 using Medallion.Threading.Redis;
@@ -52,7 +53,8 @@ namespace IM;
     typeof(AbpAspNetCoreSerilogModule),
     typeof(ImHubModule),
     typeof(ImRedisModule),
-    typeof(AbpSwashbuckleModule)
+    typeof(AbpSwashbuckleModule),
+    typeof(IMMysqlModule)
 )]
 public class ImHttpApiHostModule : AbpModule
 {
