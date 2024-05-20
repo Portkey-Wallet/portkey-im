@@ -12,12 +12,12 @@ namespace IM.User.executor;
 
 public class ReportUserImMessageCmdExe : ApplicationService
 {
-    private readonly IReportUserGateway _reportUserGateway;
+    // private readonly IReportUserGateway _reportUserGateway;
     private readonly IUserProvider _userProvider;
 
-    public ReportUserImMessageCmdExe(IReportUserGateway reportUserGateway, IUserProvider userProvider)
+    public ReportUserImMessageCmdExe(/*IReportUserGateway reportUserGateway, */IUserProvider userProvider)
     {
-        _reportUserGateway = reportUserGateway;
+        // _reportUserGateway = reportUserGateway;
         _userProvider = userProvider;
     }
     
