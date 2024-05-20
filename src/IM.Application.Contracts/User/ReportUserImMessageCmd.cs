@@ -54,17 +54,12 @@ public class ReportUserImMessageCmd : IValidatableObject
 		{
 			yield return new ValidationResult("please input the user address");
 		}
-
-		if (ReportedUserAddress.IsNullOrEmpty())
-		{
-			yield return new ValidationResult("please input the reported user address");
-		}
 	}
 }
 
 public class AddressInfo
 {
-	public string Address { get; set; }
+	public string CaAddress { get; set; }
 	
 	public string ChainId { get; set; }
 }
