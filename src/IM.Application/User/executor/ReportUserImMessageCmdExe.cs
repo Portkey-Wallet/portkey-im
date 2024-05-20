@@ -24,15 +24,14 @@ public class ReportUserImMessageCmdExe : ApplicationService
     
     public async Task ReportUserImMessage(ReportUserImMessageCmd reportUserImMessageCmd)
     {
-        Guid userId, reportedUserId;
+        Guid userId;
         try
         {
             userId = Guid.Parse(reportUserImMessageCmd.UserId);
-            reportedUserId = Guid.Parse(reportUserImMessageCmd.ReportedUserId);
         }
         catch (Exception e)
         {
-            _logger.LogError("the input user id is:{0}, reported user id is:{1}", reportUserImMessageCmd.UserId, reportUserImMessageCmd.ReportedUserId);
+            _logger.LogError("the input user id is:{0}", reportUserImMessageCmd.UserId);
             throw new UserFriendlyException("user/reportedUser id format is error, Guid should contain 32 digits with 4 dashes (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)");
         }
         var user = await _userProvider.GetUserInfoByIdAsync(userId);
@@ -41,7 +40,7 @@ public class ReportUserImMessageCmdExe : ApplicationService
             throw new UserFriendlyException("user does not exist");
         }
         var imUser = ObjectMapper.Map<UserIndex, ImUser>(user);
-        var reportedUser = await _userProvider.GetUserInfoByIdAsync(reportedUserId);
+        var reportedUser = await _userProvider.GetUserInfoAsync(reportUserImMessageCmd.RelationId);
         if (reportedUser is null)
         {
             throw new UserFriendlyException("reported user does not exist");
