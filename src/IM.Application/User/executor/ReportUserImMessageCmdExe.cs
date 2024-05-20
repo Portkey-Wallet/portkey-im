@@ -1,11 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using AutoMapper.Internal.Mappers;
-using IM.Commons;
 using IM.Entities.Es;
 using IM.Message;
-using IM.Message.Provider;
-using IM.User.Dtos;
 using IM.User.Provider;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
@@ -17,22 +13,15 @@ public class ReportUserImMessageCmdExe : ApplicationService
 {
     private readonly ILogger<ReportUserImMessageCmdExe> _logger;
     private readonly IUserProvider _userProvider;
-    private readonly IMessageAppProvider _messageAppProvider;
 
-    public ReportUserImMessageCmdExe(ILogger<ReportUserImMessageCmdExe> logger, IUserProvider userProvider, IMessageAppProvider messageAppProvider)
+    public ReportUserImMessageCmdExe(ILogger<ReportUserImMessageCmdExe> logger, IUserProvider userProvider)
     {
         _logger = logger;
         _userProvider = userProvider;
-        _messageAppProvider = messageAppProvider;
     }
     
     public async Task ReportUserImMessage(ReportUserImMessageCmd reportUserImMessageCmd)
     {
-        var isMessageExists = await _messageAppProvider.IsMessageInChannelAsync(reportUserImMessageCmd.ChannelUuid, reportUserImMessageCmd.MessageId);
-        if (!isMessageExists)
-        {
-            throw new UserFriendlyException(CommonConstant.MessageNotExist);
-        }
         Guid userId;
         try
         {
