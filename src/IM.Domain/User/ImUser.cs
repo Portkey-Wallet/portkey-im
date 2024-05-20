@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using IM.Entities.Es;
 using IM.User.Dtos;
 
 namespace IM.User;
@@ -11,5 +12,5 @@ public class ImUser
     public string RelationId { get; set; }
     public string Name { get; set; }
     public string Avatar { get; set; }
-    public List<AddressWithChain> AddressWithChain { get; set; } = new();
+    public List<CaAddressInfo> CaAddresses { get; set; }
 }

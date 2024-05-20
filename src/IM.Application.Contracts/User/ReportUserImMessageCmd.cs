@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using IM.Message;
 using JetBrains.Annotations;
-using Microsoft.IdentityModel.Tokens;
 
 namespace IM.User;
 
@@ -14,17 +13,15 @@ public class ReportUserImMessageCmd : IValidatableObject
     
 	public List<AddressInfo> UserCaAddressInfos { get; set; }
 	
-	[Required(ErrorMessage = "please input the reported user id")]
-	public string ReportedUserId {get; set; }
-	
-	public List<AddressInfo> ReportedUserAddress {get; set; }
+	// [Required(ErrorMessage = "please input the reported user id")]
+	// public string ReportedUserId {get; set; }
 	
 	[Required(ErrorMessage = "please input the report type")]
 	[Range(typeof(int), "1", "8")]
 	public int ReportType {get; set; }
 	
 	[Required(ErrorMessage = "please input the original message")]
-	[Range(typeof(string), "1", "512")]
+	[StringLength(512, MinimumLength = 1, ErrorMessage = "The field Message must be between 1 and 512.")]
 	public string Message {get; set; }
 	
 	[Required(ErrorMessage = "please input the message id")]

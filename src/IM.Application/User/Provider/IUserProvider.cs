@@ -156,9 +156,9 @@ public class UserProvider : IUserProvider, ISingletonDependency
         long currentTime = (DateTime.Now.ToUniversalTime().Ticks - 621355968000000000) / 10000;
         var parameters = new DynamicParameters();
         parameters.Add("@uid", user.PortkeyId);
-        parameters.Add("@userAddressInfo", JsonConvert.SerializeObject(user.AddressWithChain));
+        parameters.Add("@userAddressInfo", JsonConvert.SerializeObject(user.CaAddresses));
         parameters.Add("@reportedUserId", reportedUser.PortkeyId);
-        parameters.Add("@reportedUserAddressInfo", JsonConvert.SerializeObject(reportedUser.AddressWithChain));
+        parameters.Add("@reportedUserAddressInfo", JsonConvert.SerializeObject(reportedUser.CaAddresses));
         parameters.Add("@messageId", reportedMessage.MessageId);
         parameters.Add("@reportedType", reportedMessage.ReportType);
         parameters.Add("@reportedMessage", reportedMessage.Message);
