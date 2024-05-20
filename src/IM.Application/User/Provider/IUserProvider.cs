@@ -9,6 +9,7 @@ using IM.Common;
 using IM.Dapper.Repository;
 using IM.Entities.Es;
 using IM.Message;
+using IM.Message.Dtos;
 using IM.User.Dtos;
 using Nest;
 using Newtonsoft.Json;
@@ -26,6 +27,8 @@ public interface IUserProvider
     Task<UserIndex> GetUserInfoByIdAsync(Guid userId);
     Task UpdateUserInfoAsync(Guid userId, string walletName, string avatar);
     Task ReportUser(ImUser user, ImUser reportedUser, ReportedMessage reportedMessage);
+
+    Task<bool> IsMessageInChannelAsync(string channelUuid, string messageId);
 }
 
 public class UserProvider : IUserProvider, ISingletonDependency
@@ -173,5 +176,23 @@ public class UserProvider : IUserProvider, ISingletonDependency
                   " values (@uid, @userAddressInfo, @reportedUserId, @reportedUserAddressInfo, @messageId, @reportedType, " +
                   "@reportedMessage, @description, @relationId, @channelUuid, @reportedTime, @createTime, @updateTime)";
         await _imRepository.ExecuteAsync(sql, parameters);
+    }
+    
+    public async Task<bool> IsMessageInChannelAsync(string channelUuid, string messageId)
+    {
+        var messageInfo = await GetMessageByIdAsync(channelUuid,messageId);
+        return messageInfo is { Status: 0 };
+    }
+
+    private async Task<IMMessageInfoDto> GetMessageByIdAsync(string channelUuid, string messageId)
+    {
+        var parameters = new DynamicParameters();
+        parameters.Add("@channelUuid", channelUuid);
+        parameters.Add("@messageId", messageId);
+
+        var sql =
+            "select id as Id,send_uuid as SendUuid,channel_uuid as ChannelUuid,quote_id as QuoteId , status as status, mentioned_user as mentionedUser from im_message where channel_uuid=@channelUuid  and id=@messageId limit 1;";
+        var imMessageInfoDto = await _imRepository.QueryFirstOrDefaultAsync<IMMessageInfoDto>(sql, parameters);
+        return imMessageInfoDto;
     }
 }

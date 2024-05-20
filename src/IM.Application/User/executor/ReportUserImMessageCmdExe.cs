@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using IM.Commons;
 using IM.Entities.Es;
 using IM.Message;
 using IM.User.Provider;
@@ -22,6 +23,11 @@ public class ReportUserImMessageCmdExe : ApplicationService
     
     public async Task ReportUserImMessage(ReportUserImMessageCmd reportUserImMessageCmd)
     {
+        var isMessageExists = await _userProvider.IsMessageInChannelAsync(reportUserImMessageCmd.ChannelUuid, reportUserImMessageCmd.MessageId);
+        if (!isMessageExists)
+        {
+            throw new UserFriendlyException(CommonConstant.MessageNotExist);
+        }
         Guid userId;
         try
         {
