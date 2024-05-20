@@ -377,7 +377,7 @@ public class FeedAppService : ImAppService, IFeedAppService
                 continue;
             }
 
-            if (string.IsNullOrWhiteSpace(feed.ToRelationId))
+            if (!string.IsNullOrWhiteSpace(feed.ToRelationId))
             {
                 var userInfo = await _userProvider.GetUserInfoAsync(feed.ToRelationId);
                 feed.ToUserId = userInfo != null ? userInfo.Id.ToString() : "";
