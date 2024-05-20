@@ -95,4 +95,10 @@ public class UserController : ImController
         return true;
     }
     
+    [HttpGet("BlockList")]
+    public async Task<List<string>> BlockListAsync()
+    {
+        return await _blockUserAppService.BlockListAsync();
+    }
+    
 }

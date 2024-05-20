@@ -7,6 +7,8 @@ public class BlockUserInfoDto
     public int Id { get; set; }
     public string UId { get; set; }
     public string BlockUId { get; set; }
+
+    public int IsEffective { get; set; }
     public DateTime CreateTime  { get; set; }
     public DateTime UpdateTime { get; set; }
 
