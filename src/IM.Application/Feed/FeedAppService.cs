@@ -14,6 +14,7 @@ using IM.Grains.Grain.RedPackage;
 using IM.RedPackage;
 using IM.Grains.Grain.Mute;
 using IM.Message.Provider;
+using IM.User.Provider;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -41,12 +42,13 @@ public class FeedAppService : ImAppService, IFeedAppService
     private readonly IProxyFeedAppService _proxyFeedAppService;
     private readonly IRedPackageAppService _redPackageAppService;
     private readonly IUnreadMessageUpdateProvider _unreadMessageUpdateProvider;
+    private readonly IUserProvider _userProvider;
 
     public FeedAppService(IClusterClient clusterClient, IDistributedEventBus distributedEventBus,
         IHttpContextAccessor httpContextAccessor, IProxyFeedAppService proxyFeedAppService,
         IProxyChannelContactAppService proxyChannelContactAppService, ILogger<FeedAppService> logger,
         IRedPackageAppService redPackageAppService,
-        INESTRepository<FeedInfoIndex, string> feedInfoIndex, IUnreadMessageUpdateProvider unreadMessageUpdateProvider)
+        INESTRepository<FeedInfoIndex, string> feedInfoIndex, IUnreadMessageUpdateProvider unreadMessageUpdateProvider, IUserProvider userProvider)
     {
         _clusterClient = clusterClient;
         _distributedEventBus = distributedEventBus;
@@ -57,6 +59,7 @@ public class FeedAppService : ImAppService, IFeedAppService
         _feedInfoIndex = feedInfoIndex;
         _redPackageAppService = redPackageAppService;
         _unreadMessageUpdateProvider = unreadMessageUpdateProvider;
+        _userProvider = userProvider;
     }
 
     public async Task PinFeedAsync(PinFeedRequestDto input)
@@ -373,7 +376,10 @@ public class FeedAppService : ImAppService, IFeedAppService
             {
                 continue;
             }
-
+            
+            
+            var userInfo = await _userProvider.GetUserInfoAsync(feed.ToRelationId);
+            feed.ToUserId = userInfo.Id.ToString();
             _logger.LogInformation("add feed channel, id:{id} icon: {icon}", feed.ChannelUuid, memberInfo.Avatar);
             feed.ChannelIcon = memberInfo.Avatar;
         }
