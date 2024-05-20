@@ -31,7 +31,7 @@ public class ReportUserImMessageCmd : IValidatableObject
 	public string Description {get; set; }
 	
 	[Required(ErrorMessage = "please input the relation id")]
-	public string RelationId { get; set; }
+	public string ReportedRelationId { get; set; }
 	
 	[Required(ErrorMessage = "please input the channel uuid")]
 	public string ChannelUuid { get; set; }
