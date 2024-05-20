@@ -22,6 +22,7 @@ using Microsoft.Net.Http.Headers;
 using Nest;
 using Newtonsoft.Json;
 using Orleans;
+using Orleans.Runtime;
 using Volo.Abp;
 using Volo.Abp.Auditing;
 using Volo.Abp.EventBus.Distributed;
@@ -380,6 +381,7 @@ public class FeedAppService : ImAppService, IFeedAppService
             if (!string.IsNullOrWhiteSpace(feed.ToRelationId))
             {
                 var userInfo = await _userProvider.GetUserInfoAsync(feed.ToRelationId);
+                _logger.Info("current userInfo is {info}",JsonConvert.SerializeObject(userInfo));
                 feed.ToUserId = userInfo != null ? userInfo.Id.ToString() : "";
             }
             _logger.LogInformation("add feed channel, id:{id} icon: {icon}", feed.ChannelUuid, memberInfo.Avatar);
