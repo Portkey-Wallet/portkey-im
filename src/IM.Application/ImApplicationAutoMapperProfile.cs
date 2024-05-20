@@ -51,8 +51,7 @@ public class ImApplicationAutoMapperProfile : Profile
             .ForMember(t => t.PortkeyId, m => m.MapFrom(f => f.Id));
         CreateMap<UserIndex, ImUser>()
             .ForMember(t => t.PortkeyId, m => m.MapFrom(f => f.Id));
-        CreateMap<ReportUserImMessageCmd, ReportedMessage>()
-            .ForMember(t => t.ReportTime, m => m.MapFrom(f => (DateTime.Now.ToUniversalTime().Ticks - 621355968000000000) / 10000));
+        CreateMap<ReportUserImMessageCmd, ReportedMessage>();
         CreateMap<CaHolderInfoDto, CaHolderDto>()
             .ForMember(t => t.UserId, m => m.MapFrom(f => f.UserId == Guid.Empty ? null : f.UserId.ToString()))
             ;

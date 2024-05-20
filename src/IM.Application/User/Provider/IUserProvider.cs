@@ -163,7 +163,7 @@ public class UserProvider : IUserProvider, ISingletonDependency
         parameters.Add("@reportedType", reportedMessage.ReportType);
         parameters.Add("@reportedMessage", reportedMessage.Message);
         parameters.Add("@description", reportedMessage.Description);
-        parameters.Add("@reportedTime", reportedMessage.ReportTime);
+        parameters.Add("@reportedTime", currentTime);
         parameters.Add("@createTime", currentTime);
         parameters.Add("@updateTime", currentTime);
         parameters.Add("@relationId", reportedMessage.RelationId);
