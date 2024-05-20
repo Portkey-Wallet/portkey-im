@@ -166,7 +166,7 @@ public class UserProvider : IUserProvider, ISingletonDependency
         parameters.Add("@reportedTime", currentTime);
         parameters.Add("@createTime", currentTime);
         parameters.Add("@updateTime", currentTime);
-        parameters.Add("@relationId", reportedMessage.RelationId);
+        parameters.Add("@relationId", reportedMessage.ReportedRelationId);
         parameters.Add("@channelUuid", reportedMessage.ChannelUuid);
         var sql = "insert into report_message_info (uid, user_address_info, reported_user_id, reported_user_address_info, " +
                   "message_id, reported_type, reported_message, description, relation_id, channel_uuid, reported_time, create_time, update_time)" +

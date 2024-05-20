@@ -40,7 +40,7 @@ public class ReportUserImMessageCmdExe : ApplicationService
             throw new UserFriendlyException("user does not exist");
         }
         var imUser = ObjectMapper.Map<UserIndex, ImUser>(user);
-        var reportedUser = await _userProvider.GetUserInfoAsync(reportUserImMessageCmd.RelationId);
+        var reportedUser = await _userProvider.GetUserInfoAsync(reportUserImMessageCmd.ReportedRelationId);
         if (reportedUser is null)
         {
             throw new UserFriendlyException("reported user does not exist");
