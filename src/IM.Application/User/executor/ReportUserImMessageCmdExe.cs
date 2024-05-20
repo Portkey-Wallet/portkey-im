@@ -36,6 +36,6 @@ public class ReportUserImMessageCmdExe : ApplicationService
         }
         var imReportedUser = ObjectMapper.Map<UserIndex, ImUser>(reportedUser);
         var reportedMessage = ObjectMapper.Map<ReportUserImMessageCmd, ReportedMessage>(reportUserImMessageCmd); 
-        await _reportUserGateway.ReportUser(imUser, imReportedUser, reportedMessage);
+        await _userProvider.ReportUser(imUser, imReportedUser, reportedMessage);
     }
 }
