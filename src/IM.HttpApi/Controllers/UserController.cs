@@ -22,12 +22,12 @@ public class UserController : ImController
     private readonly IBlockUserAppService _blockUserAppService;
     private readonly ILogger<UserController> _logger;
 
-    public UserController(IUserAppService userAppService, IBlockUserAppService blockUserAppService， ILogger<UserController> logger)
+    public UserController(IUserAppService userAppService, IBlockUserAppService blockUserAppService, ILogger<UserController> logger)
 
     {
         _userAppService = userAppService;
-        _logger = logger;
         _blockUserAppService = blockUserAppService;
+        _logger = logger;
     }
 
     [HttpPost("token")]
