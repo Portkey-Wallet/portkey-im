@@ -5,8 +5,8 @@ namespace IM.User.Dtos;
 public class BlockUserInfoDto
 {
     public int Id { get; set; }
-    public string UId { get; set; }
-    public string BlockUId { get; set; }
+    public string RelationId { get; set; }
+    public string BlockRelationId { get; set; }
 
     public int IsEffective { get; set; }
     public DateTime CreateTime  { get; set; }

@@ -366,6 +366,7 @@ public class FeedAppService : ImAppService, IFeedAppService
 
         foreach (var feed in feedList.List)
         {
+            
             var memberInfo = memberInfoList.Find(x => x.RelationId == feed.ToRelationId);
             if (memberInfo == null)
             {
@@ -376,12 +377,7 @@ public class FeedAppService : ImAppService, IFeedAppService
             {
                 continue;
             }
-
-            if (!string.IsNullOrWhiteSpace(feed.ToRelationId))
-            {
-                var userInfo = await _userProvider.GetUserInfoAsync(feed.ToRelationId);
-                feed.ToUserId = userInfo != null ? userInfo.Id.ToString() : "";
-            }
+           
             _logger.LogInformation("add feed channel, id:{id} icon: {icon}", feed.ChannelUuid, memberInfo.Avatar);
             feed.ChannelIcon = memberInfo.Avatar;
         }

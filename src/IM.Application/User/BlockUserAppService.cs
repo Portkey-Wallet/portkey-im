@@ -13,42 +13,70 @@ namespace IM.User;
 public class BlockUserAppService : ImAppService, IBlockUserAppService
 {
     private readonly IBlockUserProvider _blockUserProvider;
+    private readonly IUserProvider _userProvider;
 
-    public BlockUserAppService(IBlockUserProvider blockUserProvider)
+    public BlockUserAppService(IBlockUserProvider blockUserProvider, IUserProvider userProvider)
     {
         _blockUserProvider = blockUserProvider;
+        _userProvider = userProvider;
     }
 
     public async Task<string> BlockUserAsync(BlockUserRequestDto input)
     {
-        var id = CurrentUser.Id.ToString();
+        if (CurrentUser.Id == null)
+        {
+            throw new UserFriendlyException("UnLogin,please try again");
+        }
+
+        var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
         var blockUser = new BlockUserInfoDto
         {
-            UId = id,
-            BlockUId = input.UserId,
-            CreateTime = new DateTime(),
-            UpdateTime = new DateTime()
+            RelationId = userIndex.RelationId,
+            BlockRelationId = input.RelationId
         };
+
+        var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(userIndex.RelationId, input.RelationId);
+
+        if (blockUserInfo is { IsEffective: 0 })
+        {
+            throw new UserFriendlyException("You have already blocked.");
+        }
+
+        if (blockUserInfo is { IsEffective: 1 })
+        {
+            await _blockUserProvider.ReBlockUserInfoAsync(blockUserInfo.Id);
+            return "success";
+        }
         await _blockUserProvider.BlockUserAsync(blockUser);
         return "success";
     }
 
     public async Task<string> UnBlockUserAsync(UnBlockUserRequestDto input)
     {
-        var id = CurrentUser.Id.ToString();
-        var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(id, input.UserId);
-        if (null != blockUserInfo)
+        if (CurrentUser.Id == null)
         {
-            await _blockUserProvider.UnBlockUserInfoAsync(blockUserInfo.Id);
+            throw new UserFriendlyException("UnLogin,please try again");
         }
 
+        var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
+        var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(userIndex.RelationId, input.RelationId);
+        if (null == blockUserInfo)
+        {
+            throw new UserFriendlyException("User have not been blocked.");
+        }
+        await _blockUserProvider.UnBlockUserInfoAsync(blockUserInfo.Id);
         return "success";
     }
 
     public async Task<bool> IsBlockedAsync(BlockUserRequestDto input)
     {
-        var id = CurrentUser.Id.ToString();
-        var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(id, input.UserId);
+        if (CurrentUser.Id == null)
+        {
+            throw new UserFriendlyException("UnLogin,please try again");
+        }
+
+        var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
+        var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(userIndex.RelationId, input.RelationId);
         if (null != blockUserInfo)
         {
             return blockUserInfo.IsEffective == 0;
@@ -59,8 +87,12 @@ public class BlockUserAppService : ImAppService, IBlockUserAppService
 
     public async Task<List<string>> BlockListAsync()
     {
-        var id = CurrentUser.Id.ToString();
-        var list = await _blockUserProvider.GetBlockUserListAsync(id);
-        return list.Select(t => t.BlockUId).ToList();
+        if (CurrentUser.Id == null)
+        {
+            throw new UserFriendlyException("UnLogin,please try again");
+        }
+        var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
+        var list = await _blockUserProvider.GetBlockUserListAsync(userIndex.RelationId);
+        return list.Select(t => t.BlockRelationId).ToList();
     }
 }
