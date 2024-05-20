@@ -153,7 +153,7 @@ public class UserProvider : IUserProvider, ISingletonDependency
     
     public async Task ReportUser(ImUser user, ImUser reportedUser, ReportedMessage reportedMessage)
     {
-        long currentTime = DateTime.UtcNow.Ticks;
+        long currentTime = (DateTime.Now.ToUniversalTime().Ticks - 621355968000000000) / 10000;
         var parameters = new DynamicParameters();
         parameters.Add("@uid", user.PortkeyId);
         parameters.Add("@userAddressInfo", JsonConvert.SerializeObject(user.AddressWithChain));
