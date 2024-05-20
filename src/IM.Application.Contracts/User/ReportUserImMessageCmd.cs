@@ -11,11 +11,6 @@ public class ReportUserImMessageCmd : IValidatableObject
 	[Required(ErrorMessage = "please input the user id")]
     public string UserId { get; set; }
     
-	public List<AddressInfo> UserCaAddressInfos { get; set; }
-	
-	// [Required(ErrorMessage = "please input the reported user id")]
-	// public string ReportedUserId {get; set; }
-	
 	[Required(ErrorMessage = "please input the report type")]
 	[Range(typeof(int), "1", "8")]
 	public int ReportType {get; set; }
@@ -45,11 +40,6 @@ public class ReportUserImMessageCmd : IValidatableObject
 		if (ReportType == (int)ReportedMessageType.Other && !String.IsNullOrEmpty(Description) && Description.Length > 200)
 		{
 			yield return new ValidationResult("your description is not allowed more");
-		}
-
-		if (UserCaAddressInfos.IsNullOrEmpty())
-		{
-			yield return new ValidationResult("please input the user address");
 		}
 	}
 }
