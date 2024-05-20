@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AElf.Indexing.Elasticsearch;
 using GraphQL;
 using IM.Common;
+using IM.Dapper.Repository;
 using IM.Entities.Es;
 using IM.User.Dtos;
 using Nest;
@@ -27,11 +28,13 @@ public class UserProvider : IUserProvider, ISingletonDependency
 {
     private readonly IGraphQLHelper _graphQlHelper;
     private readonly INESTRepository<UserIndex, Guid> _userRepository;
+    private readonly IImRepository _imRepository;
 
-    public UserProvider(INESTRepository<UserIndex, Guid> userRepository, IGraphQLHelper graphQlHelper)
+    public UserProvider(INESTRepository<UserIndex, Guid> userRepository, IGraphQLHelper graphQlHelper, IImRepository imRepository)
     {
         _userRepository = userRepository;
         _graphQlHelper = graphQlHelper;
+        _imRepository = imRepository;
     }
 
     public async Task<CaHolderInfoDto> GetCaHolderInfoAsync(string caHash)
@@ -142,5 +145,10 @@ public class UserProvider : IUserProvider, ISingletonDependency
         }
 
         await _userRepository.UpdateAsync(user);
+    }
+
+    public async Task ReportUserImMessage(ReportUserImMessageCmd reportUserImMessageCmd)
+    {
+        
     }
 }
