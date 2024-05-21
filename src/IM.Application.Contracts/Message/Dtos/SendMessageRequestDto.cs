@@ -14,7 +14,7 @@ public class SendMessageRequestDto
 
     public string QuoteId { get; set; }
 
-    public int IsBlocked { get; set; }
+    public string BlockRelationId { get; set; }
 
     public string[] MentionedUser { get; set; }
     

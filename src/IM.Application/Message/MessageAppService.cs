@@ -104,10 +104,10 @@ public class MessageAppService : ImAppService, IMessageAppService
             throw new UserFriendlyException("");
         }
         var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)currentUserId);
-        var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(userIndex.RelationId, input.ToRelationId);
+        var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(input.ToRelationId, userIndex.RelationId);
         if (blockUserInfo is { IsEffective: 0 })
         {
-            input.IsBlocked = 1;
+            input.BlockRelationId = input.ToRelationId;
         }
         
         var responseDto = await _proxyMessageAppService.SendMessageAsync(input);
