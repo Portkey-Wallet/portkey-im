@@ -17,5 +17,7 @@ public class SendMessageRequestDto
     public string BlockRelationId { get; set; }
 
     public string[] MentionedUser { get; set; }
-    
+
+    public string From { get; set; }
+
 }

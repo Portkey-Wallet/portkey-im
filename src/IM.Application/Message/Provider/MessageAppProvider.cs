@@ -13,6 +13,7 @@ using IM.Options;
 using IM.PinMessage;
 using IM.PinMessage.Dtos;
 using IM.Repository;
+using IM.User.Provider;
 using Microsoft.Extensions.Options;
 using Nest;
 using Newtonsoft.Json;
@@ -30,16 +31,18 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
     private readonly PinMessageOptions _pinMessageOptions;
     private readonly INESTRepository<UserIndex, Guid> _userRepository;
     private readonly IMessageAppService _messageAppService;
+    private readonly IUserProvider _userProvider;
 
     public MessageAppProvider(IChannelContactAppService channelContactAppService, IImRepository imRepository,
         IRefreshRepository<PinMessageIndex, string> pinMessageRepository,
-        IOptionsSnapshot<PinMessageOptions> pinMessageOptions, INESTRepository<UserIndex, Guid> userRepository, IMessageAppService messageAppService)
+        IOptionsSnapshot<PinMessageOptions> pinMessageOptions, INESTRepository<UserIndex, Guid> userRepository, IMessageAppService messageAppService, IUserProvider userProvider)
     {
         _channelContactAppService = channelContactAppService;
         _imRepository = imRepository;
         _pinMessageRepository = pinMessageRepository;
         _userRepository = userRepository;
         _messageAppService = messageAppService;
+        _userProvider = userProvider;
         _pinMessageOptions = pinMessageOptions.Value;
     }
 
@@ -164,6 +167,23 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
             "select id as Id,send_uuid as SendUuid,channel_uuid as ChannelUuid,quote_id as QuoteId , status as status, mentioned_user as mentionedUser from im_message where channel_uuid=@channelUuid  and id=@messageId limit 1;";
         var imMessageInfoDto = await _imRepository.QueryFirstOrDefaultAsync<IMMessageInfoDto>(sql, parameters);
         return imMessageInfoDto;
+    }
+
+    public async Task InsertMessageAsync(SendMessageRequestDto input)
+    {
+        var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
+        var parameters = new DynamicParameters();
+        parameters.Add("@sendUuid", input.SendUuid);
+        parameters.Add("@channelUuid", input.ChannelUuid);
+        parameters.Add("@content", input.Content);
+        parameters.Add("@type", input.Type);
+        parameters.Add("@quoteId", input.QuoteId);
+        parameters.Add("@mentionedUser", input.MentionedUser);
+        parameters.Add("@blockRelationId", input.BlockRelationId);
+        parameters.Add("@from",userIndex.RelationId);
+        var sql =
+            "INSERT INTO im_message (send_uuid, channel_uuid, from,content,type,quote_id,mentioned_user,block_relation_id) VALUES (@sendUuid, @channelUuid,@from,@content,@type,@quoteId,@mentionedUser,@blockRelationId);";
+        await _imRepository.ExecuteAsync(sql, parameters);
     }
 
 

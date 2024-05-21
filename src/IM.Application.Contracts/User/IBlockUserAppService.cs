@@ -10,4 +10,5 @@ public interface IBlockUserAppService
     Task<string> UnBlockUserAsync(UnBlockUserRequestDto input);
     Task<bool> IsBlockedAsync(BlockUserRequestDto input);
     Task<List<string>> BlockListAsync();
+    Task<bool> GetBlockRelationAsync(string inputToRelationId);
 }

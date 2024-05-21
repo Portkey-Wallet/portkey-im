@@ -63,6 +63,7 @@ public class BlockUserAppService : ImAppService, IBlockUserAppService
         {
             throw new UserFriendlyException("User have not been blocked.");
         }
+
         await _blockUserProvider.UnBlockUserInfoAsync(blockUserInfo.Id);
         return "success";
     }
@@ -90,8 +91,21 @@ public class BlockUserAppService : ImAppService, IBlockUserAppService
         {
             throw new UserFriendlyException("UnLogin,please try again");
         }
+
         var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
         var list = await _blockUserProvider.GetBlockUserListAsync(userIndex.RelationId);
         return list.Select(t => t.BlockRelationId).ToList();
+    }
+
+    public async Task<bool> GetBlockRelationAsync(string toRelationId)
+    {
+        if (CurrentUser.Id == null)
+        {
+            throw new UserFriendlyException("UnLogin,please try again");
+        }
+
+        var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
+        var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(toRelationId, userIndex.RelationId);
+        return blockUserInfo is { IsEffective: 0 };
     }
 }
