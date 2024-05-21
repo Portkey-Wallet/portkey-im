@@ -130,7 +130,7 @@ public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
             };
             var members = await _channelContactAppService.GetChannelMembersAsync(param);
             var memberInfos = members.Members.Where(t => t.RelationId.ToString() != userInfo.RelationId).ToList();
-            var blockUserId = memberInfos.FirstOrDefault()!.RelationId;
+            var blockUserId = memberInfos.FirstOrDefault()?.RelationId;
             var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(userInfo.RelationId, blockUserId);
             if (blockUserInfo != null)
             {
