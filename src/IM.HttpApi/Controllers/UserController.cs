@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Volo.Abp;
+using Volo.Abp.DistributedLocking;
 
 namespace IM.Controllers;
 
@@ -21,13 +22,15 @@ public class UserController : ImController
     private readonly IUserAppService _userAppService;
     private readonly IBlockUserAppService _blockUserAppService;
     private readonly ILogger<UserController> _logger;
+    private IAbpDistributedLock _distributedLock;
+    private readonly string _lockKeyPrefix = "Portkey:IM:ReportUser:";
 
-    public UserController(IUserAppService userAppService, IBlockUserAppService blockUserAppService, ILogger<UserController> logger)
-
+    public UserController(IUserAppService userAppService, IBlockUserAppService blockUserAppService, ILogger<UserController> logger, IAbpDistributedLock distributedLock)
     {
         _userAppService = userAppService;
         _blockUserAppService = blockUserAppService;
         _logger = logger;
+        _distributedLock = distributedLock;
     }
 
     [HttpPost("token")]
@@ -69,6 +72,14 @@ public class UserController : ImController
     [HttpPost("report")]
     public async Task<string> ReportUserImMessage(ReportUserImMessageCmd reportUserImMessageCmd)
     {
+        await using var handle = await _distributedLock.TryAcquireAsync(name: _lockKeyPrefix 
+                                                                              + reportUserImMessageCmd.UserId + ":" 
+                                                                              + reportUserImMessageCmd.ReportType + ":"
+                                                                              + reportUserImMessageCmd.MessageId);
+        if (handle == null)
+        {
+            return "failed reason: reporting too frequently";
+        }
         await _userAppService.ReportUserImMessage(reportUserImMessageCmd);
         return "success";
     }
