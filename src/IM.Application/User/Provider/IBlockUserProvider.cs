@@ -63,7 +63,7 @@ public class BlockUserProvider : IBlockUserProvider, ISingletonDependency
         var parameters = new DynamicParameters();
         parameters.Add("@uId", id);
         var sql =
-            "select id,relation_id AS relationId,block_relation_id AS blockRelationId from block_user_info where relation_id = @uId and is_effective = 1";
+            "select id,relation_id AS relationId,block_relation_id AS blockRelationId from block_user_info where relation_id = @uId and is_effective = 0";
         var userInfoDtos = await _imRepository.QueryAsync<BlockUserInfoDto>(sql, parameters);
         return userInfoDtos?.ToList();
     }
