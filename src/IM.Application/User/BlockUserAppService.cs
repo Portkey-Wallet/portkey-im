@@ -4,8 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using IM.User.Dtos;
 using IM.User.Provider;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Volo.Abp;
 using Volo.Abp.Auditing;
+using ILogger = Castle.Core.Logging.ILogger;
 
 namespace IM.User;
 
@@ -14,11 +17,13 @@ public class BlockUserAppService : ImAppService, IBlockUserAppService
 {
     private readonly IBlockUserProvider _blockUserProvider;
     private readonly IUserProvider _userProvider;
+    private readonly ILogger<BlockUserAppService> _logger;
 
-    public BlockUserAppService(IBlockUserProvider blockUserProvider, IUserProvider userProvider)
+    public BlockUserAppService(IBlockUserProvider blockUserProvider, IUserProvider userProvider,  ILogger<BlockUserAppService> logger)
     {
         _blockUserProvider = blockUserProvider;
         _userProvider = userProvider;
+        _logger = logger;
     }
 
     public async Task<string> BlockUserAsync(BlockUserRequestDto input)
@@ -106,6 +111,7 @@ public class BlockUserAppService : ImAppService, IBlockUserAppService
 
         var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
         var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(toRelationId, userIndex.RelationId);
+        _logger.LogInformation("Block user info is {json}",JsonConvert.SerializeObject(blockUserInfo));
         return blockUserInfo is { IsEffective: 0 };
     }
 }
