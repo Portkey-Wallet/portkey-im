@@ -37,18 +37,17 @@ public class BlockUserAppService : ImAppService, IBlockUserAppService
 
         var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(userIndex.RelationId, input.RelationId);
 
-        if (blockUserInfo is { IsEffective: 0 })
+        switch (blockUserInfo)
         {
-            throw new UserFriendlyException("You have already blocked.");
+            case { IsEffective: 0 }:
+                throw new UserFriendlyException("You have already blocked.");
+            case { IsEffective: 1 }:
+                await _blockUserProvider.ReBlockUserInfoAsync(blockUserInfo.Id);
+                return "success";
+            default:
+                await _blockUserProvider.BlockUserAsync(blockUser);
+                return "success";
         }
-
-        if (blockUserInfo is { IsEffective: 1 })
-        {
-            await _blockUserProvider.ReBlockUserInfoAsync(blockUserInfo.Id);
-            return "success";
-        }
-        await _blockUserProvider.BlockUserAsync(blockUser);
-        return "success";
     }
 
     public async Task<string> UnBlockUserAsync(UnBlockUserRequestDto input)

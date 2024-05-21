@@ -44,7 +44,7 @@ public class BlockUserProvider : IBlockUserProvider, ISingletonDependency
         parameters.Add("@relationId", id);
         parameters.Add("@blockRelationId", reportUserId);
         var sql =
-            "select id,relation_id AS RelationId,block_relation_id AS blockRelationId from block_user_info where relation_id = @relationId and block_relation_id = @blockRelationId";
+            "select id,relation_id AS RelationId,block_relation_id AS blockRelationId, is_effective AS isEffective from block_user_info where relation_id = @relationId and block_relation_id = @blockRelationId";
         var userInfoDto = await _imRepository.QueryFirstOrDefaultAsync<BlockUserInfoDto>(sql, parameters);
         return userInfoDto;
     }
