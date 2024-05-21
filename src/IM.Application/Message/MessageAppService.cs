@@ -98,13 +98,16 @@ public class MessageAppService : ImAppService, IMessageAppService
 
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)
     {
-        
-        var relationId = input.ToRelationId;
-        var userInfo = await _userProvider.GetUserInfoAsync(relationId);
-        var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(CurrentUser.GetId().ToString(), userInfo.Id.ToString());
+        var currentUserId = CurrentUser.Id;
+        if (null == currentUserId)
+        {
+            throw new UserFriendlyException("");
+        }
+        var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)currentUserId);
+        var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(input.ToRelationId, userIndex.RelationId);
         if (blockUserInfo is { IsEffective: 0 })
         {
-            input.IsBlocked = 1;
+            input.BlockRelationId = input.ToRelationId;
         }
         
         var responseDto = await _proxyMessageAppService.SendMessageAsync(input);

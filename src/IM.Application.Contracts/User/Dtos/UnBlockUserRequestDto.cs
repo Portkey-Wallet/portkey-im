@@ -2,5 +2,5 @@ namespace IM.User.Dtos;
 
 public class UnBlockUserRequestDto
 {
-    public string UserId { get; set; }
+    public string RelationId { get; set; }
 }

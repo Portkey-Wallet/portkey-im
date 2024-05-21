@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,16 +29,18 @@ public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
     private readonly IChannelProvider _channelProvider;
     private readonly IChannelContactV2AppService _channelContactAppService;
     private readonly IBlockUserProvider _blockUserProvider;
+    private readonly IUserProvider _userProvider;
 
     public ProxyMessageAppService(IProxyRequestProvider proxyRequestProvider, IHttpContextAccessor httpContextAccessor,
         IOptionsSnapshot<RelationOneOptions> relationOneOptions, IChannelProvider channelProvider,
-        IChannelContactV2AppService channelContactAppService, IBlockUserProvider blockUserProvider)
+        IChannelContactV2AppService channelContactAppService, IBlockUserProvider blockUserProvider, IUserProvider userProvider)
     {
         _proxyRequestProvider = proxyRequestProvider;
         _httpContextAccessor = httpContextAccessor;
         _channelProvider = channelProvider;
         _channelContactAppService = channelContactAppService;
         _blockUserProvider = blockUserProvider;
+        _userProvider = userProvider;
         _relationOneOptions = relationOneOptions.Value;
     }
 
@@ -116,24 +119,8 @@ public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
     public async Task<List<ListMessageResponseDto>> ListMessageAsync(
         ListMessageRequestDto input)
     {
-        var flag = false;
-        var id = CurrentUser.GetId().ToString();
-        var channelInfo = await _channelProvider.GetChannelInfoByUUIDAsync(input.ChannelUuid);
-        if (channelInfo.Type == "P")
-        {
-            var param = new ChannelMembersRequestDto
-            {
-                ChannelUuid = input.ChannelUuid
-            };
-            var members = await _channelContactAppService.GetChannelMembersAsync(param);
-            var memberInfos = members.Members.Where(t => t.UserId.ToString() != id).ToList();
-            var blockUserId = memberInfos.FirstOrDefault()!.UserId.ToString();
-            var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(id, blockUserId);
-            if (blockUserInfo != null)
-            {
-                flag = true;
-            }
-        }
+        var userInfo = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
+        
 
         var baseUrl = "api/v1/message/list";
         var queryString = new StringBuilder();
@@ -148,16 +135,12 @@ public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
             queryString.Append("&toRelationId=").Append(input.ToRelationId);
         }
 
-        if (flag)
-        {
-            queryString.Append("&isBlock=").Append(1);
-        }
-
         queryString.Append("&maxCreateAt=").Append(input.MaxCreateAt);
         var result =
             await _proxyRequestProvider.GetAsync<List<ListMessageResponseDto>>(
                 baseUrl + queryString);
 
-        return result;
+        var listMessageResponseDtos = result.Where(t => t.BlockRelationId != userInfo.RelationId).ToList();
+        return listMessageResponseDtos;
     }
 }
