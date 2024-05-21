@@ -173,6 +173,8 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
     {
         var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
         var parameters = new DynamicParameters();
+        var now = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+        parameters.Add("@id", now);
         parameters.Add("@sendUuid", input.SendUuid);
         parameters.Add("@channelUuid", input.ChannelUuid);
         parameters.Add("@content", input.Content);
@@ -182,7 +184,7 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
         parameters.Add("@blockRelationId", input.BlockRelationId);
         parameters.Add("@from",userIndex.RelationId);
         var sql =
-            "INSERT INTO im_message (send_uuid, channel_uuid, from,content,type,quote_id,mentioned_user,block_relation_id) VALUES (@sendUuid, @channelUuid,@from,@content,@type,@quoteId,@mentionedUser,@blockRelationId);";
+            "INSERT INTO im_message (id,send_uuid, `from`,channel_uuid,content,type,quote_id,mentioned_user,block_relation_id) VALUES (@id,@sendUuid, @channelUuid,@from,@content,@type,@quoteId,@mentionedUser,@blockRelationId);";
         await _imRepository.ExecuteAsync(sql, parameters);
     }
 
