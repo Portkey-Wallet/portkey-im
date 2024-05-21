@@ -110,7 +110,9 @@ public class BlockUserAppService : ImAppService, IBlockUserAppService
         }
 
         var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
+        _logger.LogInformation("Current user info is {json}",JsonConvert.SerializeObject(userIndex));
         var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(toRelationId, userIndex.RelationId);
+        _logger.LogInformation("sent message to user : {to},sent person is {from}",toRelationId,userIndex.RelationId);
         _logger.LogInformation("Block user info is {json}",JsonConvert.SerializeObject(blockUserInfo));
         return blockUserInfo is { IsEffective: 0 };
     }
