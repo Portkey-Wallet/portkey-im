@@ -14,6 +14,7 @@ using IM.Grains.Grain.RedPackage;
 using IM.RedPackage;
 using IM.Grains.Grain.Mute;
 using IM.Message.Provider;
+using IM.User.Provider;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -21,6 +22,7 @@ using Microsoft.Net.Http.Headers;
 using Nest;
 using Newtonsoft.Json;
 using Orleans;
+using Orleans.Runtime;
 using Volo.Abp;
 using Volo.Abp.Auditing;
 using Volo.Abp.EventBus.Distributed;
@@ -41,12 +43,14 @@ public class FeedAppService : ImAppService, IFeedAppService
     private readonly IProxyFeedAppService _proxyFeedAppService;
     private readonly IRedPackageAppService _redPackageAppService;
     private readonly IUnreadMessageUpdateProvider _unreadMessageUpdateProvider;
+    private readonly IUserProvider _userProvider;
 
     public FeedAppService(IClusterClient clusterClient, IDistributedEventBus distributedEventBus,
         IHttpContextAccessor httpContextAccessor, IProxyFeedAppService proxyFeedAppService,
         IProxyChannelContactAppService proxyChannelContactAppService, ILogger<FeedAppService> logger,
         IRedPackageAppService redPackageAppService,
-        INESTRepository<FeedInfoIndex, string> feedInfoIndex, IUnreadMessageUpdateProvider unreadMessageUpdateProvider)
+        INESTRepository<FeedInfoIndex, string> feedInfoIndex, IUnreadMessageUpdateProvider unreadMessageUpdateProvider,
+        IUserProvider userProvider)
     {
         _clusterClient = clusterClient;
         _distributedEventBus = distributedEventBus;
@@ -57,6 +61,7 @@ public class FeedAppService : ImAppService, IFeedAppService
         _feedInfoIndex = feedInfoIndex;
         _redPackageAppService = redPackageAppService;
         _unreadMessageUpdateProvider = unreadMessageUpdateProvider;
+        _userProvider = userProvider;
     }
 
     public async Task PinFeedAsync(PinFeedRequestDto input)
@@ -141,12 +146,13 @@ public class FeedAppService : ImAppService, IFeedAppService
         foreach (var listFeedResponseItemDto in result.List)
         {
             var content = listFeedResponseItemDto.LastMessageContent;
-            
+
             if (listFeedResponseItemDto.LastMessageType == RedPackageConstant.RedPackageCardType)
             {
                 await BuildRedPackageLastMessageAsync(listFeedResponseItemDto);
             }
         }
+
         return result;
     }
 
@@ -363,6 +369,13 @@ public class FeedAppService : ImAppService, IFeedAppService
 
         foreach (var feed in feedList.List)
         {
+            if (!string.IsNullOrWhiteSpace(feed.ToRelationId))
+            {
+                var userInfo = await _userProvider.GetUserInfoAsync(feed.ToRelationId);
+                _logger.Info("current userInfo is {info}", JsonConvert.SerializeObject(userInfo));
+                feed.ToUserId = userInfo != null ? userInfo.Id.ToString() : "";
+            }
+
             var memberInfo = memberInfoList.Find(x => x.RelationId == feed.ToRelationId);
             if (memberInfo == null)
             {
@@ -404,9 +417,10 @@ public class FeedAppService : ImAppService, IFeedAppService
                 _logger.LogError("Parse RedPackageCard error,Content:{Content}", input.LastMessageContent);
                 return;
             }
+
             var grain = _clusterClient.GetGrain<IRedPackageUserGrain>(
                 RedPackageHelper.BuildUserViewKey(CurrentUser.GetId(), content.Data.Id));
-        
+
             input.RedPackage.ViewStatus = (await grain.GetUserViewStatus()).Data;
         }
         catch (Exception e)
@@ -414,7 +428,7 @@ public class FeedAppService : ImAppService, IFeedAppService
             _logger.LogError(e, "BuildRedPackageLastMessageAsync error,Content:{Content}", input.LastMessageContent);
         }
     }
-    
+
     private async Task SendFeedListEventAsync(string relationIdFromToken, int timeoutInSec)
     {
         if (!string.IsNullOrEmpty(relationIdFromToken))

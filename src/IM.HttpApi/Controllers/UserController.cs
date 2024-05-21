@@ -20,13 +20,15 @@ namespace IM.Controllers;
 public class UserController : ImController
 {
     private readonly IUserAppService _userAppService;
+    private readonly IBlockUserAppService _blockUserAppService;
     private readonly ILogger<UserController> _logger;
     private IAbpDistributedLock _distributedLock;
     private readonly string _lockKeyPrefix = "Portkey:IM:ReportUser:";
 
-    public UserController(IUserAppService userAppService, ILogger<UserController> logger, IAbpDistributedLock distributedLock)
+    public UserController(IUserAppService userAppService, IBlockUserAppService blockUserAppService, ILogger<UserController> logger, IAbpDistributedLock distributedLock)
     {
         _userAppService = userAppService;
+        _blockUserAppService = blockUserAppService;
         _logger = logger;
         _distributedLock = distributedLock;
     }
@@ -94,4 +96,32 @@ public class UserController : ImController
     {
         return await _userAppService.ListUserInfoAsync(input);
     }
+    
+    [HttpPost("block")]
+    public async Task<string> BlockUserAsync(BlockUserRequestDto input)
+    {
+        await _blockUserAppService.BlockUserAsync(input);
+        return "success";
+    }
+    
+    [HttpPost("unBlock")]
+    public async Task<string> UnBlockUserAsync(UnBlockUserRequestDto input)
+    {
+        await _blockUserAppService.UnBlockUserAsync(input);
+        return "success";
+    }
+    
+    [HttpPost("isBlocked")]
+    public async Task<bool> IsBlockedAsync(BlockUserRequestDto input)
+    {
+        await _blockUserAppService.IsBlockedAsync(input);
+        return true;
+    }
+    
+    [HttpGet("blockList")]
+    public async Task<List<string>> BlockListAsync()
+    {
+        return await _blockUserAppService.BlockListAsync();
+    }
+    
 }

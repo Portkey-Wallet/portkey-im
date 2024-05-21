@@ -1,15 +1,21 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using IM.ChannelContact;
+using IM.ChannelContact.Dto;
+using IM.ChannelContactService.Provider;
 using IM.Common;
 using IM.Commons;
 using IM.Message;
 using IM.Message.Dtos;
 using IM.Options;
+using IM.User.Provider;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Volo.Abp;
 using Volo.Abp.Auditing;
+using Volo.Abp.Users;
 
 namespace IM.RelationOne;
 
@@ -19,12 +25,19 @@ public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IProxyRequestProvider _proxyRequestProvider;
     private readonly RelationOneOptions _relationOneOptions;
+    private readonly IChannelProvider _channelProvider;
+    private readonly IChannelContactV2AppService _channelContactAppService;
+    private readonly IBlockUserProvider _blockUserProvider;
 
-    public ProxyMessageAppService(IProxyRequestProvider proxyRequestProvider, IHttpContextAccessor httpContextAccessor, 
-        IOptionsSnapshot<RelationOneOptions> relationOneOptions)
+    public ProxyMessageAppService(IProxyRequestProvider proxyRequestProvider, IHttpContextAccessor httpContextAccessor,
+        IOptionsSnapshot<RelationOneOptions> relationOneOptions, IChannelProvider channelProvider,
+        IChannelContactV2AppService channelContactAppService, IBlockUserProvider blockUserProvider)
     {
         _proxyRequestProvider = proxyRequestProvider;
         _httpContextAccessor = httpContextAccessor;
+        _channelProvider = channelProvider;
+        _channelContactAppService = channelContactAppService;
+        _blockUserProvider = blockUserProvider;
         _relationOneOptions = relationOneOptions.Value;
     }
 
@@ -42,7 +55,6 @@ public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
         var result =
             await _proxyRequestProvider.PostAsync<object>(
                 "api/v1/message/hide", input, null);
-
     }
 
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)
@@ -77,7 +89,7 @@ public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
 
         return result;
     }
-    
+
     public async Task<UnreadCountResponseDto> GetUnreadMessageCountAsync()
     {
         var result =
@@ -86,14 +98,14 @@ public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
 
         return result;
     }
-    
+
     public async Task<UnreadCountResponseDto> GetUnreadMessageCountWithTokenAsync(string authToken)
     {
         var header = new Dictionary<string, string>()
         {
             [CommonConstant.AuthHeader] = authToken,
         };
-        
+
         var result =
             await _proxyRequestProvider.GetAsync<UnreadCountResponseDto>(
                 "api/v1/message/unreadCount", header);
@@ -104,6 +116,25 @@ public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
     public async Task<List<ListMessageResponseDto>> ListMessageAsync(
         ListMessageRequestDto input)
     {
+        var flag = false;
+        var id = CurrentUser.GetId().ToString();
+        var channelInfo = await _channelProvider.GetChannelInfoByUUIDAsync(input.ChannelUuid);
+        if (channelInfo.Type == "P")
+        {
+            var param = new ChannelMembersRequestDto
+            {
+                ChannelUuid = input.ChannelUuid
+            };
+            var members = await _channelContactAppService.GetChannelMembersAsync(param);
+            var memberInfos = members.Members.Where(t => t.UserId.ToString() != id).ToList();
+            var blockUserId = memberInfos.FirstOrDefault()!.UserId.ToString();
+            var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(id, blockUserId);
+            if (blockUserInfo != null)
+            {
+                flag = true;
+            }
+        }
+
         var baseUrl = "api/v1/message/list";
         var queryString = new StringBuilder();
         queryString.Append("?limit=").Append(input.Limit == 0 ? 10 : input.Limit);
@@ -115,6 +146,11 @@ public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
         else if (!string.IsNullOrEmpty(input.ToRelationId))
         {
             queryString.Append("&toRelationId=").Append(input.ToRelationId);
+        }
+
+        if (flag)
+        {
+            queryString.Append("&isBlock=").Append(1);
         }
 
         queryString.Append("&maxCreateAt=").Append(input.MaxCreateAt);
