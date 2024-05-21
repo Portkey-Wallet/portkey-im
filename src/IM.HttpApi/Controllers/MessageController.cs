@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using IM.Message;
 using IM.Message.Dtos;
 using IM.Message.Provider;
+using IM.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
@@ -17,17 +18,32 @@ public class MessageController : ImController
 {
     private readonly IMessageAppService _messageAppService;
     private readonly IMessageAppProvider _messageAppProvider;
+    private readonly IBlockUserAppService _blockUserAppService;
 
-    public MessageController(IMessageAppService messageAppService, IMessageAppProvider messageAppProvider)
+    public MessageController(IMessageAppService messageAppService, IMessageAppProvider messageAppProvider, IBlockUserAppService blockUserAppService)
     {
         _messageAppService = messageAppService;
         _messageAppProvider = messageAppProvider;
+        _blockUserAppService = blockUserAppService;
     }
 
     [Authorize, HttpPost("send")]
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)
     {
-        return await _messageAppService.SendMessageAsync(input);
+
+        var blockExists = await _blockUserAppService.GetBlockRelationAsync(input.ToRelationId);
+        switch (blockExists)
+        {
+            case true:
+                input.BlockRelationId = input.ToRelationId;
+                await _messageAppProvider.InsertMessageAsync(input);
+                return new SendMessageResponseDto
+                {
+                    ChannelUuid = input.ChannelUuid,
+                };
+            default:
+                return await _messageAppService.SendMessageAsync(input);
+        }
     }
 
 

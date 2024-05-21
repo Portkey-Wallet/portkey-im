@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using AElf.Indexing.Elasticsearch;
 using IM.ChannelContactService.Provider;
 using IM.Chat;
-using IM.Common;
 using IM.Commons;
 using IM.Dtos;
 using IM.Entities.Es;
@@ -20,7 +19,6 @@ using IM.PinMessage.Dtos;
 using IM.RedPackage;
 using IM.Repository;
 using IM.User;
-using IM.User.Provider;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -54,8 +52,7 @@ public class MessageAppService : ImAppService, IMessageAppService
     private readonly IGroupProvider _groupProvider;
     private readonly MessagePushOptions _messagePushOptions;
     private readonly IUserAppService _userAppService;
-    private readonly IBlockUserProvider _blockUserProvider;
-    private readonly IUserProvider _userProvider;
+
 
     public MessageAppService(IProxyMessageAppService proxyMessageAppService,
         IStringEncryptionService encryptionService,
@@ -70,7 +67,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         IOptionsSnapshot<PinMessageOptions> pinMessageOptions,
         INESTRepository<UserIndex, Guid> userRepository,
         IRefreshRepository<PinMessageIndex, string> pinMessageRepository,
-        IUserAppService userAppService, IBlockUserProvider blockUserProvider, IUserProvider userProvider)
+        IUserAppService userAppService)
     {
         _proxyMessageAppService = proxyMessageAppService;
         _encryptionService = encryptionService;
@@ -87,8 +84,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         _groupProvider = groupProvider;
         _messagePushOptions = messagePushOptions.Value;
         _userAppService = userAppService;
-        _blockUserProvider = blockUserProvider;
-        _userProvider = userProvider;
+
     }
 
     public async Task<int> ReadMessageAsync(ReadMessageRequestDto input)
@@ -98,25 +94,8 @@ public class MessageAppService : ImAppService, IMessageAppService
 
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)
     {
-        var currentUserId = CurrentUser.Id;
-        if (null == currentUserId)
-        {
-            throw new UserFriendlyException("");
-        }
-        var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)currentUserId);
-        var blockUserInfo = await _blockUserProvider.GetBlockUserInfoAsync(input.ToRelationId, userIndex.RelationId);
-        if (blockUserInfo is { IsEffective: 0 })
-        {
-            input.BlockRelationId = input.ToRelationId;
-        }
-        
         var responseDto = await _proxyMessageAppService.SendMessageAsync(input);
         if (responseDto == null || responseDto.ChannelUuid.IsNullOrEmpty())
-        {
-            return responseDto;
-        }
-        
-        if (blockUserInfo is { IsEffective: 0 })
         {
             return responseDto;
         }
