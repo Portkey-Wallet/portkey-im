@@ -179,11 +179,11 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
         parameters.Add("@channelUuid", input.ChannelUuid);
         parameters.Add("@content", input.Content);
         parameters.Add("@type", input.Type);
-        parameters.Add("@mentionedUser", input.MentionedUser);
+        //parameters.Add("@mentionedUser", input.MentionedUser);
         parameters.Add("@blockRelationId", input.BlockRelationId);
         parameters.Add("@from",userIndex.RelationId);
         var sql =
-            "INSERT INTO im_message (id,send_uuid, `from`,channel_uuid,content,type,mentioned_user,block_relation_id) VALUES (@id,@sendUuid,@from ,@channelUuid,@content,@type,@mentionedUser,@blockRelationId);";
+            "INSERT INTO im_message (id,send_uuid, `from`,channel_uuid,content,type,block_relation_id) VALUES (@id,@sendUuid,@from ,@channelUuid,@content,@type,@blockRelationId);";
         await _imRepository.ExecuteAsync(sql, parameters);
     }
 
