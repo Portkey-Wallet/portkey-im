@@ -32,6 +32,7 @@ public interface IChannelProvider
     Task<ChannelDetailResponseDto> GetChannelDetailInfoAsync(string relationId, string channelUuid);
     Task<List<FriendInfoDto>> GetFriendInfosAsync(string relationId);
     Task<ChannelDetailInfoResponseDto> GetChannelInfoByUUIDAsync(string inputChannelUuid);
+    Task<ChannelDetailInfoResponseDto> GetBlockChannelUuidAsync(string relationId, string blockRelationId);
 }
 
 public class ChannelProvider : IChannelProvider, ISingletonDependency
@@ -168,6 +169,19 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
         var parameters = new DynamicParameters();
         parameters.Add("@uuid", inputChannelUuid);
         var sql = "select  uuid AS Uuid, type AS Type, from_relation_id AS FromRelationId, to_relation_id AS ToRelationId from im_channel where uuid = @uuid;";
+        var channelDetail = await _imRepository.QueryFirstOrDefaultAsync<ChannelDetailInfoResponseDto>(sql, parameters);
+        return channelDetail;
+    }
+
+    public async Task<ChannelDetailInfoResponseDto> GetBlockChannelUuidAsync(string relationId, string blockRelationId)
+    {
+        var parameters = new DynamicParameters();
+        parameters.Add("@fromRelationId", relationId);
+        parameters.Add("@toRelationId", blockRelationId);
+        parameters.Add("@fromRelationId1", blockRelationId);
+        parameters.Add("@toRelationId1", relationId);
+        var sql =
+            "select uuid as Uuid from im_channel where (from_relation_id = @fromRelationId and to_relation_id = @toRelationId) or (from_relation_id = @fromRelationId1 and to_relation_id = @toRelationId1);";
         var channelDetail = await _imRepository.QueryFirstOrDefaultAsync<ChannelDetailInfoResponseDto>(sql, parameters);
         return channelDetail;
     }
