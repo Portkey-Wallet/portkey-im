@@ -48,6 +48,7 @@ public class UnreadMessageUpdateProvider : IUnreadMessageUpdateProvider, ISingle
                 return;
             }
 
+            _logger.LogInformation("auth token:{token}", authToken);
             var unreadCountResponseDto = await _proxyMessageAppService.GetUnreadMessageCountWithTokenAsync(authToken);
 
             var unreadMessageDto = new UnreadMessageDto

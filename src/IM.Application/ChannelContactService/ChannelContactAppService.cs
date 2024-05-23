@@ -78,7 +78,6 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
         var response = await _proxyChannelContactAppService.LeaveChannelAsync(leaveChannelRequestDto);
         var authToken = GetAuthFromHeader();
         
-        // update group information asynchronously
         await _groupProvider.LeaveGroupAsync(leaveChannelRequestDto?.ChannelUuid, CurrentUser.GetId().ToString());
         // update unread message count asynchronously
         _ = _unreadMessageUpdateProvider.UpdateUnReadMessageCountAsync(leaveChannelRequestDto?.ChannelUuid, authToken);
