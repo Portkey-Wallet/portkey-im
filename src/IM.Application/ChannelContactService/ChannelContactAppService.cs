@@ -76,11 +76,7 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
     public async Task<string> LeaveChannelAsync(LeaveChannelRequestDto leaveChannelRequestDto)
     {
         var response = await _proxyChannelContactAppService.LeaveChannelAsync(leaveChannelRequestDto);
-        var authToken = GetAuthFromHeader();
-        
         await _groupProvider.LeaveGroupAsync(leaveChannelRequestDto?.ChannelUuid, CurrentUser.GetId().ToString());
-        // update unread message count asynchronously
-        _ = _unreadMessageUpdateProvider.UpdateUnReadMessageCountAsync(leaveChannelRequestDto?.ChannelUuid, authToken);
         return response;
     }
 
