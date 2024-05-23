@@ -54,8 +54,7 @@ public class MessageAppService : ImAppService, IMessageAppService
     private readonly IGroupProvider _groupProvider;
     private readonly MessagePushOptions _messagePushOptions;
     private readonly IUserAppService _userAppService;
-    private readonly IMessageAppProvider _messageAppProvider;
-    private readonly IUserProvider _userProvider;
+
 
 
     public MessageAppService(IProxyMessageAppService proxyMessageAppService,
@@ -71,7 +70,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         IOptionsSnapshot<PinMessageOptions> pinMessageOptions,
         INESTRepository<UserIndex, Guid> userRepository,
         IRefreshRepository<PinMessageIndex, string> pinMessageRepository,
-        IUserAppService userAppService, IMessageAppProvider messageAppProvider, IUserProvider userProvider)
+        IUserAppService userAppService)
     {
         _proxyMessageAppService = proxyMessageAppService;
         _encryptionService = encryptionService;
@@ -88,8 +87,6 @@ public class MessageAppService : ImAppService, IMessageAppService
         _groupProvider = groupProvider;
         _messagePushOptions = messagePushOptions.Value;
         _userAppService = userAppService;
-        _messageAppProvider = messageAppProvider;
-        _userProvider = userProvider;
     }
 
     public async Task<int> ReadMessageAsync(ReadMessageRequestDto input)
