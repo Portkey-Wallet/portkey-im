@@ -140,11 +140,9 @@ public class FeedAppService : ImAppService, IFeedAppService
             var channelUuid =
                 await _channelProvider.GetBlockChannelUuidAsync(blockUserInfo.RelationId,
                     blockUserInfo.BlockRelationId);
-            _logger.Info("channelUUid is {uuid}",channelUuid.Uuid);
             uuids.Add(channelUuid.Uuid);
         }
         
-        _logger.Info("Should exclude list is {list}",uuids.ToString());
         var resultList = new List<ListFeedResponseItemDto>();
         
         foreach (var item in result.List)

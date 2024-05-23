@@ -13,12 +13,14 @@ using IM.Grains.Grain.Message;
 using IM.Grains.Grain.RedPackage;
 using IM.Message.Dtos;
 using IM.Message.Etos;
+using IM.Message.Provider;
 using IM.Options;
 using IM.PinMessage;
 using IM.PinMessage.Dtos;
 using IM.RedPackage;
 using IM.Repository;
 using IM.User;
+using IM.User.Provider;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -52,6 +54,8 @@ public class MessageAppService : ImAppService, IMessageAppService
     private readonly IGroupProvider _groupProvider;
     private readonly MessagePushOptions _messagePushOptions;
     private readonly IUserAppService _userAppService;
+    private readonly IMessageAppProvider _messageAppProvider;
+    private readonly IUserProvider _userProvider;
 
 
     public MessageAppService(IProxyMessageAppService proxyMessageAppService,
@@ -67,7 +71,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         IOptionsSnapshot<PinMessageOptions> pinMessageOptions,
         INESTRepository<UserIndex, Guid> userRepository,
         IRefreshRepository<PinMessageIndex, string> pinMessageRepository,
-        IUserAppService userAppService)
+        IUserAppService userAppService, IMessageAppProvider messageAppProvider, IUserProvider userProvider)
     {
         _proxyMessageAppService = proxyMessageAppService;
         _encryptionService = encryptionService;
@@ -84,7 +88,8 @@ public class MessageAppService : ImAppService, IMessageAppService
         _groupProvider = groupProvider;
         _messagePushOptions = messagePushOptions.Value;
         _userAppService = userAppService;
-
+        _messageAppProvider = messageAppProvider;
+        _userProvider = userProvider;
     }
 
     public async Task<int> ReadMessageAsync(ReadMessageRequestDto input)
@@ -99,7 +104,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         {
             return responseDto;
         }
-       
+
         var authToken = GetAuthFromHeader();
         _ = PublishMessageAsync(input, CurrentUser.GetId(), authToken);
         return responseDto;
@@ -337,7 +342,18 @@ public class MessageAppService : ImAppService, IMessageAppService
     public async Task<List<ListMessageResponseDto>> ListMessageAsync(
         ListMessageRequestDto input)
     {
-        var result = await _proxyMessageAppService.ListMessageAsync(input);
+        var tempList = await _proxyMessageAppService.ListMessageAsync(input);
+        var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
+        var result = new List<ListMessageResponseDto>();
+        foreach (var dto in tempList)
+        {
+            var message = await _messageAppProvider.GetMessageByIdAsync(dto.ChannelUuid, dto.Id);
+            if (!string.IsNullOrEmpty(message.BlockRelationId) && message.BlockRelationId == userIndex.RelationId)
+            {
+                continue;
+            }
+            result.Add(dto);
+        }
 
         var transferMessages = new List<ListMessageResponseDto>();
         foreach (var listMessageResponseDto in result)
