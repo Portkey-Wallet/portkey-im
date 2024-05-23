@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using IM.Message;
@@ -19,6 +20,7 @@ public class MessageController : ImController
     private readonly IMessageAppService _messageAppService;
     private readonly IMessageAppProvider _messageAppProvider;
     private readonly IBlockUserAppService _blockUserAppService;
+        
 
     public MessageController(IMessageAppService messageAppService, IMessageAppProvider messageAppProvider, IBlockUserAppService blockUserAppService)
     {
@@ -65,7 +67,11 @@ public class MessageController : ImController
     public async Task<List<ListMessageResponseDto>> ListMessageAsync(
         ListMessageRequestDto input)
     {
-        return await _messageAppService.ListMessageAsync(input);
+        var temList = await _messageAppService.ListMessageAsync(input);
+        
+        var result =  await _messageAppProvider.FilterHideMessage(temList);
+
+        return result;
     }
 
 

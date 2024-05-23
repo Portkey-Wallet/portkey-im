@@ -187,6 +187,22 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
         await _imRepository.ExecuteAsync(sql, parameters);
     }
 
+    public async Task<List<ListMessageResponseDto>> FilterHideMessage(List<ListMessageResponseDto> tempList)
+    {
+        var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
+        var result = new List<ListMessageResponseDto>();
+        foreach (var dto in tempList)
+        {
+            var message = await GetMessageByIdAsync(dto.ChannelUuid, dto.Id);
+            if (!string.IsNullOrEmpty(message.BlockRelationId) && message.BlockRelationId == userIndex.RelationId)
+            {
+                continue;
+            }
+            result.Add(dto);
+        }
+        return result;
+    }
+
 
     private async Task<List<PinMessageIndex>> GetListByParamAsync(string quoteId, string channelUuid)
     {

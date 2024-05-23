@@ -342,19 +342,7 @@ public class MessageAppService : ImAppService, IMessageAppService
     public async Task<List<ListMessageResponseDto>> ListMessageAsync(
         ListMessageRequestDto input)
     {
-        var tempList = await _proxyMessageAppService.ListMessageAsync(input);
-        var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
-        var result = new List<ListMessageResponseDto>();
-        foreach (var dto in tempList)
-        {
-            var message = await _messageAppProvider.GetMessageByIdAsync(dto.ChannelUuid, dto.Id);
-            if (!string.IsNullOrEmpty(message.BlockRelationId) && message.BlockRelationId == userIndex.RelationId)
-            {
-                continue;
-            }
-            result.Add(dto);
-        }
-
+        var result = await _proxyMessageAppService.ListMessageAsync(input);
         var transferMessages = new List<ListMessageResponseDto>();
         foreach (var listMessageResponseDto in result)
         {
