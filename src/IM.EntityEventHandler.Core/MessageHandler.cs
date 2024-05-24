@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AElf.Indexing.Elasticsearch;
+using IM.ChannelContactService.Provider;
 using IM.Chat;
 using IM.Commons;
 using IM.Entities.Es;
@@ -33,6 +34,7 @@ public class MessageHandler : IDistributedEventHandler<EventMessageEto>, IDistri
     private readonly IMessagePushProvider _messagePushProvider;
     private readonly IUserProvider _userProvider;
     private readonly MessagePushOptions _messagePushOptions;
+    private readonly IChannelProvider _channelProvider;
 
     public MessageHandler(
         ILogger<MessageHandler> logger,
@@ -42,7 +44,8 @@ public class MessageHandler : IDistributedEventHandler<EventMessageEto>, IDistri
         INESTRepository<GroupIndex, string> groupRepository,
         IMessagePushProvider messagePushProvider,
         IUserProvider userProvider,
-        IOptionsSnapshot<MessagePushOptions> messagePushOptions)
+        IOptionsSnapshot<MessagePushOptions> messagePushOptions,
+        IChannelProvider channelProvider)
     {
         _logger = logger;
         _messageAppService = messageAppService;
@@ -51,6 +54,7 @@ public class MessageHandler : IDistributedEventHandler<EventMessageEto>, IDistri
         _groupRepository = groupRepository;
         _messagePushProvider = messagePushProvider;
         _userProvider = userProvider;
+        _channelProvider = channelProvider;
         _messagePushOptions = messagePushOptions.Value;
     }
 
@@ -97,19 +101,11 @@ public class MessageHandler : IDistributedEventHandler<EventMessageEto>, IDistri
             }
 
             var user = await _userProvider.GetUserInfoByIdAsync(eventData.UserId);
-
             var userName = user?.Name;
             if (userName.IsNullOrWhiteSpace())
             {
                 userName = CommonConstant.DefaultDisplayName;
             }
-
-            var message = new ImMessagePushDto()
-            {
-                Content = MessageHelper.GetContent(eventData.Type, eventData.Content),
-                SenderName = userName,
-                ChannelId = eventData.ChannelUuid
-            };
 
             var groupId = eventData.ChannelUuid;
             var groupInfo = await GetGroupInfosAsync(groupId);
@@ -118,6 +114,25 @@ public class MessageHandler : IDistributedEventHandler<EventMessageEto>, IDistri
             {
                 throw new UserFriendlyException($"group not exist, groupId:{groupId}");
             }
+
+            var muteUserIds = await _channelProvider.GetMuteMembersAsync(groupId);
+            var toUserIds = groupInfo.Members
+                .Where(f => f.PortKeyId != eventData.UserId.ToString() && !muteUserIds.Contains(f.RelationId))
+                .Select(t => t.PortKeyId).Distinct().ToList();
+
+            if (toUserIds.IsNullOrEmpty())
+            {
+                _logger.LogWarning("send to users is empty, userId:{userId}, groupId:{groupId}", eventData.UserId,
+                    groupId);
+                return;
+            }
+
+            var message = new ImMessagePushDto()
+            {
+                Content = MessageHelper.GetContent(eventData.Type, eventData.Content),
+                SenderName = userName,
+                ChannelId = eventData.ChannelUuid
+            };
 
             if (groupInfo.Type.Equals(GroupType.G.ToString(), StringComparison.OrdinalIgnoreCase))
             {
@@ -130,14 +145,6 @@ public class MessageHandler : IDistributedEventHandler<EventMessageEto>, IDistri
                 message.SenderName = userName;
                 message.Icon = user?.Avatar;
                 message.ChatType = ChatType.P2P;
-            }
-
-            var toUserIds = groupInfo.Members.Where(f => f.PortKeyId != eventData.UserId.ToString())
-                .Select(t => t.PortKeyId).Distinct().ToList();
-
-            if (toUserIds.IsNullOrEmpty())
-            {
-                return;
             }
 
             message.ToUserIds = toUserIds;

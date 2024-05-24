@@ -9,10 +9,12 @@ using IM.Feed.Etos;
 using IM.Grains.Grain.Group;
 using IM.Grains.Grain.Mute;
 using IM.Grains.Grain.User;
+using IM.Message;
 using IM.Message.Dtos;
 using IM.Message.Etos;
 using IM.PinMessage;
 using IM.PinMessage.Dtos;
+using IM.User;
 using IM.User.Dtos;
 using IM.User.Etos;
 using Volo.Abp.AutoMapper;
@@ -47,6 +49,9 @@ public class ImApplicationAutoMapperProfile : Profile
 
         CreateMap<UserIndex, ImUserDto>()
             .ForMember(t => t.PortkeyId, m => m.MapFrom(f => f.Id));
+        CreateMap<UserIndex, ImUser>()
+            .ForMember(t => t.PortkeyId, m => m.MapFrom(f => f.Id));
+        CreateMap<ReportUserImMessageCmd, ReportedMessage>();
         CreateMap<CaHolderInfoDto, CaHolderDto>()
             .ForMember(t => t.UserId, m => m.MapFrom(f => f.UserId == Guid.Empty ? null : f.UserId.ToString()))
             ;

@@ -16,6 +16,8 @@ public class ListMessageResponseDto
     public string FromName { get; set; }
     public string FromAvatar { get; set; }
     public string Content { get; set; }
+
+    public string BlockRelationId { get; set; }
     public RedPackageMessage RedPackage { get; set; }
     [CanBeNull] public ListMessageResponseDto Quote { get; set; }
     

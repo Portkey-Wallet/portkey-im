@@ -4,6 +4,7 @@ using AutoResponseWrapper;
 using GraphQL.Client.Abstractions;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
+using IM.Common;
 using IM.Commons;
 using IM.Grains;
 using IM.Hub;
@@ -268,6 +269,8 @@ public class ImHttpApiHostModule : AbpModule
         app.UseConfiguredEndpoints();
 
         StartOrleans(context.ServiceProvider);
+        
+        ConfigurationProvidersHelper.DisplayConfigurationProviders(context);
     }
 
     public override void OnApplicationShutdown(ApplicationShutdownContext context)

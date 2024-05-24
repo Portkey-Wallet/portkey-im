@@ -16,6 +16,7 @@ using IM.Options;
 using IM.RelationOne;
 using IM.User.Dtos;
 using IM.User.Etos;
+using IM.User.executor;
 using IM.User.Provider;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -42,6 +43,7 @@ public class UserAppService : ImAppService, IUserAppService
     private readonly IUserProvider _userProvider;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly CAServerOptions _caServerOptions;
+    private readonly ReportUserImMessageCmdExe _reportUserImMessageCmdExe;
 
     public UserAppService(IProxyUserAppService proxyUserAppService,
         IDistributedEventBus distributedEventBus,
@@ -49,7 +51,8 @@ public class UserAppService : ImAppService, IUserAppService
         IHttpClientProvider httpClientProvider,
         IUserProvider userProvider,
         IHttpContextAccessor httpContextAccessor,
-        IOptionsSnapshot<CAServerOptions> caServerOptions)
+        IOptionsSnapshot<CAServerOptions> caServerOptions,
+        ReportUserImMessageCmdExe reportUserImMessageCmdExe)
     {
         _proxyUserAppService = proxyUserAppService;
         _distributedEventBus = distributedEventBus;
@@ -58,6 +61,7 @@ public class UserAppService : ImAppService, IUserAppService
         _userProvider = userProvider;
         _httpContextAccessor = httpContextAccessor;
         _caServerOptions = caServerOptions.Value;
+        _reportUserImMessageCmdExe = reportUserImMessageCmdExe;
     }
 
     public async Task<SignatureDto> GetSignatureAsync(SignatureRequestDto input)
@@ -132,6 +136,12 @@ public class UserAppService : ImAppService, IUserAppService
 
     public async Task<List<AddressInfoDto>> GetAddressesAsync(string relationId) =>
         await _proxyUserAppService.GetAddressesAsync(relationId);
+    
+    //report user's message, in order to meet Apple's requirements
+    public async Task ReportUserImMessage(ReportUserImMessageCmd reportUserImMessageCmd)
+    {
+        await _reportUserImMessageCmdExe.ReportUserImMessage(reportUserImMessageCmd);
+    }
 
     public async Task<ImUserDto> GetImUserInfoAsync(string relationId)
     {
