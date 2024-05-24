@@ -28,6 +28,7 @@ public interface IGroupProvider
     Task UpdateGroupAsync(string groupId, string authToken);
     Task DeleteGroupAsync(string groupId);
     Task<GroupIndex> GetGroupInfosAsync(string groupId);
+    Task LeaveGroupAsync(string groupId, string userId);
 }
 
 public class GroupProvider : IGroupProvider, ISingletonDependency
@@ -133,6 +134,22 @@ public class GroupProvider : IGroupProvider, ISingletonDependency
 
         QueryContainer Filter(QueryContainerDescriptor<GroupIndex> f) => f.Bool(b => b.Must(mustQuery));
         return await _groupRepository.GetAsync(Filter);
+    }
+
+    public async Task LeaveGroupAsync(string groupId, string userId)
+    {
+        if (groupId.IsNullOrEmpty()) return;
+        var groupGrain = _clusterClient.GetGrain<IGroupGrain>(groupId);
+        var resultDto = await groupGrain.LeaveGroup(userId);
+        if (!resultDto.Success())
+        {
+            _logger.LogError("leave group fail, group id: {id}, userId:{userId}, error code: {code}", groupId, userId,
+                resultDto.Code);
+        }
+
+        await _distributedEventBus.PublishAsync(_objectMapper.Map<GroupGrainDto, GroupAddOrUpdateEto>(resultDto.Data),
+            false, false);
+        _logger.LogInformation("leave group success, group id: {id}", groupId);
     }
 
     private async Task<List<GroupMember>> GetGroupMembersAsync(List<MemberInfo> memberInfos)

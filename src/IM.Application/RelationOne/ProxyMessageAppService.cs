@@ -5,6 +5,10 @@ using IM.Common;
 using IM.Commons;
 using IM.Message;
 using IM.Message.Dtos;
+using IM.Options;
+using IM.RelationOne.Dtos;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using Volo.Abp;
 using Volo.Abp.Auditing;
 
@@ -13,13 +17,17 @@ namespace IM.RelationOne;
 [RemoteService(false), DisableAuditing]
 public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
 {
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IProxyRequestProvider _proxyRequestProvider;
-
-
-    public ProxyMessageAppService(IProxyRequestProvider proxyRequestProvider)
+    private readonly RelationOneOptions _relationOneOptions;
+    private readonly IHttpClientProvider _httpClientProvider;
+    public ProxyMessageAppService(IProxyRequestProvider proxyRequestProvider, IHttpContextAccessor httpContextAccessor,
+        IOptionsSnapshot<RelationOneOptions> relationOneOptions, IHttpClientProvider httpClientProvider)
     {
         _proxyRequestProvider = proxyRequestProvider;
-       
+        _httpContextAccessor = httpContextAccessor;
+        _httpClientProvider = httpClientProvider;
+        _relationOneOptions = relationOneOptions.Value;
     }
 
     public async Task<int> ReadMessageAsync(ReadMessageRequestDto input)
@@ -70,7 +78,7 @@ public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
 
         return result;
     }
-
+    
     public async Task<UnreadCountResponseDto> GetUnreadMessageCountAsync()
     {
         var result =
@@ -79,19 +87,20 @@ public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
 
         return result;
     }
-
+    
     public async Task<UnreadCountResponseDto> GetUnreadMessageCountWithTokenAsync(string authToken)
     {
+        var url = "api/v1/message/unreadCount";
         var header = new Dictionary<string, string>()
         {
             [CommonConstant.AuthHeader] = authToken,
+            [RelationOneConstant.KeyName] = _relationOneOptions.ApiKey
         };
-
         var result =
-            await _proxyRequestProvider.GetAsync<UnreadCountResponseDto>(
-                "api/v1/message/unreadCount", header);
+            await _httpClientProvider.GetAsync<RelationOneResponseDto<UnreadCountResponseDto>>(GetUrl(url),
+                header);
 
-        return result;
+        return result.Data;
     }
 
     public async Task<List<ListMessageResponseDto>> ListMessageAsync(
@@ -116,5 +125,10 @@ public class ProxyMessageAppService : ImAppService, IProxyMessageAppService
                 baseUrl + queryString);
 
         return result;
+    }
+
+    private string GetUrl(string url)
+    {
+        return $"{_relationOneOptions.BaseUrl.TrimEnd('/')}/{url}";
     }
 }

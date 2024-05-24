@@ -57,10 +57,10 @@ public class GroupGrain : Grain<GroupState>, IGroupGrain
             result.Code = CommonResult.GroupDeletedCode;
             return result;
         }
-        
+
         State = _objectMapper.Map<GroupGrainDto, GroupState>(group);
         await WriteStateAsync();
-        
+
         result.Data = _objectMapper.Map<GroupState, GroupGrainDto>(State);
         return result;
     }
@@ -96,5 +96,20 @@ public class GroupGrain : Grain<GroupState>, IGroupGrain
     public Task<bool> Exist()
     {
         return Task.FromResult(!State.Id.IsNullOrEmpty() && !State.IsDelete);
+    }
+
+    public async Task<GrainResultDto<GroupGrainDto>> LeaveGroup(string userId)
+    {
+        var result = new GrainResultDto<GroupGrainDto>();
+        if (State.Id.IsNullOrEmpty() || State.IsDelete)
+        {
+            result.Code = CommonResult.GroupNotExistCode;
+            return result;
+        }
+
+        State.Members.RemoveAll(t => t.PortKeyId == userId);
+        await WriteStateAsync();
+        result.Data = _objectMapper.Map<GroupState, GroupGrainDto>(State);
+        return result;
     }
 }

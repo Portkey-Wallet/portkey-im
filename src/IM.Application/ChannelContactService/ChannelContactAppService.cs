@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using IM.Message.Provider;
 using Volo.Abp;
 using Volo.Abp.Auditing;
+using Volo.Abp.Users;
 
 
 namespace IM.ChannelContactService;
@@ -36,7 +37,7 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
     {
         var responseDto = await _proxyChannelContactAppService.CreateChannelAsync(requestDto);
         var authToken = GetAuthFromHeader();
-        
+
         // add group information asynchronously
         _ = _groupProvider.AddGroupAsync(responseDto?.ChannelUuid, authToken);
         return responseDto;
@@ -56,7 +57,7 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
     {
         var response = await _proxyChannelContactAppService.JoinChannelAsync(joinChannelRequestDto);
         var authToken = GetAuthFromHeader();
-        
+
         // update group information asynchronously
         _ = _groupProvider.UpdateGroupAsync(joinChannelRequestDto?.ChannelUuid, authToken);
         return response;
@@ -66,7 +67,7 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
     {
         var response = await _proxyChannelContactAppService.RemoveFromChannelAsync(removeMemberRequestDto);
         var authToken = GetAuthFromHeader();
-        
+
         // update group information asynchronously
         _ = _groupProvider.UpdateGroupAsync(removeMemberRequestDto?.ChannelUuid, authToken);
         return response;
@@ -75,19 +76,14 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
     public async Task<string> LeaveChannelAsync(LeaveChannelRequestDto leaveChannelRequestDto)
     {
         var response = await _proxyChannelContactAppService.LeaveChannelAsync(leaveChannelRequestDto);
-        var authToken = GetAuthFromHeader();
-        
-        // update group information asynchronously
-        _ = _groupProvider.UpdateGroupAsync(leaveChannelRequestDto?.ChannelUuid, authToken);
-        // update unread message count asynchronously
-        _ = _unreadMessageUpdateProvider.UpdateUnReadMessageCountAsync(leaveChannelRequestDto?.ChannelUuid, authToken);
+        await _groupProvider.LeaveGroupAsync(leaveChannelRequestDto?.ChannelUuid, CurrentUser.GetId().ToString());
         return response;
     }
 
     public async Task<string> DisbandChannelAsync(DisbandChannelRequestDto disbandChannelRequestDto)
     {
         var response = await _proxyChannelContactAppService.DisbandChannelAsync(disbandChannelRequestDto);
-        
+
         // delete group asynchronously
         _ = _groupProvider.DeleteGroupAsync(disbandChannelRequestDto?.ChannelUuid);
         return response;
@@ -117,7 +113,7 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
     {
         var response = await _proxyChannelContactAppService.SetChannelNameAsync(requestDto);
         var authToken = GetAuthFromHeader();
-        
+
         // add group information asynchronously
         _ = _groupProvider.UpdateGroupAsync(requestDto?.ChannelUuid, authToken);
         return response;
@@ -127,7 +123,7 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
     {
         var response = await _proxyChannelContactAppService.AddChannelMemberAsync(requestDto);
         var authToken = GetAuthFromHeader();
-        
+
         // add group information asynchronously
         _ = _groupProvider.UpdateGroupAsync(requestDto?.ChannelUuid, authToken);
         return response;

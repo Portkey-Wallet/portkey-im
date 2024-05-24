@@ -10,4 +10,5 @@ public interface IGroupGrain : IGrainWithStringKey
     Task<GrainResultDto<GroupGrainDto>> DeleteGroup();
     Task<GrainResultDto<List<GroupMember>>> GetMembers();
     Task<bool> Exist();
+    Task<GrainResultDto<GroupGrainDto>> LeaveGroup(string userId);
 }
