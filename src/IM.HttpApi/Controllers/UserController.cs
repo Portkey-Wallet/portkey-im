@@ -16,7 +16,7 @@ namespace IM.Controllers;
 [Area("app")]
 [ControllerName("ImUser")]
 [Route("api/v1/users")]
-// [Authorize]
+[Authorize]
 public class UserController : ImController
 {
     private readonly IUserAppService _userAppService;
@@ -91,7 +91,7 @@ public class UserController : ImController
         return "success";
     }
     
-    [HttpGet("userInfo/list")/*, Authorize*/]
+    [HttpGet("userInfo/list"), Authorize]
     public async Task<List<UserInfoListDto>> ListUserInfoAsync(UserInfoListRequestDto input)
     {
         return await _userAppService.ListUserInfoAsync(input);
