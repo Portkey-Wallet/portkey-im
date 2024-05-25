@@ -44,6 +44,7 @@ public class UserAppService : ImAppService, IUserAppService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly CAServerOptions _caServerOptions;
     private readonly ReportUserImMessageCmdExe _reportUserImMessageCmdExe;
+    private readonly ILogger<UserAppService> _logger;
 
     public UserAppService(IProxyUserAppService proxyUserAppService,
         IDistributedEventBus distributedEventBus,
@@ -52,7 +53,8 @@ public class UserAppService : ImAppService, IUserAppService
         IUserProvider userProvider,
         IHttpContextAccessor httpContextAccessor,
         IOptionsSnapshot<CAServerOptions> caServerOptions,
-        ReportUserImMessageCmdExe reportUserImMessageCmdExe)
+        ReportUserImMessageCmdExe reportUserImMessageCmdExe,
+        ILogger<UserAppService> logger)
     {
         _proxyUserAppService = proxyUserAppService;
         _distributedEventBus = distributedEventBus;
@@ -62,6 +64,7 @@ public class UserAppService : ImAppService, IUserAppService
         _httpContextAccessor = httpContextAccessor;
         _caServerOptions = caServerOptions.Value;
         _reportUserImMessageCmdExe = reportUserImMessageCmdExe;
+        _logger = logger;
     }
 
     public async Task<SignatureDto> GetSignatureAsync(SignatureRequestDto input)
@@ -300,7 +303,7 @@ public class UserAppService : ImAppService, IUserAppService
     {
         //get holder infos by email/phone/google/apple
         var portKeyIds = await GetHolderInfosAsync(input.Keywords);
-
+        _logger.LogInformation("=======im check====== portKeyIds={0}", JsonConvert.SerializeObject(portKeyIds));
         if (Guid.TryParse(input.Keywords, out var portKeyId) && portKeyId != CurrentUser.GetId())
         {
             portKeyIds.Add(portKeyId);
@@ -312,6 +315,7 @@ public class UserAppService : ImAppService, IUserAppService
 
         //get relation ids by portkey ids or caAddress, then deduplicate
         var userList = await _userProvider.ListUserInfoAsync(portKeyIds, keywords);
+        _logger.LogInformation("=======im check====== userList={0}", JsonConvert.SerializeObject(userList));
         var users = userList
             .GroupBy(user => user.RelationId)
             .Select(group => group.First())
@@ -339,13 +343,15 @@ public class UserAppService : ImAppService, IUserAppService
         all.RemoveAll(t => t.RelationId == currentUser?.RelationId);
         //get contact's remark
         var contactProfileDtos = await GetContactListAsync(portKeyIds, input.Keywords);
-
+        _logger.LogInformation("=======im check====== contactProfileDtos={0}", JsonConvert.SerializeObject(contactProfileDtos));
         var map = contactProfileDtos.ToDictionary(i => i.ImInfo.RelationId, i => i);
 
         var needAddAvatarUsers = new List<UserInfoListDto>();
         foreach (var userInfo in all)
         {
+            _logger.LogInformation("=======im check====== userInfo={0}", JsonConvert.SerializeObject(userInfo));
             var contact = map.GetOrDefault(userInfo.RelationId);
+            _logger.LogInformation("=======im check====== contact={0}", JsonConvert.SerializeObject(contact));
             if (contact == null)
             {
                 needAddAvatarUsers.Add(userInfo);

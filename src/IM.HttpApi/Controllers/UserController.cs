@@ -16,7 +16,7 @@ namespace IM.Controllers;
 [Area("app")]
 [ControllerName("ImUser")]
 [Route("api/v1/users")]
-[Authorize]
+// [Authorize]
 public class UserController : ImController
 {
     private readonly IUserAppService _userAppService;
