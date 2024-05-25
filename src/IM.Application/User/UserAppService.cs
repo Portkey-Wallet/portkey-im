@@ -352,10 +352,10 @@ public class UserAppService : ImAppService, IUserAppService
                 continue;
             }
 
-            var name = contact.Name;
+            var name = contact.CaHolderInfo?.WalletName;
             if (name.IsNullOrWhiteSpace())
             {
-                name = contact.CaHolderInfo?.WalletName;
+                name = contact.Name;
             }
 
             if (!name.IsNullOrWhiteSpace())
