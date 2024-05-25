@@ -91,7 +91,7 @@ public class UserController : ImController
         return "success";
     }
     
-    [HttpGet("userInfo/list"), Authorize]
+    [HttpGet("userInfo/list")/*, Authorize*/]
     public async Task<List<UserInfoListDto>> ListUserInfoAsync(UserInfoListRequestDto input)
     {
         return await _userAppService.ListUserInfoAsync(input);
