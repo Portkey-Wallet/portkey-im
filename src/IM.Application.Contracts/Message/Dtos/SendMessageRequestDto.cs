@@ -14,6 +14,10 @@ public class SendMessageRequestDto
 
     public string QuoteId { get; set; }
 
+    public string BlockRelationId { get; set; }
+
     public string[] MentionedUser { get; set; }
-    
+
+    public string From { get; set; }
+
 }

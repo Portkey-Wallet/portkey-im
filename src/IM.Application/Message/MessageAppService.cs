@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using AElf.Indexing.Elasticsearch;
 using IM.ChannelContactService.Provider;
 using IM.Chat;
-using IM.Common;
 using IM.Commons;
 using IM.Dtos;
 using IM.Entities.Es;
@@ -14,12 +13,14 @@ using IM.Grains.Grain.Message;
 using IM.Grains.Grain.RedPackage;
 using IM.Message.Dtos;
 using IM.Message.Etos;
+using IM.Message.Provider;
 using IM.Options;
 using IM.PinMessage;
 using IM.PinMessage.Dtos;
 using IM.RedPackage;
 using IM.Repository;
 using IM.User;
+using IM.User.Provider;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -53,6 +54,8 @@ public class MessageAppService : ImAppService, IMessageAppService
     private readonly IGroupProvider _groupProvider;
     private readonly MessagePushOptions _messagePushOptions;
     private readonly IUserAppService _userAppService;
+
+
 
     public MessageAppService(IProxyMessageAppService proxyMessageAppService,
         IStringEncryptionService encryptionService,
@@ -337,7 +340,6 @@ public class MessageAppService : ImAppService, IMessageAppService
         ListMessageRequestDto input)
     {
         var result = await _proxyMessageAppService.ListMessageAsync(input);
-
         var transferMessages = new List<ListMessageResponseDto>();
         foreach (var listMessageResponseDto in result)
         {

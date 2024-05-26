@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AElf.Indexing.Elasticsearch;
 using IM.ChannelContact;
 using IM.ChannelContact.Dto;
+using IM.ChannelContactService.Provider;
 using IM.Commons;
 using IM.Feed.Dtos;
 using IM.Feed.Etos;
@@ -14,6 +15,7 @@ using IM.Grains.Grain.RedPackage;
 using IM.RedPackage;
 using IM.Grains.Grain.Mute;
 using IM.Message.Provider;
+using IM.User.Provider;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -21,6 +23,7 @@ using Microsoft.Net.Http.Headers;
 using Nest;
 using Newtonsoft.Json;
 using Orleans;
+using Orleans.Runtime;
 using Volo.Abp;
 using Volo.Abp.Auditing;
 using Volo.Abp.EventBus.Distributed;
@@ -41,12 +44,16 @@ public class FeedAppService : ImAppService, IFeedAppService
     private readonly IProxyFeedAppService _proxyFeedAppService;
     private readonly IRedPackageAppService _redPackageAppService;
     private readonly IUnreadMessageUpdateProvider _unreadMessageUpdateProvider;
+    private readonly IUserProvider _userProvider;
+    private readonly IBlockUserProvider _blockUserProvider;
+    private readonly IChannelProvider _channelProvider;
 
     public FeedAppService(IClusterClient clusterClient, IDistributedEventBus distributedEventBus,
         IHttpContextAccessor httpContextAccessor, IProxyFeedAppService proxyFeedAppService,
         IProxyChannelContactAppService proxyChannelContactAppService, ILogger<FeedAppService> logger,
         IRedPackageAppService redPackageAppService,
-        INESTRepository<FeedInfoIndex, string> feedInfoIndex, IUnreadMessageUpdateProvider unreadMessageUpdateProvider)
+        INESTRepository<FeedInfoIndex, string> feedInfoIndex, IUnreadMessageUpdateProvider unreadMessageUpdateProvider,
+        IUserProvider userProvider, IBlockUserProvider blockUserProvider, IChannelProvider channelProvider)
     {
         _clusterClient = clusterClient;
         _distributedEventBus = distributedEventBus;
@@ -57,6 +64,9 @@ public class FeedAppService : ImAppService, IFeedAppService
         _feedInfoIndex = feedInfoIndex;
         _redPackageAppService = redPackageAppService;
         _unreadMessageUpdateProvider = unreadMessageUpdateProvider;
+        _userProvider = userProvider;
+        _blockUserProvider = blockUserProvider;
+        _channelProvider = channelProvider;
     }
 
     public async Task PinFeedAsync(PinFeedRequestDto input)
@@ -119,34 +129,40 @@ public class FeedAppService : ImAppService, IFeedAppService
     public async Task<ListFeedResponseDto> ListFeedAsync(ListFeedRequestDto input,
         [CanBeNull] IDictionary<string, string> headers)
     {
-        /*
-        var relationIdFromToken = JwtHelper.ExtractRelationIdFromToken(
-            _httpContextAccessor.HttpContext?.Request?.Headers[RelationOneConstant.AuthHeader]);
+        var result = await FetchFeedListAsync(input, headers);
 
-        if (!string.IsNullOrEmpty(input.Keyword))
+        var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
+        var blockUserList = await _blockUserProvider.GetBlockUserListAsync(userIndex.RelationId);
+
+        var uuids = new List<string>();
+        foreach (var blockUserInfo in blockUserList)
         {
-            if (string.IsNullOrEmpty(relationIdFromToken))
+            var channelUuid =
+                await _channelProvider.GetBlockChannelUuidAsync(blockUserInfo.RelationId,
+                    blockUserInfo.BlockRelationId);
+            uuids.Add(channelUuid.Uuid);
+        }
+        
+        var resultList = new List<ListFeedResponseItemDto>();
+        
+        foreach (var item in result.List)
+        {
+            if (!uuids.Contains(item.ChannelUuid))
             {
-                throw new UserFriendlyException("permission denied", HttpStatusCode.NotFound.ToString());
+                resultList.Add(item);
             }
-
-            await SendFeedListEventAsync(relationIdFromToken, FeedConsts.FeedPullGapSearchInSec);
-
-            return await SearchChannel(input.Keyword, input.Cursor, input.MaxResultCount, relationIdFromToken);
         }
 
-        await SendFeedListEventAsync(relationIdFromToken, FeedConsts.FeedPullGapInSec);
-        */
-        var result = await FetchFeedListAsync(input, headers);
+        result.List = resultList;
+
         foreach (var listFeedResponseItemDto in result.List)
         {
-            var content = listFeedResponseItemDto.LastMessageContent;
-            
             if (listFeedResponseItemDto.LastMessageType == RedPackageConstant.RedPackageCardType)
             {
                 await BuildRedPackageLastMessageAsync(listFeedResponseItemDto);
             }
         }
+
         return result;
     }
 
@@ -404,9 +420,10 @@ public class FeedAppService : ImAppService, IFeedAppService
                 _logger.LogError("Parse RedPackageCard error,Content:{Content}", input.LastMessageContent);
                 return;
             }
+
             var grain = _clusterClient.GetGrain<IRedPackageUserGrain>(
                 RedPackageHelper.BuildUserViewKey(CurrentUser.GetId(), content.Data.Id));
-        
+
             input.RedPackage.ViewStatus = (await grain.GetUserViewStatus()).Data;
         }
         catch (Exception e)
@@ -414,7 +431,7 @@ public class FeedAppService : ImAppService, IFeedAppService
             _logger.LogError(e, "BuildRedPackageLastMessageAsync error,Content:{Content}", input.LastMessageContent);
         }
     }
-    
+
     private async Task SendFeedListEventAsync(string relationIdFromToken, int timeoutInSec)
     {
         if (!string.IsNullOrEmpty(relationIdFromToken))

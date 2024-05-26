@@ -31,6 +31,8 @@ public interface IChannelProvider
 
     Task<ChannelDetailResponseDto> GetChannelDetailInfoAsync(string relationId, string channelUuid);
     Task<List<FriendInfoDto>> GetFriendInfosAsync(string relationId);
+    Task<ChannelDetailInfoResponseDto> GetChannelInfoByUUIDAsync(string inputChannelUuid);
+    Task<ChannelDetailInfoResponseDto> GetBlockChannelUuidAsync(string relationId, string blockRelationId);
 
     Task<List<string>> GetMuteMembersAsync(string channelUuid);
 }
@@ -85,7 +87,7 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
     public async Task<List<MemberInfo>> GetMembersAsync(string channelUuid, List<string> relationIds)
     {
         if (relationIds.IsNullOrEmpty()) return new List<MemberInfo>();
-
+        
         var builder = new StringBuilder("(");
         foreach (var relationId in relationIds)
         {
@@ -133,7 +135,7 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
         parameters.Add("@skipCount", skipCount);
         parameters.Add("@maxResultCount", maxResultCount);
         parameters.Add("@keyword", $"%{keyword}%");
-
+        
         var sql =
             $"select channel.relation_id as RelationId,channel.is_admin as IsAdmin, user.name as Name from im_channel_member channel left join pk_user.uc_user user on channel.relation_id=user.relation_id  where channel.channel_uuid=@channelUuid and channel.status=0{excludeStr} and user.name like @keyword order by channel.index limit @skipCount,@maxResultCount;";
 
@@ -163,6 +165,28 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
             "select user.relation_id as RelationId,user.name as Name,friend.friend_relation_id as FriendRelationId,friend.remark as Remark from pk_user.uc_user user join pk_user.uc_friend friend on user.relation_id=friend.relation_id where user.relation_id=@relationId and friend.remark<>'';";
         var friendInfos = await _imRepository.QueryAsync<FriendInfoDto>(sql, parameters);
         return friendInfos?.ToList();
+    }
+
+    public async Task<ChannelDetailInfoResponseDto> GetChannelInfoByUUIDAsync(string inputChannelUuid)
+    {
+        var parameters = new DynamicParameters();
+        parameters.Add("@uuid", inputChannelUuid);
+        var sql = "select  uuid AS Uuid, type AS Type, from_relation_id AS FromRelationId, to_relation_id AS ToRelationId from im_channel where uuid = @uuid;";
+        var channelDetail = await _imRepository.QueryFirstOrDefaultAsync<ChannelDetailInfoResponseDto>(sql, parameters);
+        return channelDetail;
+    }
+
+    public async Task<ChannelDetailInfoResponseDto> GetBlockChannelUuidAsync(string relationId, string blockRelationId)
+    {
+        var parameters = new DynamicParameters();
+        parameters.Add("@fromRelationId", relationId);
+        parameters.Add("@toRelationId", blockRelationId);
+        parameters.Add("@fromRelationId1", blockRelationId);
+        parameters.Add("@toRelationId1", relationId);
+        var sql =
+            "select uuid as Uuid from im_channel where (from_relation_id = @fromRelationId and to_relation_id = @toRelationId) or (from_relation_id = @fromRelationId1 and to_relation_id = @toRelationId1);";
+        var channelDetail = await _imRepository.QueryFirstOrDefaultAsync<ChannelDetailInfoResponseDto>(sql, parameters);
+        return channelDetail;
     }
 
     public async Task<List<string>> GetMuteMembersAsync(string channelUuid)

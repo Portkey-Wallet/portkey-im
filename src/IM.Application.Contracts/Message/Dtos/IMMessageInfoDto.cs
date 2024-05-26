@@ -11,5 +11,6 @@ public class IMMessageInfoDto
     public string Type { get; set; }
     public long QuoteId { get; set; }
     public string MentionedUser { get; set; }
+    public string BlockRelationId { get; set; }
     public int Status { get; set; }
 }
