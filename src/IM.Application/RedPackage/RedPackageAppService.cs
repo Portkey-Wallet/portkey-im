@@ -2,14 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using IM.ChannelContact;
-using IM.ChannelContact.Dto;
+using IM.ChannelContactService.Provider;
 using IM.Common;
 using IM.Commons;
 using IM.Grains.Grain.RedPackage;
 using IM.Options;
 using IM.RedPackage.Dtos;
-using IM.RelationOne;
+using IM.RedPackage.Provider;
 using IM.User.Provider;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -30,22 +29,25 @@ public class RedPackageAppService : ImAppService, IRedPackageAppService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserProvider _userProvider;
     private readonly IClusterClient _clusterClient;
-    private readonly IChannelContactAppService _channelContactAppAppService;
+    private readonly IRedPackageProvider _packageProvider;
+    private readonly IChannelProvider _channelProvider;
 
     public RedPackageAppService(
         IHttpClientProvider httpClientProvider,
         IOptionsSnapshot<CAServerOptions> caServerOptions,
         IHttpContextAccessor httpContextAccessor,
-        IChannelContactAppService channelContactAppAppService,
         IUserProvider userProvider,
-        IClusterClient clusterClient)
+        IClusterClient clusterClient,
+        IRedPackageProvider packageProvider,
+        IChannelProvider channelProvider)
     {
         _httpClientProvider = httpClientProvider;
         _caServerOptions = caServerOptions.Value;
         _httpContextAccessor = httpContextAccessor;
         _userProvider = userProvider;
         _clusterClient = clusterClient;
-        _channelContactAppAppService = channelContactAppAppService;
+        _packageProvider = packageProvider;
+        _channelProvider = channelProvider;
     }
 
     public async Task<GenerateRedPackageOutputDto> GenerateRedPackageAsync(GenerateRedPackageInputDto redPackageInput)
@@ -132,10 +134,7 @@ public class RedPackageAppService : ImAppService, IRedPackageAppService
         var getDetailTask = _httpClientProvider.GetAsync<RedPackageDetailDto>(
             _caServerOptions.BaseUrl + CAServerConstant.GetRedPackageDetail +
             $"?id={input.Id}&skipCount={0}&maxResultCount={0}", headers);
-        var getChannelTask = _channelContactAppAppService.GetChannelDetailInfoAsync(new ChannelDetailInfoRequestDto()
-        {
-            ChannelUuid = input.ChannelUuid
-        });
+        var getChannelTask = _channelProvider.GetChannelInfoByUUIDAsync(input.ChannelUuid);
 
         await Task.WhenAll(getUserTask, getDetailTask, getChannelTask);
 
@@ -172,10 +171,10 @@ public class RedPackageAppService : ImAppService, IRedPackageAppService
         if (!string.Equals(channelDetail.Uuid, detail.ChannelUuid))
         {
             throw new UserFriendlyException("invalid channel uuid");
-            ;
         }
 
-        if (!CheckPermissions(channelDetail, detail))
+        var permissionCheck = await CheckPermissionsAsync(input.ChannelUuid, user.RelationId);
+        if (!permissionCheck)
         {
             throw new UserFriendlyException("User lacks permission to grab the red packet");
         }
@@ -189,30 +188,18 @@ public class RedPackageAppService : ImAppService, IRedPackageAppService
         return result;
     }
 
-    private bool CheckPermissions(ChannelDetailInfoResponseDto channelDetail, RedPackageDetailDto redPackageDetail)
+    private async Task<bool> CheckPermissionsAsync(string channelUuid, string relationId)
     {
-        if (channelDetail.Members.Any(x => x.UserId == CurrentUser.GetId()))
-        {
-            return true;
-        }
-
-        return false;
+        var memberInfo = await _packageProvider.GetMemberAsync(channelUuid, relationId);
+        return memberInfo != null;
     }
 
     private async Task<bool> CheckChannelAsync(string channelUuid)
     {
         try
         {
-            var result = await _channelContactAppAppService.GetChannelDetailInfoAsync(new ChannelDetailInfoRequestDto()
-            {
-                ChannelUuid = channelUuid
-            });
-            if (result.Uuid == channelUuid)
-            {
-                return true;
-            }
-
-            return false;
+            var result = await _channelProvider.GetChannelInfoByUUIDAsync(channelUuid);
+            return result != null && result.Uuid == channelUuid;
         }
         catch (Exception e)
         {
