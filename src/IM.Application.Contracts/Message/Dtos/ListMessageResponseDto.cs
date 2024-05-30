@@ -22,6 +22,8 @@ public class ListMessageResponseDto
     [CanBeNull] public ListMessageResponseDto Quote { get; set; }
     
     public PinMessageInfo PinInfo { get; set; }
+
+    public bool IsOwner { get; set; } = false;
 }
 
 public class PinMessageInfo

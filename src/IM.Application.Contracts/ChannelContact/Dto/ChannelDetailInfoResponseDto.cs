@@ -28,6 +28,8 @@ public class ChannelDetailInfoResponseDto
     public string ToRelationId { get; set; }
 
     public List<MemberInfo> Members { get;set; }
-    
-    
+
+    public string OwnerId { get; set; }
+
+
 }
