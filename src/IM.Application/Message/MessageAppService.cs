@@ -54,6 +54,7 @@ public class MessageAppService : ImAppService, IMessageAppService
     private readonly IGroupProvider _groupProvider;
     private readonly MessagePushOptions _messagePushOptions;
     private readonly IUserAppService _userAppService;
+    private readonly IChannelProvider _channelProvider;
 
 
 
@@ -70,7 +71,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         IOptionsSnapshot<PinMessageOptions> pinMessageOptions,
         INESTRepository<UserIndex, Guid> userRepository,
         IRefreshRepository<PinMessageIndex, string> pinMessageRepository,
-        IUserAppService userAppService)
+        IUserAppService userAppService, IChannelProvider channelProvider)
     {
         _proxyMessageAppService = proxyMessageAppService;
         _encryptionService = encryptionService;
@@ -87,6 +88,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         _groupProvider = groupProvider;
         _messagePushOptions = messagePushOptions.Value;
         _userAppService = userAppService;
+        _channelProvider = channelProvider;
     }
 
     public async Task<int> ReadMessageAsync(ReadMessageRequestDto input)
@@ -340,9 +342,15 @@ public class MessageAppService : ImAppService, IMessageAppService
         ListMessageRequestDto input)
     {
         var result = await _proxyMessageAppService.ListMessageAsync(input);
+        var channelDetail = await _channelProvider.GetChannelInfoByUUIDAsync(input.ChannelUuid);
         var transferMessages = new List<ListMessageResponseDto>();
         foreach (var listMessageResponseDto in result)
         {
+            if (listMessageResponseDto.From == channelDetail.OwnerId)
+            {
+                listMessageResponseDto.IsOwner = true;
+            }
+
             if (listMessageResponseDto.Type == RedPackageConstant.RedPackageCardType)
             {
                 await BuildRedPackageMessageAsync(listMessageResponseDto);
