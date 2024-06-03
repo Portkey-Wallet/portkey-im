@@ -171,7 +171,7 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
     {
         var parameters = new DynamicParameters();
         parameters.Add("@uuid", inputChannelUuid);
-        var sql = "select  uuid AS Uuid, type AS Type, from_relation_id AS FromRelationId, to_relation_id AS ToRelationId from im_channel where uuid = @uuid;";
+        var sql = "select  uuid AS Uuid, type AS Type, from_relation_id AS FromRelationId, to_relation_id AS ToRelationId,owner_id AS OwnerId from im_channel where uuid = @uuid;";
         var channelDetail = await _imRepository.QueryFirstOrDefaultAsync<ChannelDetailInfoResponseDto>(sql, parameters);
         return channelDetail;
     }
