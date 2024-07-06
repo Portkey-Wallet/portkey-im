@@ -3,6 +3,7 @@ using AElf.Indexing.Elasticsearch.Options;
 using GraphQL.Client.Abstractions;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
+using IM.Cache;
 using IM.Common;
 using IM.Commons;
 using IM.EntityEventHandler.Core;
@@ -10,6 +11,7 @@ using IM.EntityEventHandler.Core.Worker;
 using IM.Grains;
 using IM.MongoDB;
 using IM.Options;
+using IM.Redis;
 using Medallion.Threading;
 using Medallion.Threading.Redis;
 using Microsoft.Extensions.Caching.Distributed;
@@ -52,6 +54,7 @@ public class ImEntityEventHandlerModule : AbpModule
         AddProxyClient(context, configuration);
         ConfigureDistributedLocking(context, configuration);
         ConfigureGraphQl(context, configuration);
+        ConfigureRedisCacheProvider(context, configuration);
         context.Services.AddSingleton(o =>
         {
             return new ClientBuilder()
@@ -107,6 +110,16 @@ public class ImEntityEventHandlerModule : AbpModule
                 .Connect(configuration["Redis:Configuration"]);
             return new RedisDistributedSynchronizationProvider(connection.GetDatabase());
         });
+    }
+    
+    private void ConfigureRedisCacheProvider(
+        ServiceConfigurationContext context,
+        IConfiguration configuration)
+    {
+        var multiplexer = ConnectionMultiplexer
+            .Connect(configuration["Redis:Configuration"]);
+        context.Services.AddSingleton<IConnectionMultiplexer>(multiplexer);
+        context.Services.AddSingleton<ICacheProvider,RedisCacheProvider>();
     }
 
 

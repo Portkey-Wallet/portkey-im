@@ -20,6 +20,7 @@
     <ItemGroup>
         <ProjectReference Include="..\IM.EntityEventHandler.Core\IM.EntityEventHandler.Core.csproj" />
         <ProjectReference Include="..\IM.MongoDB\IM.MongoDB.csproj" />
+        <ProjectReference Include="..\IM.Redis\IM.Redis.csproj" />
     </ItemGroup>
 
     <ItemGroup>
