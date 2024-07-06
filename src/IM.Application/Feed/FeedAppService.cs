@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using AElf.Indexing.Elasticsearch;
 using IM.ChannelContact;
@@ -14,16 +13,16 @@ using IM.Grains.Grain.Feed;
 using IM.Grains.Grain.RedPackage;
 using IM.RedPackage;
 using IM.Grains.Grain.Mute;
-using IM.Message.Provider;
+using IM.Options;
 using IM.User.Provider;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 using Nest;
 using Newtonsoft.Json;
 using Orleans;
-using Orleans.Runtime;
 using Volo.Abp;
 using Volo.Abp.Auditing;
 using Volo.Abp.EventBus.Distributed;
@@ -42,18 +41,19 @@ public class FeedAppService : ImAppService, IFeedAppService
     private readonly ILogger<FeedAppService> _logger;
     private readonly IProxyChannelContactAppService _proxyChannelContactAppService;
     private readonly IProxyFeedAppService _proxyFeedAppService;
-    private readonly IRedPackageAppService _redPackageAppService;
-    private readonly IUnreadMessageUpdateProvider _unreadMessageUpdateProvider;
     private readonly IUserProvider _userProvider;
     private readonly IBlockUserProvider _blockUserProvider;
     private readonly IChannelProvider _channelProvider;
+    private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
+    private readonly IChannelContactAppService _channelContactAppAppService;
 
     public FeedAppService(IClusterClient clusterClient, IDistributedEventBus distributedEventBus,
         IHttpContextAccessor httpContextAccessor, IProxyFeedAppService proxyFeedAppService,
         IProxyChannelContactAppService proxyChannelContactAppService, ILogger<FeedAppService> logger,
-        IRedPackageAppService redPackageAppService,
-        INESTRepository<FeedInfoIndex, string> feedInfoIndex, IUnreadMessageUpdateProvider unreadMessageUpdateProvider,
-        IUserProvider userProvider, IBlockUserProvider blockUserProvider, IChannelProvider channelProvider)
+        INESTRepository<FeedInfoIndex, string> feedInfoIndex,
+        IUserProvider userProvider, IBlockUserProvider blockUserProvider, IChannelProvider channelProvider,
+        IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions,
+        IChannelContactAppService channelContactAppAppService)
     {
         _clusterClient = clusterClient;
         _distributedEventBus = distributedEventBus;
@@ -62,11 +62,11 @@ public class FeedAppService : ImAppService, IFeedAppService
         _proxyChannelContactAppService = proxyChannelContactAppService;
         _logger = logger;
         _feedInfoIndex = feedInfoIndex;
-        _redPackageAppService = redPackageAppService;
-        _unreadMessageUpdateProvider = unreadMessageUpdateProvider;
         _userProvider = userProvider;
         _blockUserProvider = blockUserProvider;
         _channelProvider = channelProvider;
+        _channelContactAppAppService = channelContactAppAppService;
+        _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
 
     public async Task PinFeedAsync(PinFeedRequestDto input)
@@ -130,8 +130,80 @@ public class FeedAppService : ImAppService, IFeedAppService
         [CanBeNull] IDictionary<string, string> headers)
     {
         var result = await FetchFeedListAsync(input, headers);
-
         var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
+        var botChannel = await _channelProvider.GetBotChannelUuidAsync(userIndex.RelationId,
+            _chatBotBasicInfoOptions.RelationId);
+        if (result.List.Count > 0)
+        {
+            if (botChannel == null)
+            {
+                var membersList = new List<string>
+                {
+                    userIndex.RelationId,
+                    _chatBotBasicInfoOptions.RelationId
+                };
+                //create 
+                var botChannelCreate = new CreateChannelRequestDto
+                {
+                    Name = _chatBotBasicInfoOptions.Name,
+                    ChannelIcon = _chatBotBasicInfoOptions.Avatar,
+                    Type = "P",
+                    Members = membersList
+                };
+                await _channelContactAppAppService.CreateChannelAsync(botChannelCreate);
+                var channelBot = await _channelProvider.GetBotChannelUuidAsync(userIndex.RelationId,
+                    _chatBotBasicInfoOptions.RelationId);
+                var item = new ListFeedResponseItemDto
+                {
+                    ChannelUuid = channelBot.Uuid,
+                    ChannelIcon = _chatBotBasicInfoOptions.Avatar,
+                    ChannelType = "P",
+                    ToRelationId = _chatBotBasicInfoOptions.RelationId,
+                    BotChannel = true
+                };
+                var index = 0;
+                for (var i = 0; i < result.List.Count; i++)
+                {
+                    if (result.List[i].Pin)
+                    {
+                        continue;
+                    }
+
+                    index = i + 1;
+                    break;
+                }
+
+                result.List.Insert(index, item);
+            }
+
+            var channelList = result.List.Select(t => t.ChannelUuid).ToList();
+            if (botChannel is { Status: 0 } && !channelList.Contains(botChannel.Uuid))
+            {
+                var item = new ListFeedResponseItemDto
+                {
+                    ChannelUuid = botChannel.Uuid,
+                    ChannelIcon = _chatBotBasicInfoOptions.Avatar,
+                    ChannelType = "P",
+                    ToRelationId = _chatBotBasicInfoOptions.RelationId,
+                    BotChannel = true
+                };
+                var index = 0;
+                for (var i = 0; i < result.List.Count; i++)
+                {
+                    if (result.List[i].Pin)
+                    {
+                        continue;
+                    }
+
+                    index = i + 1;
+                    break;
+                }
+
+                result.List.Insert(index, item);
+            }
+        }
+
+
         var blockUserList = await _blockUserProvider.GetBlockUserListAsync(userIndex.RelationId);
 
         var uuids = new List<string>();
@@ -142,9 +214,9 @@ public class FeedAppService : ImAppService, IFeedAppService
                     blockUserInfo.BlockRelationId);
             uuids.Add(channelUuid.Uuid);
         }
-        
+
         var resultList = new List<ListFeedResponseItemDto>();
-        
+
         foreach (var item in result.List)
         {
             if (!uuids.Contains(item.ChannelUuid))

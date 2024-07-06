@@ -20,4 +20,6 @@ public class SendMessageRequestDto
 
     public string From { get; set; }
 
+    public System.Enum ContactEnums { get; set; } = Chat.ContactEnums.Normal;
+
 }

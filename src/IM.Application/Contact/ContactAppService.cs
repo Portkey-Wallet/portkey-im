@@ -32,13 +32,14 @@ public class ContactAppService : ImAppService, IContactAppService
     private readonly CAServerOptions _caServerOptions;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserProvider _userProvider;
+    private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
 
     public ContactAppService(IHttpClientProvider httpClientProvider, IProxyContactAppService proxyContactAppService,
         IUserAppService userAppService, IOptions<VariablesOptions> variablesOptions,
         IOptions<CAServerOptions> caServerOptions,
         IHttpContextAccessor httpContextAccessor,
         IProxyUserAppService proxyUserAppService,
-        IUserProvider userProvider)
+        IUserProvider userProvider, IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions)
     {
         _httpClientProvider = httpClientProvider;
         _proxyContactAppService = proxyContactAppService;
@@ -48,6 +49,7 @@ public class ContactAppService : ImAppService, IContactAppService
         _httpContextAccessor = httpContextAccessor;
         _proxyUserAppService = proxyUserAppService;
         _userProvider = userProvider;
+        _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
 
     public async Task<ContactInfoDto> GetContactProfileAsync(ContactProfileRequestDto input)
@@ -63,14 +65,56 @@ public class ContactAppService : ImAppService, IContactAppService
         if (input.Id != Guid.Empty)
         {
             contactProfileDto = await GetContactByContactIdAsync(input.Id, headers);
+            if (contactProfileDto.ImInfo.RelationId == _chatBotBasicInfoOptions.RelationId)
+            {
+                return new ContactInfoDto
+                {
+                    Name = contactProfileDto.Name,
+                    Avatar = _chatBotBasicInfoOptions.Avatar,
+                    ImInfo = new ImInfoDto
+                    {
+                        Name = _chatBotBasicInfoOptions.Name,
+                        RelationId = _chatBotBasicInfoOptions.RelationId
+                    },
+                    ContactType = 1
+                };
+            }
         }
         else if (input.PortkeyId != Guid.Empty)
         {
             contactProfileDto = await GetContactByPortkeyIdAsync(input.PortkeyId, headers);
+            if (contactProfileDto.ImInfo.RelationId == _chatBotBasicInfoOptions.RelationId)
+            {
+                return new ContactInfoDto
+                {
+                    Name = contactProfileDto.Name,
+                    Avatar = _chatBotBasicInfoOptions.Avatar,
+                    ImInfo = new ImInfoDto
+                    {
+                        Name = _chatBotBasicInfoOptions.Name,
+                        RelationId = _chatBotBasicInfoOptions.RelationId
+                    },
+                    ContactType = 1
+                };
+            }
         }
         else
         {
             contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
+            if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
+            {
+                return new ContactInfoDto
+                {
+                    Name = contactProfileDto.Name,
+                    Avatar = _chatBotBasicInfoOptions.Avatar,
+                    ImInfo = new ImInfoDto
+                    {
+                        Name = _chatBotBasicInfoOptions.Name,
+                        RelationId = _chatBotBasicInfoOptions.RelationId
+                    },
+                    ContactType = 1
+                };
+            }
         }
 
         Logger.LogDebug(

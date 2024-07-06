@@ -31,5 +31,7 @@ public class ChannelDetailInfoResponseDto
 
     public string OwnerId { get; set; }
 
+    public int Status { get; set; }
+
 
 }

@@ -6,6 +6,7 @@ using GraphQL.Client.Serializer.Newtonsoft;
 using IM.Common;
 using IM.Commons;
 using IM.EntityEventHandler.Core;
+using IM.EntityEventHandler.Core.Worker;
 using IM.Grains;
 using IM.MongoDB;
 using IM.Options;
@@ -22,6 +23,7 @@ using StackExchange.Redis;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
+using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Caching;
 using Volo.Abp.Caching.StackExchangeRedis;
 using Volo.Abp.EventBus.RabbitMq;
@@ -73,6 +75,8 @@ public class ImEntityEventHandlerModule : AbpModule
 
         AddMessagePushService(context, configuration);
         Configure<MessagePushOptions>(configuration.GetSection("MessagePush"));
+        Configure<ChatBotBasicInfoOptions>(configuration.GetSection("ChatBotBasicInfo"));
+        Configure<ChatBotConfigOptions>(configuration.GetSection("ChatBotConfig"));
     }
 
     private void ConfigureGraphQl(ServiceConfigurationContext context,
@@ -126,6 +130,10 @@ public class ImEntityEventHandlerModule : AbpModule
     
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
+        var backgroundWorkerManger = context.ServiceProvider.GetRequiredService<IBackgroundWorkerManager>();
+        
+        //backgroundWorkerManger.AddAsync(context.ServiceProvider.GetService<InitReferralRankWorker>());
+        backgroundWorkerManger.AddAsync(context.ServiceProvider.GetService<AuthTokenRefreshWorker>());
         ConfigurationProvidersHelper.DisplayConfigurationProviders(context);
     }
 

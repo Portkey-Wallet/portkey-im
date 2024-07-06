@@ -17,6 +17,7 @@ public class ContactInfoDto
     public long ModificationTime { get; set; }
     public bool IsImputation { get; set; }
     public List<PermissionSetting> LoginAccounts { get; set; } = new();
+    public int ContactType { get; set; } = 0;
 
 }
 

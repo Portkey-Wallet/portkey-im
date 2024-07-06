@@ -27,4 +27,6 @@ public class ListFeedResponseItemDto
     public bool Pin { get; set; }
     public string PinAt { get; set; }
     public RedPackageMessage RedPackage { get; set; } = new();
+
+    public bool BotChannel { get; set; } = false;
 }

@@ -46,4 +46,6 @@ public static class CommonConstant
     public const int RegisterChainCount = 1;
     public const string NumberSign = "#";
     public const int AddressLengthCount = 35;
+
+    public const string ChatBotUrl = "https://api.openai.com/v1/chat/completions";
 }

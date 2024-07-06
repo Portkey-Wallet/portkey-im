@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using IM.Chat;
+using IM.ChatBot;
 using IM.Message;
 using IM.Message.Dtos;
 using IM.Message.Provider;
@@ -20,9 +22,10 @@ public class MessageController : ImController
     private readonly IMessageAppService _messageAppService;
     private readonly IMessageAppProvider _messageAppProvider;
     private readonly IBlockUserAppService _blockUserAppService;
-        
 
-    public MessageController(IMessageAppService messageAppService, IMessageAppProvider messageAppProvider, IBlockUserAppService blockUserAppService)
+
+    public MessageController(IMessageAppService messageAppService, IMessageAppProvider messageAppProvider,
+        IBlockUserAppService blockUserAppService)
     {
         _messageAppService = messageAppService;
         _messageAppProvider = messageAppProvider;
@@ -32,7 +35,6 @@ public class MessageController : ImController
     [Authorize, HttpPost("send")]
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)
     {
-
         var blockExists = await _blockUserAppService.GetBlockRelationAsync(input.ToRelationId);
         switch (blockExists)
         {
@@ -58,7 +60,7 @@ public class MessageController : ImController
 
     [HttpPost("hide")]
     public async Task HideMessageAsync(HideMessageRequestDto input)
-    { 
+    {
         await _messageAppService.HideMessageAsync(input);
     }
 
@@ -68,8 +70,8 @@ public class MessageController : ImController
         ListMessageRequestDto input)
     {
         var temList = await _messageAppService.ListMessageAsync(input);
-        
-        var result =  await _messageAppProvider.FilterHideMessage(temList);
+
+        var result = await _messageAppProvider.FilterHideMessage(temList);
 
         return result;
     }
@@ -87,10 +89,10 @@ public class MessageController : ImController
         return;
         //await _messageAppService.EventProcessAsync(input);
     }
-    
+
     [HttpPost("hideByLeader")]
     public async Task HideMessageByLeaderAsync(HideMessageByLeaderRequestDto input)
-    { 
+    {
         await _messageAppProvider.HideMessageByLeaderAsync(input);
     }
 }

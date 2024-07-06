@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AElf.Indexing.Elasticsearch;
+using IM.Cache;
 using IM.ChannelContactService.Provider;
 using IM.Chat;
+using IM.ChatBot;
+using IM.Common;
 using IM.Commons;
 using IM.Dtos;
 using IM.Entities.Es;
@@ -55,7 +58,12 @@ public class MessageAppService : ImAppService, IMessageAppService
     private readonly MessagePushOptions _messagePushOptions;
     private readonly IUserAppService _userAppService;
     private readonly IChannelProvider _channelProvider;
-
+    private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
+    private readonly IHttpClientProvider _httpClientProvider;
+    private readonly RelationOneOptions _relationOneOptions;
+    private readonly ICacheProvider _cacheProvider;
+    private readonly IChatBotAppService _chatBotAppService;
+    private const string RelationTokenCacheKey = "IM:RelationTokenKey:";
 
 
     public MessageAppService(IProxyMessageAppService proxyMessageAppService,
@@ -71,7 +79,9 @@ public class MessageAppService : ImAppService, IMessageAppService
         IOptionsSnapshot<PinMessageOptions> pinMessageOptions,
         INESTRepository<UserIndex, Guid> userRepository,
         IRefreshRepository<PinMessageIndex, string> pinMessageRepository,
-        IUserAppService userAppService, IChannelProvider channelProvider)
+        IUserAppService userAppService, IChannelProvider channelProvider,
+        IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions, IHttpClientProvider httpClientProvider,
+        ICacheProvider cacheProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions, IChatBotAppService chatBotAppService)
     {
         _proxyMessageAppService = proxyMessageAppService;
         _encryptionService = encryptionService;
@@ -89,6 +99,11 @@ public class MessageAppService : ImAppService, IMessageAppService
         _messagePushOptions = messagePushOptions.Value;
         _userAppService = userAppService;
         _channelProvider = channelProvider;
+        _httpClientProvider = httpClientProvider;
+        _cacheProvider = cacheProvider;
+        _chatBotAppService = chatBotAppService;
+        _relationOneOptions = relationOneOptions.Value;
+        _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
 
     public async Task<int> ReadMessageAsync(ReadMessageRequestDto input)
@@ -98,6 +113,27 @@ public class MessageAppService : ImAppService, IMessageAppService
 
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)
     {
+        if (input.ToRelationId == _chatBotBasicInfoOptions.RelationId)
+        {
+            await _proxyMessageAppService.SendMessageAsync(input);
+            var response = await _chatBotAppService.SendMessageToChatBotAsync(input.Content, input.From);
+            var message = new SendMessageRequestDto
+            {
+                ToRelationId = input.From,
+                ChannelUuid = input.ChannelUuid,
+                Content = response,
+                From = input.ToRelationId,
+                Type = input.Type
+            };
+            await SendBotMessageAsync(message);
+            return new SendMessageResponseDto
+            {
+                ChannelUuid = input.ChannelUuid,
+                ChatBotResponse = response
+            };
+        }
+
+
         var responseDto = await _proxyMessageAppService.SendMessageAsync(input);
         if (responseDto == null || responseDto.ChannelUuid.IsNullOrEmpty())
         {
@@ -596,5 +632,25 @@ public class MessageAppService : ImAppService, IMessageAppService
             _logger.LogError(e, "BuildTransferMessage error,Content:{Content}", message.Content);
             return null;
         }
+    }
+
+    private async Task SendBotMessageAsync(SendMessageRequestDto message)
+    {
+        var headers = new Dictionary<string, string>();
+        var token = await _cacheProvider.Get(RelationTokenCacheKey);
+        headers.Add(RelationOneConstant.AuthHeader, token);
+        await _httpClientProvider.PostAsync<SendMessageResponseDto>(GetUrl("api/v1/message/send"), message,
+            headers);
+    }
+
+
+    private string GetUrl(string url)
+    {
+        if (_relationOneOptions == null || _relationOneOptions.UrlPrefix.IsNullOrWhiteSpace())
+        {
+            return url;
+        }
+
+        return $"{_relationOneOptions.UrlPrefix.TrimEnd('/')}/{url}";
     }
 }

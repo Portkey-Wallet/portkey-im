@@ -7,6 +7,8 @@ using IM.ChannelContactService.Provider;
 using IM.Commons;
 using Microsoft.AspNetCore.Http;
 using IM.Message.Provider;
+using IM.Options;
+using Microsoft.Extensions.Options;
 using Volo.Abp;
 using Volo.Abp.Auditing;
 using Volo.Abp.Users;
@@ -21,15 +23,18 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
     private readonly IGroupProvider _groupProvider;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUnreadMessageUpdateProvider _unreadMessageUpdateProvider;
+    private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
 
     public ChannelContactAppService(IProxyChannelContactAppService proxyChannelContactAppService,
         IGroupProvider groupProvider, IHttpContextAccessor httpContextAccessor,
-        IUnreadMessageUpdateProvider unreadMessageUpdateProvider)
+        IUnreadMessageUpdateProvider unreadMessageUpdateProvider,
+        IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions)
     {
         _proxyChannelContactAppService = proxyChannelContactAppService;
         _groupProvider = groupProvider;
         _httpContextAccessor = httpContextAccessor;
         _unreadMessageUpdateProvider = unreadMessageUpdateProvider;
+        _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
 
 
@@ -91,6 +96,11 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
 
     public async Task<string> ChannelOwnerTransferAsync(OwnerTransferRequestDto ownerTransferRequestDto)
     {
+        if (ownerTransferRequestDto.RelationId == _chatBotBasicInfoOptions.RelationId)
+        {
+            return "";
+        }
+
         return await _proxyChannelContactAppService.ChannelOwnerTransferAsync(ownerTransferRequestDto);
     }
 
