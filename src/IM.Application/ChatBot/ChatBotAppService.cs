@@ -75,6 +75,13 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
     public async Task RefreshBotTokenAsync()
     {
+        var value = await _cacheProvider.Get(RelationTokenCacheKey);
+        if (value.HasValue)
+        {
+            _logger.LogDebug("token has been init.");
+            return;
+        }
+
         try
         {
             var message = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
