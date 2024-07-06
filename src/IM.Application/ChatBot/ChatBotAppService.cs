@@ -85,7 +85,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             {
                 Address = _chatBotBasicInfoOptions.Address,
                 CaHash = _chatBotBasicInfoOptions.CaHash,
-                Message = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+                Message = message,
                 Signature = signature.ToHex()
             };
             var result = await _userAppService.GetSignatureAsync(signatureRequest);
@@ -108,6 +108,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
     public async Task InitBotUsageRankAsync()
     {
         var value = await _cacheProvider.Get(InitBotUsageRankCacheKey);
+        
         if (value.HasValue)
         {
             return;
