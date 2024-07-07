@@ -134,12 +134,12 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
     private async Task<string> GetPortkeyToken()
     {
-        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var data = Encoding.UTF8.GetBytes(_chatBotBasicInfoOptions.Address + "-" + now).ComputeHash();
-        var signature =
-            AElf.Cryptography.CryptoHelper.SignWithPrivateKey(
-                ByteArrayHelper.HexStringToByteArray(_chatBotBasicInfoOptions.BotKey),
-                data);
+        // var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        // var data = Encoding.UTF8.GetBytes(_chatBotBasicInfoOptions.Address + "-" + now).ComputeHash();
+        // var signature =
+        //     AElf.Cryptography.CryptoHelper.SignWithPrivateKey(
+        //         ByteArrayHelper.HexStringToByteArray(_chatBotBasicInfoOptions.BotKey),
+        //         data);
         
         var formContent = new FormUrlEncodedContent(new[]
         {
@@ -159,8 +159,6 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         var client = _httpClientFactory.CreateClient();
         var response =
             await client.PostAsync("https://auth-aa-portkey-test.portkey.finance/connect/token", formContent);
-        
-        
         
         // var dict = new Dictionary<string, string>();
         // dict.Add("ca_hash", _chatBotBasicInfoOptions.CaHash);
