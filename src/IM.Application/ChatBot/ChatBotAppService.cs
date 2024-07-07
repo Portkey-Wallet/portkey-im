@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using AElf;
@@ -34,16 +35,18 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
     private readonly ChatBotConfigOptions _chatBotConfigOptions;
     private readonly ILogger<ChatBotAppService> _logger;
     private readonly IHttpClientProvider _httpClientProvider;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public ChatBotAppService(ICacheProvider cacheProvider, IUserAppService userAppService,
         IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions,
         IOptionsSnapshot<ChatBotConfigOptions> chatBotConfigOptions, ILogger<ChatBotAppService> logger,
-        IHttpClientProvider httpClientProvider)
+        IHttpClientProvider httpClientProvider, IHttpClientFactory httpClientFactory)
     {
         _cacheProvider = cacheProvider;
         _userAppService = userAppService;
         _logger = logger;
         _httpClientProvider = httpClientProvider;
+        _httpClientFactory = httpClientFactory;
         _chatBotConfigOptions = chatBotConfigOptions.Value;
         _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
@@ -152,15 +155,20 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             signature = signature.ToHex(),
             timestamp = now
         };
-        var header = new Dictionary<string, string>()
-        {
-            { "Content-Type", "application/x-www-form-urlencoded" }
-        };
-        var response = await _httpClientProvider.PostAsync<AuthResponseDto>(
-            "https://auth-aa-portkey-test.portkey.finance/connect/token",
-            tokenRequest,header);
+        
+        var postContent = new StringContent(JsonConvert.SerializeObject(tokenRequest), Encoding.UTF8, "application/x-www-form-urlencoded");
+        
+        var client = _httpClientFactory.CreateClient();
+        var response = await client.PostAsync("https://auth-aa-portkey-test.portkey.finance/connect/token", postContent);
+
+        
+        
+        
+        // var response = await _httpClientProvider.PostAsync<AuthResponseDto>(
+        //     "https://auth-aa-portkey-test.portkey.finance/connect/token",
+        //     tokenRequest, header);
         _logger.LogDebug("GetToken is {token}", JsonConvert.SerializeObject(response));
-        return response.AccessToken;
+        return response.ToString();
     }
 
     public async Task InitBotUsageRankAsync()
