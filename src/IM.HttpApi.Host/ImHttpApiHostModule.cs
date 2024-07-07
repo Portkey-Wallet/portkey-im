@@ -4,6 +4,7 @@ using AutoResponseWrapper;
 using GraphQL.Client.Abstractions;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
+using IM.Cache;
 using IM.Common;
 using IM.Commons;
 using IM.Grains;
@@ -78,6 +79,7 @@ public class ImHttpApiHostModule : AbpModule
 
         AddProxyClient(context, configuration);
         ConfigureGraphQl(context, configuration);
+        ConfigureRedisCacheProvider(context, configuration);
     }
 
     private void ConfigureCache(IConfiguration configuration)
@@ -143,6 +145,17 @@ public class ImHttpApiHostModule : AbpModule
             }
         );
     }
+
+    private void ConfigureRedisCacheProvider(
+        ServiceConfigurationContext context,
+        IConfiguration configuration)
+    {
+        var multiplexer = ConnectionMultiplexer
+            .Connect(configuration["Redis:Configuration"]);
+        context.Services.AddSingleton<IConnectionMultiplexer>(multiplexer);
+        context.Services.AddSingleton<ICacheProvider, RedisCacheProvider>();
+    }
+
 
     private static void ConfigureOrleans(ServiceConfigurationContext context, IConfiguration configuration)
     {
@@ -269,7 +282,7 @@ public class ImHttpApiHostModule : AbpModule
         app.UseConfiguredEndpoints();
 
         StartOrleans(context.ServiceProvider);
-        
+
         ConfigurationProvidersHelper.DisplayConfigurationProviders(context);
     }
 
