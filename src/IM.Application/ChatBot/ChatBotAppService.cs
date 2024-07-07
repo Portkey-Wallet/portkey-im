@@ -154,7 +154,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         };
         var header = new Dictionary<string, string>()
         {
-            { "content-type", "application/x-www-form-urlencoded" }
+            { "Content-Type", "application/x-www-form-urlencoded" }
         };
         var response = await _httpClientProvider.PostAsync<AuthResponseDto>(
             "https://auth-aa-portkey-test.portkey.finance/connect/token",
