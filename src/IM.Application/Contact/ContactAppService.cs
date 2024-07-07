@@ -69,12 +69,14 @@ public class ContactAppService : ImAppService, IContactAppService
             {
                 return new ContactInfoDto
                 {
+                    Id = contactProfileDto.Id.ToString(),
                     Name = contactProfileDto.Name,
                     Avatar = _chatBotBasicInfoOptions.Avatar,
                     ImInfo = new ImInfoDto
                     {
                         Name = _chatBotBasicInfoOptions.Name,
-                        RelationId = _chatBotBasicInfoOptions.RelationId
+                        RelationId = _chatBotBasicInfoOptions.RelationId,
+                        PortkeyId = contactProfileDto.ImInfo.PortkeyId
                     },
                     ContactType = 1
                 };
@@ -87,12 +89,14 @@ public class ContactAppService : ImAppService, IContactAppService
             {
                 return new ContactInfoDto
                 {
+                    Id = contactProfileDto.Id.ToString(),
                     Name = contactProfileDto.Name,
                     Avatar = _chatBotBasicInfoOptions.Avatar,
                     ImInfo = new ImInfoDto
                     {
                         Name = _chatBotBasicInfoOptions.Name,
-                        RelationId = _chatBotBasicInfoOptions.RelationId
+                        RelationId = _chatBotBasicInfoOptions.RelationId,
+                        PortkeyId = contactProfileDto.ImInfo.PortkeyId
                     },
                     ContactType = 1
                 };
@@ -105,12 +109,14 @@ public class ContactAppService : ImAppService, IContactAppService
             {
                 return new ContactInfoDto
                 {
+                    Id = contactProfileDto.Id.ToString(),
                     Name = contactProfileDto.Name,
                     Avatar = _chatBotBasicInfoOptions.Avatar,
                     ImInfo = new ImInfoDto
                     {
-                        Name = _chatBotBasicInfoOptions.Name,
-                        RelationId = _chatBotBasicInfoOptions.RelationId
+                        Name = contactProfileDto.ImInfo.Name,
+                        RelationId = _chatBotBasicInfoOptions.RelationId,
+                        PortkeyId = contactProfileDto.ImInfo.PortkeyId
                     },
                     ContactType = 1
                 };

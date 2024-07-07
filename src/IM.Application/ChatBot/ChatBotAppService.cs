@@ -81,7 +81,6 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             _logger.LogDebug("token has been init.");
             return;
         }
-
         try
         {
             var message = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
