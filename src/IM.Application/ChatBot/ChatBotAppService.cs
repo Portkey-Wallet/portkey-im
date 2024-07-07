@@ -163,16 +163,17 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         
         
         var dict = new Dictionary<string, string>();
-        dict.Add("ca_hash", _chatBotBasicInfoOptions.CaHash);
+        //dict.Add("ca_hash", _chatBotBasicInfoOptions.CaHash);
+        dict.Add("ca_hash", "5ebe0ed9484193ede75adafd7c57480e71c44656448d27b6252b12a295387e96");
         dict.Add("chain_id", "AELF");
         dict.Add("chainId", "AELF");
         dict.Add("client_id", "CAServer_App");
         dict.Add("scope", "CAServer");
         dict.Add("grant_type", "signature");
         dict.Add("pubkey",
-                     "04ef8c06f061c7e80b5b1d7901212c836c78608ca40afa9eecb373c9c51fff87ee79b208cf3cc0b46f1a991470c071dcdacba3a82222245100b0bba56fcf210750");
-        dict.Add("signature", signature.ToHex());
-        dict.Add("timestamp", now.ToString());
+                     "04e9bbac772673ff306b4ea16ad22697ae7d195b01477b7452ab5388acf7e8ef61d1b8f5f26fd50f4692587bf03a6c7414aba6981bbb8127244a6a4167685f3752");
+        dict.Add("signature", "15549a229ec929528caa381a5d58e1d199c481c4e4b48b0875f637da1eaead3c1681f64e4526eb5449483222ae7c1b1a893b3db5af2374b47aeffa5a035932ee00");
+        dict.Add("timestamp", "1720323332297");
         
         using var client = new HttpClient();
         using var req = new HttpRequestMessage(HttpMethod.Post, "https://auth-aa-portkey-test.portkey.finance/connect/token") { Content = new FormUrlEncodedContent(dict) };
