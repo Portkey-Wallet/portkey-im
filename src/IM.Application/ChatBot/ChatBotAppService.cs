@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AElf;
+using IM.Auth.Dtos;
 using IM.Cache;
 using IM.Common;
 using IM.Commons;
@@ -88,8 +89,11 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
         try
         {
-            var pToken = GetPortkeyToken();
-
+            var pToken = await GetPortkeyToken();
+            var headers = new Dictionary<string, string>
+            {
+                { CommonConstant.AuthHeader, pToken }
+            };
 
             var message = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
             var data = Encoding.UTF8.GetBytes(message).ComputeHash();
@@ -104,11 +108,15 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
                 Message = message,
                 Signature = signature.ToHex()
             };
-            var result = await _userAppService.GetSignatureAsync(signatureRequest);
-            _logger.LogDebug("Portkey token is {token}", result.Token);
+
+            var response = await _httpClientProvider.PostAsync<SignatureDto>(
+                ImUrlConstant.AddressToken, signatureRequest, headers);
+
+            // var result = await _userAppService.GetSignatureAsync(signatureRequest);
+            _logger.LogDebug("Portkey token is {token}", response.Token);
             var authToken = new AuthRequestDto
             {
-                AddressAuthToken = result.Token
+                AddressAuthToken = response.Token
             };
             var token = await _userAppService.GetAuthTokenAsync(authToken);
             _logger.LogDebug("Relation one Token is {token} ", token.Token);
@@ -123,7 +131,33 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
     private async Task<string> GetPortkeyToken()
     {
-        return "";
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var data = Encoding.UTF8.GetBytes(_chatBotBasicInfoOptions.Address + "-" + now).ComputeHash();
+        var signature =
+            AElf.Cryptography.CryptoHelper.SignWithPrivateKey(
+                ByteArrayHelper.HexStringToByteArray(_chatBotBasicInfoOptions.BotKey),
+                data);
+
+        var tokenRequest = new AuthTokenRequestDto
+        {
+            ca_hash = _chatBotBasicInfoOptions.CaHash,
+            chain_id = "AELF",
+            chainId = "AELF",
+            client_id = "CAServer_App",
+            scope = "CAServer",
+            grant_type = "signature",
+            //pubkey = _chatBotBasicInfoOptions.Pubkey,
+            pubkey =
+                "04ef8c06f061c7e80b5b1d7901212c836c78608ca40afa9eecb373c9c51fff87ee79b208cf3cc0b46f1a991470c071dcdacba3a82222245100b0bba56fcf210750",
+            signature = signature.ToHex(),
+            timestamp = now
+        };
+
+        var response = await _httpClientProvider.PostAsync<AuthResponseDto>(
+            "https://auth-aa-portkey-test.portkey.finance/connect/token",
+            tokenRequest);
+        _logger.LogDebug("GetToken is {token}", JsonConvert.SerializeObject(response));
+        return response.AccessToken;
     }
 
     public async Task InitBotUsageRankAsync()
@@ -137,7 +171,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         }
 
         var botKeys = _chatBotConfigOptions.BotKeys;
-        _logger.LogDebug("Keys length is {length}",botKeys.Count);
+        _logger.LogDebug("Keys length is {length}", botKeys.Count);
         foreach (var key in botKeys)
         {
             _logger.LogDebug("BotKey is {key}", key);

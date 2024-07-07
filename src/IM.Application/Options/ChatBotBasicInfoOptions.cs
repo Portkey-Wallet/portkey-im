@@ -14,5 +14,7 @@ public class ChatBotBasicInfoOptions
 
     public string BotKey { get; set; }
 
+    public string Pubkey { get; set; }
+
 
 }
