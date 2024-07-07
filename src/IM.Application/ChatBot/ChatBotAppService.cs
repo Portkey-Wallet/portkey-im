@@ -156,14 +156,28 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             timestamp = now
         };
         
-        var postContent = new StringContent(JsonConvert.SerializeObject(tokenRequest), Encoding.UTF8, "application/x-www-form-urlencoded");
-        
-        var client = _httpClientFactory.CreateClient();
-        var response = await client.PostAsync("https://auth-aa-portkey-test.portkey.finance/connect/token", postContent);
+        var formContent = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("ca_hash", _chatBotBasicInfoOptions.CaHash),
+            new KeyValuePair<string, string>("chain_id", "AELF"),
+            new KeyValuePair<string, string>("chainId", "AELF"),
+            new KeyValuePair<string, string>("client_id", "CAServer_App"),
+            new KeyValuePair<string, string>("scope", "CAServer"),
+            new KeyValuePair<string, string>("grant_type", "signature"),
+            new KeyValuePair<string, string>("pubkey",
+                "04ef8c06f061c7e80b5b1d7901212c836c78608ca40afa9eecb373c9c51fff87ee79b208cf3cc0b46f1a991470c071dcdacba3a82222245100b0bba56fcf210750"),
+            new KeyValuePair<string, string>("signature", signature.ToHex()),
+            new KeyValuePair<string, string>("signature", now.ToString())
 
-        
-        
-        
+        });
+
+        //var postContent = new StringContent(JsonConvert.SerializeObject(tokenRequest), Encoding.UTF8, "application/x-www-form-urlencoded");
+
+        var client = _httpClientFactory.CreateClient();
+        var response =
+            await client.PostAsync("https://auth-aa-portkey-test.portkey.finance/connect/token", formContent);
+
+
         // var response = await _httpClientProvider.PostAsync<AuthResponseDto>(
         //     "https://auth-aa-portkey-test.portkey.finance/connect/token",
         //     tokenRequest, header);
