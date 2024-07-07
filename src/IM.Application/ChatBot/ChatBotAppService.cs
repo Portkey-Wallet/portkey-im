@@ -36,7 +36,8 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
     public ChatBotAppService(ICacheProvider cacheProvider, IUserAppService userAppService,
         IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions,
-        IOptionsSnapshot<ChatBotConfigOptions> chatBotConfigOptions, ILogger<ChatBotAppService> logger, IHttpClientProvider httpClientProvider)
+        IOptionsSnapshot<ChatBotConfigOptions> chatBotConfigOptions, ILogger<ChatBotAppService> logger,
+        IHttpClientProvider httpClientProvider)
     {
         _cacheProvider = cacheProvider;
         _userAppService = userAppService;
@@ -84,18 +85,18 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             _logger.LogDebug("token has been init.");
             return;
         }
+
         try
         {
-
             var pToken = GetPortkeyToken();
-            
-            
-            
-            
+
+
             var message = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
             var data = Encoding.UTF8.GetBytes(message).ComputeHash();
             var privateKey = _chatBotBasicInfoOptions.BotKey;
-            var signature = AElf.Cryptography.CryptoHelper.SignWithPrivateKey(ByteArrayHelper.HexStringToByteArray(privateKey), data);
+            var signature =
+                AElf.Cryptography.CryptoHelper.SignWithPrivateKey(ByteArrayHelper.HexStringToByteArray(privateKey),
+                    data);
             var signatureRequest = new SignatureRequestDto
             {
                 Address = _chatBotBasicInfoOptions.Address,
@@ -104,13 +105,13 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
                 Signature = signature.ToHex()
             };
             var result = await _userAppService.GetSignatureAsync(signatureRequest);
-            _logger.LogDebug("Portkey token is {token}",result.Token);
+            _logger.LogDebug("Portkey token is {token}", result.Token);
             var authToken = new AuthRequestDto
             {
                 AddressAuthToken = result.Token
             };
             var token = await _userAppService.GetAuthTokenAsync(authToken);
-            _logger.LogDebug("Relation one Token is {token} ",token.Token);
+            _logger.LogDebug("Relation one Token is {token} ", token.Token);
             var expire = TimeSpan.FromHours(24);
             await _cacheProvider.Set(RelationTokenCacheKey, token.Token, expire);
         }
@@ -122,24 +123,26 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
     private async Task<string> GetPortkeyToken()
     {
-        
-       
         return "";
-        
-        
-        
     }
 
     public async Task InitBotUsageRankAsync()
     {
         var value = await _cacheProvider.Get(InitBotUsageRankCacheKey);
-        
+
         if (value.HasValue)
         {
-            return;
+            _logger.LogDebug("Rank has been init.{value}", value.ToString());
+            //return;
         }
 
         var botKeys = _chatBotConfigOptions.BotKeys;
+        _logger.LogDebug("Keys length is {length}",botKeys.Count);
+        foreach (var key in botKeys)
+        {
+            _logger.LogDebug("BotKey is {key}", key);
+        }
+
         foreach (var key in botKeys)
         {
             await _cacheProvider.AddScoreAsync(BotUsageRankKey, key, 0);
