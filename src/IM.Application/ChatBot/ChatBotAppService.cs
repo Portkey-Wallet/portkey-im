@@ -168,7 +168,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         dict.Add("scope", "CAServer");
         dict.Add("grant_type", "signature");
         dict.Add("pubkey",
-                     "04e9bbac772673ff306b4ea16ad22697ae7d195b01477b7452ab5388acf7e8ef61d1b8f5f26fd50f4692587bf03a6c7414aba6981bbb8127244a6a4167685f3752");
+                     "04ef8c06f061c7e80b5b1d7901212c836c78608ca40afa9eecb373c9c51fff87ee79b208cf3cc0b46f1a991470c071dcdacba3a82222245100b0bba56fcf210750");
         dict.Add("signature", signature.ToHex());
         dict.Add("timestamp", now.ToString());
         
