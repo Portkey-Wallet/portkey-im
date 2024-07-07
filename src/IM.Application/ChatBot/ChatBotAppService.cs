@@ -30,6 +30,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
     private const string UserBotCacheKey = "IM:UserBotKey:";
     private const string RelationTokenCacheKey = "IM:RelationTokenKey:";
     private const string InitBotUsageRankCacheKey = "IM:InitBotUsageRank:";
+    private const string PortkeyTokenCacheKey = "PortKey:AuthToken:";
     private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
     private readonly ChatBotConfigOptions _chatBotConfigOptions;
     private readonly ILogger<ChatBotAppService> _logger;
@@ -88,7 +89,6 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             _logger.LogDebug("token has been init.");
             return;
         }
-
         try
         {
             var pToken = await GetPortkeyToken();
@@ -111,7 +111,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
                 Signature = signature.ToHex()
             };
 
-            _logger.LogDebug("Request to im url is {url}",GetUrl(ImUrlConstant.AddressToken));
+            _logger.LogDebug("Request to im url is {url}", GetUrl(ImUrlConstant.AddressToken));
             var response = await _httpClientProvider.PostAsync<SignatureDto>(
                 GetUrl(ImUrlConstant.AddressToken), signatureRequest, headers);
 
@@ -134,13 +134,20 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
     private async Task<string> GetPortkeyToken()
     {
+        var cacheToken = await _cacheProvider.Get(PortkeyTokenCacheKey);
+        if (cacheToken.HasValue)
+        {
+            _logger.LogDebug("Token is exist,{token}", cacheToken);
+            return cacheToken;
+        }
+
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var data = Encoding.UTF8.GetBytes(_chatBotBasicInfoOptions.Address + "-" + now).ComputeHash();
         var signature =
             AElf.Cryptography.CryptoHelper.SignWithPrivateKey(
                 ByteArrayHelper.HexStringToByteArray(_chatBotBasicInfoOptions.BotKey),
                 data);
-        
+
         var dict = new Dictionary<string, string>();
         dict.Add("ca_hash", _chatBotBasicInfoOptions.CaHash);
         dict.Add("chain_id", "AELF");
@@ -149,17 +156,21 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         dict.Add("scope", "CAServer");
         dict.Add("grant_type", "signature");
         dict.Add("pubkey",
-                     "04ef8c06f061c7e80b5b1d7901212c836c78608ca40afa9eecb373c9c51fff87ee79b208cf3cc0b46f1a991470c071dcdacba3a82222245100b0bba56fcf210750");
+            "04ef8c06f061c7e80b5b1d7901212c836c78608ca40afa9eecb373c9c51fff87ee79b208cf3cc0b46f1a991470c071dcdacba3a82222245100b0bba56fcf210750");
         dict.Add("signature", signature.ToHex());
         dict.Add("timestamp", now.ToString());
-        
+
         using var client = new HttpClient();
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://auth-aa-portkey-test.portkey.finance/connect/token") { Content = new FormUrlEncodedContent(dict) };
+        using var req =
+            new HttpRequestMessage(HttpMethod.Post, "https://auth-aa-portkey-test.portkey.finance/connect/token")
+                { Content = new FormUrlEncodedContent(dict) };
         using var res = await client.SendAsync(req);
-     
+
         var stringAsync = await res.Content.ReadAsStringAsync();
         var authTokenDto = JsonConvert.DeserializeObject<AuthResponseDto>(stringAsync);
         _logger.LogDebug("GetToken is {token}", JsonConvert.SerializeObject(authTokenDto));
+        var expire = TimeSpan.FromDays(1);
+        await _cacheProvider.Set(PortkeyTokenCacheKey, authTokenDto.AccessToken, expire);
         return authTokenDto.AccessToken;
     }
 
@@ -202,11 +213,9 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         await _cacheProvider.Set(UserBotCacheKey + from, rank.First().Element, expire);
         return rank.First().Element;
     }
-    
+
     private string GetUrl(string url)
     {
         return $"{_relationOneOptions.BaseUrl.TrimEnd('/')}/{url}";
     }
-    
-    
 }
