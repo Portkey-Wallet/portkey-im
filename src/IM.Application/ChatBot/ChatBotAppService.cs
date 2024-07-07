@@ -140,49 +140,46 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             AElf.Cryptography.CryptoHelper.SignWithPrivateKey(
                 ByteArrayHelper.HexStringToByteArray(_chatBotBasicInfoOptions.BotKey),
                 data);
-
-        var tokenRequest = new AuthTokenRequestDto
-        {
-            ca_hash = _chatBotBasicInfoOptions.CaHash,
-            chain_id = "AELF",
-            chainId = "AELF",
-            client_id = "CAServer_App",
-            scope = "CAServer",
-            grant_type = "signature",
-            //pubkey = _chatBotBasicInfoOptions.Pubkey,
-            pubkey =
-                "04ef8c06f061c7e80b5b1d7901212c836c78608ca40afa9eecb373c9c51fff87ee79b208cf3cc0b46f1a991470c071dcdacba3a82222245100b0bba56fcf210750",
-            signature = signature.ToHex(),
-            timestamp = now
-        };
         
-        var formContent = new FormUrlEncodedContent(new[]
-        {
-            new KeyValuePair<string, string>("ca_hash", _chatBotBasicInfoOptions.CaHash),
-            new KeyValuePair<string, string>("chain_id", "AELF"),
-            new KeyValuePair<string, string>("chainId", "AELF"),
-            new KeyValuePair<string, string>("client_id", "CAServer_App"),
-            new KeyValuePair<string, string>("scope", "CAServer"),
-            new KeyValuePair<string, string>("grant_type", "signature"),
-            new KeyValuePair<string, string>("pubkey",
-                "04ef8c06f061c7e80b5b1d7901212c836c78608ca40afa9eecb373c9c51fff87ee79b208cf3cc0b46f1a991470c071dcdacba3a82222245100b0bba56fcf210750"),
-            new KeyValuePair<string, string>("signature", signature.ToHex()),
-            new KeyValuePair<string, string>("signature", now.ToString())
-
-        });
-
-        //var postContent = new StringContent(JsonConvert.SerializeObject(tokenRequest), Encoding.UTF8, "application/x-www-form-urlencoded");
-
-        var client = _httpClientFactory.CreateClient();
-        var response =
-            await client.PostAsync("https://auth-aa-portkey-test.portkey.finance/connect/token", formContent);
-
-
-        // var response = await _httpClientProvider.PostAsync<AuthResponseDto>(
-        //     "https://auth-aa-portkey-test.portkey.finance/connect/token",
-        //     tokenRequest, header);
-        _logger.LogDebug("GetToken is {token}", JsonConvert.SerializeObject(response));
-        return response.ToString();
+        // var formContent = new FormUrlEncodedContent(new[]
+        // {
+        //     new KeyValuePair<string, string>("ca_hash", _chatBotBasicInfoOptions.CaHash),
+        //     new KeyValuePair<string, string>("chain_id", "AELF"),
+        //     new KeyValuePair<string, string>("chainId", "AELF"),
+        //     new KeyValuePair<string, string>("client_id", "CAServer_App"),
+        //     new KeyValuePair<string, string>("scope", "CAServer"),
+        //     new KeyValuePair<string, string>("grant_type", "signature"),
+        //     new KeyValuePair<string, string>("pubkey",
+        //         "04ef8c06f061c7e80b5b1d7901212c836c78608ca40afa9eecb373c9c51fff87ee79b208cf3cc0b46f1a991470c071dcdacba3a82222245100b0bba56fcf210750"),
+        //     new KeyValuePair<string, string>("signature", signature.ToHex()),
+        //     new KeyValuePair<string, string>("signature", now.ToString())
+        //
+        // });
+        //
+        // var client = _httpClientFactory.CreateClient();
+        // var response =
+        //     await client.PostAsync("https://auth-aa-portkey-test.portkey.finance/connect/token", formContent);
+        
+        
+        
+        var dict = new Dictionary<string, string>();
+        dict.Add("ca_hash", _chatBotBasicInfoOptions.CaHash);
+        dict.Add("chain_id", "AELF");
+        dict.Add("chainId", "AELF");
+        dict.Add("client_id", "CAServer_App");
+        dict.Add("scope", "CAServer");
+        dict.Add("grant_type", "signature");
+        dict.Add("pubkey",
+                     "04ef8c06f061c7e80b5b1d7901212c836c78608ca40afa9eecb373c9c51fff87ee79b208cf3cc0b46f1a991470c071dcdacba3a82222245100b0bba56fcf210750");
+        dict.Add("signature", signature.ToHex());
+        dict.Add("timestamp", now.ToString());
+        
+        using var client = new HttpClient();
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://auth-aa-portkey-test.portkey.finance/connect/token") { Content = new FormUrlEncodedContent(dict) };
+        using var res = await client.SendAsync(req);
+     
+        _logger.LogDebug("GetToken is {token}", JsonConvert.SerializeObject(res));
+        return res.ToString();
     }
 
     public async Task InitBotUsageRankAsync()
