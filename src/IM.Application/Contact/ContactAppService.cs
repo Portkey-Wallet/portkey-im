@@ -418,7 +418,13 @@ public class ContactAppService : ImAppService, IContactAppService
 
     private async Task<ContactProfileDto> GetByRelationIdAsync(string contactId)
     {
-        var headers = BuildReqHeader();
+        
+        var token = _httpContextAccessor.HttpContext?.Request.Headers[CommonConstant.AuthHeader];
+        var headers = new Dictionary<string, string>
+        {
+            { CommonConstant.AuthHeader, token }
+        };
+
         var param = new ContactProfileRequestDto()
         {
             RelationId = contactId,
