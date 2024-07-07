@@ -18,7 +18,6 @@ using Newtonsoft.Json;
 using RestSharp;
 using Volo.Abp;
 using Volo.Abp.Auditing;
-using ILogger = DnsClient.Internal.ILogger;
 
 namespace IM.ChatBot;
 
@@ -112,6 +111,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
                 Signature = signature.ToHex()
             };
 
+            _logger.LogDebug("Request to im url is {url}",GetUrl(ImUrlConstant.AddressToken));
             var response = await _httpClientProvider.PostAsync<SignatureDto>(
                 GetUrl(ImUrlConstant.AddressToken), signatureRequest, headers);
 
@@ -205,12 +205,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
     
     private string GetUrl(string url)
     {
-        if (_relationOneOptions == null || _relationOneOptions.UrlPrefix.IsNullOrWhiteSpace())
-        {
-            return url;
-        }
-
-        return $"{_relationOneOptions.UrlPrefix.TrimEnd('/')}/{url}";
+        return $"{_relationOneOptions.BaseUrl.TrimEnd('/')}/{url}";
     }
     
     
