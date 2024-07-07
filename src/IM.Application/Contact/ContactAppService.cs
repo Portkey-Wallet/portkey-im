@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using IM.ChatBot;
 using IM.Common;
 using IM.Commons;
 using IM.Contact.Dtos;
@@ -425,7 +426,7 @@ public class ContactAppService : ImAppService, IContactAppService
             { CommonConstant.AuthHeader, token }
         };
 
-        var param = new ContactProfileRequestDto()
+        var param = new ChatBotRequestDto
         {
             RelationId = contactId,
             UserId = (Guid)CurrentUser.Id

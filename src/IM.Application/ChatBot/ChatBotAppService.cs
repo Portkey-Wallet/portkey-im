@@ -123,10 +123,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
     private async Task<string> GetPortkeyToken()
     {
         
-        // var headers = new Dictionary<string,string>();
-        // var result =
-        //     await _httpClientProvider.PostAsync<AuthRequestDto>(
-        //         , redPackageInput, headers);
+       
         return "";
         
         
