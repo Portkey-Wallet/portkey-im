@@ -152,10 +152,13 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             signature = signature.ToHex(),
             timestamp = now
         };
-
+        var header = new Dictionary<string, string>()
+        {
+            { "content-type", "application/x-www-form-urlencoded" }
+        };
         var response = await _httpClientProvider.PostAsync<AuthResponseDto>(
             "https://auth-aa-portkey-test.portkey.finance/connect/token",
-            tokenRequest);
+            tokenRequest,header);
         _logger.LogDebug("GetToken is {token}", JsonConvert.SerializeObject(response));
         return response.AccessToken;
     }
