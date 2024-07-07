@@ -109,6 +109,7 @@ public class ContactAppService : ImAppService, IContactAppService
         }
         else
         {
+            var result = await GetByRelationIdAsync(input.RelationId);
             contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
             if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
             {
@@ -412,5 +413,57 @@ public class ContactAppService : ImAppService, IContactAppService
         if (stranger != null && !stranger.RelationId.IsNullOrWhiteSpace()) return;
 
         throw new UserFriendlyException("Invalid input");
+    }
+
+    private async Task<ContactProfileDto> GetByRelationIdAsync(string contactId)
+    {
+        var headers = BuildReqHeader();
+        var param = new ContactProfileRequestDto()
+        {
+            RelationId = contactId,
+            UserId = (Guid)CurrentUser.Id
+            
+        };
+        var contactProfileDto = await _httpClientProvider.PostAsync<ContactProfileDto>(
+            _caServerOptions.BaseUrl + CAServerConstant.ContactsGetByRelationId, param, headers);
+
+        if (contactProfileDto.CaHolderInfo == null || contactProfileDto.CaHolderInfo.UserId == Guid.Empty)
+        {
+            return contactProfileDto;
+        }
+
+        contactProfileDto.LoginAccounts =
+            await GetPermissionsAsync(contactProfileDto.CaHolderInfo.UserId.ToString(), headers);
+
+        return contactProfileDto;
+    }
+
+    private async Task<ContactProfileDto> GetByPortkeyIdAsync(Guid contactId, Dictionary<string, string> headers)
+    {
+        var contactProfileDto = await _httpClientProvider.GetAsync<ContactProfileDto>(
+            _caServerOptions.BaseUrl + CAServerConstant.ContactsGetByPortkeyId + contactId, headers);
+
+        if (contactProfileDto.CaHolderInfo == null || contactProfileDto.CaHolderInfo.UserId == Guid.Empty)
+        {
+            return contactProfileDto;
+        }
+
+        contactProfileDto.LoginAccounts =
+            await GetPermissionsAsync(contactProfileDto.CaHolderInfo.UserId.ToString(), headers);
+
+        return contactProfileDto;
+    }
+
+    private Dictionary<string, string> BuildReqHeader()
+    {
+        var authToken = _httpContextAccessor.HttpContext?.Request.Headers[CommonConstant.AuthHeader];
+        var relationAuthToken = _httpContextAccessor.HttpContext?.Request.Headers[RelationOneConstant.AuthHeader];
+
+        var headers = new Dictionary<string, string>
+        {
+            { CommonConstant.AuthHeader, authToken },
+            { RelationOneConstant.AuthHeader, relationAuthToken }
+        };
+        return headers;
     }
 }

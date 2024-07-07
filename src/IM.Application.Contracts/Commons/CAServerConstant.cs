@@ -13,6 +13,10 @@ public class CAServerConstant
     public const string GetContactsRemark = "api/app/contacts/getContactList";
     public const string GetContactsByUserId = "api/app/contacts/getContactsByUserId";
     
+    public const string ContactsGetByRelationId = "api/app/contacts/getContactsByRelationId";
+    public const string ContactsGetByPortkeyId = "api/app/contacts/getContactsByPortkeyId";
+    
+    
     public const string GenerateRedPackage = "api/app/redpackage/generate";
     public const string SendRedPackage = "api/app/redpackage/send";
     public const string GetCreationResult = "api/app/redpackage/getCreationResult";
