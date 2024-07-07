@@ -78,6 +78,7 @@ public class ContactAppService : ImAppService, IContactAppService
                     Id = contactProfileDto.Id.ToString(),
                     Name = contactProfileDto.Name,
                     Avatar = _chatBotBasicInfoOptions.Avatar,
+                    UserId = contactProfileDto.UserId.ToString(),
                     ImInfo = new ImInfoDto
                     {
                         Name = _chatBotBasicInfoOptions.Name,
@@ -119,6 +120,8 @@ public class ContactAppService : ImAppService, IContactAppService
                 {
                     Id = result.Id.ToString(),
                     Name = result.Name,
+                    Index = result.Index,
+                    UserId = result.UserId.ToString(),
                     Avatar = _chatBotBasicInfoOptions.Avatar,
                     ImInfo = new ImInfoDto
                     {
@@ -419,7 +422,6 @@ public class ContactAppService : ImAppService, IContactAppService
 
     private async Task<ContactProfileDto> GetByRelationIdAsync(string contactId)
     {
-        
         var token = _httpContextAccessor.HttpContext?.Request.Headers[CommonConstant.AuthHeader];
         var headers = new Dictionary<string, string>
         {
