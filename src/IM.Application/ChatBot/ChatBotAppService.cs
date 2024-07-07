@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AElf;
 using IM.Cache;
+using IM.Common;
 using IM.Commons;
 using IM.Options;
 using IM.User;
@@ -31,14 +32,16 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
     private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
     private readonly ChatBotConfigOptions _chatBotConfigOptions;
     private readonly ILogger<ChatBotAppService> _logger;
+    private readonly IHttpClientProvider _httpClientProvider;
 
     public ChatBotAppService(ICacheProvider cacheProvider, IUserAppService userAppService,
         IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions,
-        IOptionsSnapshot<ChatBotConfigOptions> chatBotConfigOptions, ILogger<ChatBotAppService> logger)
+        IOptionsSnapshot<ChatBotConfigOptions> chatBotConfigOptions, ILogger<ChatBotAppService> logger, IHttpClientProvider httpClientProvider)
     {
         _cacheProvider = cacheProvider;
         _userAppService = userAppService;
         _logger = logger;
+        _httpClientProvider = httpClientProvider;
         _chatBotConfigOptions = chatBotConfigOptions.Value;
         _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
@@ -83,6 +86,12 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         }
         try
         {
+
+            var pToken = GetPortkeyToken();
+            
+            
+            
+            
             var message = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
             var data = Encoding.UTF8.GetBytes(message).ComputeHash();
             var privateKey = _chatBotBasicInfoOptions.BotKey;
@@ -109,6 +118,19 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         {
             _logger.LogError("Refresh Relation Token failed:{ex}", e.Message);
         }
+    }
+
+    private async Task<string> GetPortkeyToken()
+    {
+        
+        var headers = new Dictionary<string,string>();
+        var result =
+            await _httpClientProvider.PostAsync<AuthRequestDto>(
+                , redPackageInput, headers);
+        return result;
+        
+        
+        
     }
 
     public async Task InitBotUsageRankAsync()

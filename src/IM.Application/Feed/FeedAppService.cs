@@ -184,6 +184,7 @@ public class FeedAppService : ImAppService, IFeedAppService
                     ChannelUuid = botChannel.Uuid,
                     ChannelIcon = _chatBotBasicInfoOptions.Avatar,
                     ChannelType = "P",
+                    DisplayName = _chatBotBasicInfoOptions.Name,
                     ToRelationId = _chatBotBasicInfoOptions.RelationId,
                     BotChannel = true
                 };

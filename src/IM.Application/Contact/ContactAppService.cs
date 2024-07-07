@@ -15,6 +15,7 @@ using IM.User.Provider;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Auditing;
@@ -33,13 +34,16 @@ public class ContactAppService : ImAppService, IContactAppService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserProvider _userProvider;
     private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
+    private readonly ILogger<ContactAppService> _logger;
+
 
     public ContactAppService(IHttpClientProvider httpClientProvider, IProxyContactAppService proxyContactAppService,
         IUserAppService userAppService, IOptions<VariablesOptions> variablesOptions,
         IOptions<CAServerOptions> caServerOptions,
         IHttpContextAccessor httpContextAccessor,
         IProxyUserAppService proxyUserAppService,
-        IUserProvider userProvider, IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions)
+        IUserProvider userProvider, IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions,
+        ILogger<ContactAppService> logger)
     {
         _httpClientProvider = httpClientProvider;
         _proxyContactAppService = proxyContactAppService;
@@ -49,6 +53,7 @@ public class ContactAppService : ImAppService, IContactAppService
         _httpContextAccessor = httpContextAccessor;
         _proxyUserAppService = proxyUserAppService;
         _userProvider = userProvider;
+        _logger = logger;
         _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
 
@@ -188,6 +193,7 @@ public class ContactAppService : ImAppService, IContactAppService
         var contactProfileDto = new ContactProfileDto();
 
         var contact = await _userAppService.GetContactAsync(portkeyId);
+        _logger.LogDebug("contact is {contact}", JsonConvert.SerializeObject(contact));
 
         if (contact != null)
         {
@@ -243,6 +249,7 @@ public class ContactAppService : ImAppService, IContactAppService
         };
 
         var user = await _userProvider.GetUserInfoAsync(relationId);
+        _logger.LogDebug("contact is {contact}", JsonConvert.SerializeObject(user));
 
         var userInfo = await _proxyUserAppService.GetUserInfoAsync(userInfoRequestDto);
 
