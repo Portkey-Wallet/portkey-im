@@ -145,7 +145,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         {
             new KeyValuePair<string, string>("ca_hash", "5ebe0ed9484193ede75adafd7c57480e71c44656448d27b6252b12a295387e96"),
             new KeyValuePair<string, string>("chain_id", "AELF"),
-            new KeyValuePair<string, string>("chainId", "AELF"),
+            //new KeyValuePair<string, string>("chainId", "AELF"),
             new KeyValuePair<string, string>("client_id", "CAServer_App"),
             new KeyValuePair<string, string>("scope", "CAServer"),
             new KeyValuePair<string, string>("grant_type", "signature"),
