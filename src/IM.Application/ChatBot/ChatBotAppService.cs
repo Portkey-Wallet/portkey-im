@@ -97,7 +97,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
                 { CommonConstant.AuthHeader, pToken }
             };
 
-            var message = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+            var message = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
             var data = Encoding.UTF8.GetBytes(message).ComputeHash();
             var privateKey = _chatBotBasicInfoOptions.BotKey;
             var signature =
