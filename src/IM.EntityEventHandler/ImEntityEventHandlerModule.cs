@@ -80,6 +80,8 @@ public class ImEntityEventHandlerModule : AbpModule
         Configure<MessagePushOptions>(configuration.GetSection("MessagePush"));
         Configure<ChatBotBasicInfoOptions>(configuration.GetSection("ChatBotBasicInfo"));
         Configure<ChatBotConfigOptions>(configuration.GetSection("ChatBotConfig"));
+        Configure<RelationOneOptions>(configuration.GetSection("RelationOne"));
+        
     }
 
     private void ConfigureGraphQl(ServiceConfigurationContext context,

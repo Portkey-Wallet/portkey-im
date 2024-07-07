@@ -35,18 +35,18 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
     private readonly ChatBotConfigOptions _chatBotConfigOptions;
     private readonly ILogger<ChatBotAppService> _logger;
     private readonly IHttpClientProvider _httpClientProvider;
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly RelationOneOptions _relationOneOptions;
 
     public ChatBotAppService(ICacheProvider cacheProvider, IUserAppService userAppService,
         IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions,
         IOptionsSnapshot<ChatBotConfigOptions> chatBotConfigOptions, ILogger<ChatBotAppService> logger,
-        IHttpClientProvider httpClientProvider, IHttpClientFactory httpClientFactory)
+        IHttpClientProvider httpClientProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions)
     {
         _cacheProvider = cacheProvider;
         _userAppService = userAppService;
         _logger = logger;
         _httpClientProvider = httpClientProvider;
-        _httpClientFactory = httpClientFactory;
+        _relationOneOptions = relationOneOptions.Value;
         _chatBotConfigOptions = chatBotConfigOptions.Value;
         _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
@@ -113,7 +113,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             };
 
             var response = await _httpClientProvider.PostAsync<SignatureDto>(
-                ImUrlConstant.AddressToken, signatureRequest, headers);
+                GetUrl(ImUrlConstant.AddressToken), signatureRequest, headers);
 
             // var result = await _userAppService.GetSignatureAsync(signatureRequest);
             _logger.LogDebug("Portkey token is {token}", response.Token);
@@ -140,25 +140,6 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             AElf.Cryptography.CryptoHelper.SignWithPrivateKey(
                 ByteArrayHelper.HexStringToByteArray(_chatBotBasicInfoOptions.BotKey),
                 data);
-        
-        // var formContent = new FormUrlEncodedContent(new[]
-        // {
-        //     new KeyValuePair<string, string>("ca_hash", "5ebe0ed9484193ede75adafd7c57480e71c44656448d27b6252b12a295387e96"),
-        //     new KeyValuePair<string, string>("chain_id", "AELF"),
-        //     //new KeyValuePair<string, string>("chainId", "AELF"),
-        //     new KeyValuePair<string, string>("client_id", "CAServer_App"),
-        //     new KeyValuePair<string, string>("scope", "CAServer"),
-        //     new KeyValuePair<string, string>("grant_type", "signature"),
-        //     new KeyValuePair<string, string>("pubkey",
-        //         "04e9bbac772673ff306b4ea16ad22697ae7d195b01477b7452ab5388acf7e8ef61d1b8f5f26fd50f4692587bf03a6c7414aba6981bbb8127244a6a4167685f3752"),
-        //     new KeyValuePair<string, string>("signature", "15549a229ec929528caa381a5d58e1d199c481c4e4b48b0875f637da1eaead3c1681f64e4526eb5449483222ae7c1b1a893b3db5af2374b47aeffa5a035932ee00"),
-        //     new KeyValuePair<string, string>("timestamp", "1720323332297")
-        //
-        // });
-        //
-        // var client = _httpClientFactory.CreateClient();
-        // var response =
-        //     await client.PostAsync("https://auth-aa-portkey-test.portkey.finance/connect/token", formContent);
         
         var dict = new Dictionary<string, string>();
         dict.Add("ca_hash", _chatBotBasicInfoOptions.CaHash);
@@ -221,4 +202,16 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         await _cacheProvider.Set(UserBotCacheKey + from, rank.First().Element, expire);
         return rank.First().Element;
     }
+    
+    private string GetUrl(string url)
+    {
+        if (_relationOneOptions == null || _relationOneOptions.UrlPrefix.IsNullOrWhiteSpace())
+        {
+            return url;
+        }
+
+        return $"{_relationOneOptions.UrlPrefix.TrimEnd('/')}/{url}";
+    }
+    
+    
 }
