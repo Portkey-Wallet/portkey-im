@@ -134,7 +134,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
     private async Task<string> GetPortkeyToken()
     {
-        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var data = Encoding.UTF8.GetBytes(_chatBotBasicInfoOptions.Address + "-" + now).ComputeHash();
         var signature =
             AElf.Cryptography.CryptoHelper.SignWithPrivateKey(
