@@ -110,17 +110,18 @@ public class ContactAppService : ImAppService, IContactAppService
         else
         {
             var result = await GetByRelationIdAsync(input.RelationId);
+            _logger.LogDebug("contact is {contact}",JsonConvert.SerializeObject(result));
             contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
             if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
             {
                 return new ContactInfoDto
                 {
-                    Id = contactProfileDto.Id.ToString(),
-                    Name = contactProfileDto.Name,
+                    Id = result.Id.ToString(),
+                    Name = result.Name,
                     Avatar = _chatBotBasicInfoOptions.Avatar,
                     ImInfo = new ImInfoDto
                     {
-                        Name = contactProfileDto.ImInfo.Name,
+                        Name = result.ImInfo.Name,
                         RelationId = _chatBotBasicInfoOptions.RelationId,
                         PortkeyId = contactProfileDto.ImInfo.PortkeyId
                     },
