@@ -133,7 +133,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         if (value.HasValue)
         {
             _logger.LogDebug("Rank has been init.{value}", value.ToString());
-            //return;
+            return;
         }
 
         var botKeys = _chatBotConfigOptions.BotKeys;

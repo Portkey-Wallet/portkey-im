@@ -147,6 +147,8 @@ public class ImEntityEventHandlerModule : AbpModule
         
         //backgroundWorkerManger.AddAsync(context.ServiceProvider.GetService<InitReferralRankWorker>());
         backgroundWorkerManger.AddAsync(context.ServiceProvider.GetService<AuthTokenRefreshWorker>());
+        backgroundWorkerManger.AddAsync(context.ServiceProvider.GetService<InitChatBotUsageRankWorker>());
+        
         ConfigurationProvidersHelper.DisplayConfigurationProviders(context);
     }
 
