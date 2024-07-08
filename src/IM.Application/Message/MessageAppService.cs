@@ -647,11 +647,6 @@ public class MessageAppService : ImAppService, IMessageAppService
 
     private string GetUrl(string url)
     {
-        if (_relationOneOptions == null || _relationOneOptions.UrlPrefix.IsNullOrWhiteSpace())
-        {
-            return url;
-        }
-
-        return $"{_relationOneOptions.UrlPrefix.TrimEnd('/')}/{url}";
+        return $"{_relationOneOptions.BaseUrl.TrimEnd('/')}/{url}";
     }
 }
