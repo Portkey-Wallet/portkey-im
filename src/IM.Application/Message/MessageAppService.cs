@@ -639,7 +639,7 @@ public class MessageAppService : ImAppService, IMessageAppService
     {
         var headers = new Dictionary<string, string>();
         var token = await _cacheProvider.Get(RelationTokenCacheKey);
-        headers.Add(RelationOneConstant.AuthHeader, token);
+        headers.Add(RelationOneConstant.AuthHeader, $"{CommonConstant.JwtPrefix} {token}");
         await _httpClientProvider.PostAsync<SendMessageResponseDto>(GetUrl("api/v1/message/send"), message,
             headers);
     }
