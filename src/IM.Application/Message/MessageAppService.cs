@@ -81,7 +81,8 @@ public class MessageAppService : ImAppService, IMessageAppService
         IRefreshRepository<PinMessageIndex, string> pinMessageRepository,
         IUserAppService userAppService, IChannelProvider channelProvider,
         IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions, IHttpClientProvider httpClientProvider,
-        ICacheProvider cacheProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions, IChatBotAppService chatBotAppService)
+        ICacheProvider cacheProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions,
+        IChatBotAppService chatBotAppService)
     {
         _proxyMessageAppService = proxyMessageAppService;
         _encryptionService = encryptionService;
@@ -117,7 +118,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         {
             await _proxyMessageAppService.SendMessageAsync(input);
             var response = await _chatBotAppService.SendMessageToChatBotAsync(input.Content, input.From);
-            _logger.LogDebug("Response from gpt is {response}",response);
+            _logger.LogDebug("Response from gpt is {response}", response);
             var message = new SendMessageRequestDto
             {
                 ToRelationId = input.From,
@@ -640,6 +641,8 @@ public class MessageAppService : ImAppService, IMessageAppService
         var headers = new Dictionary<string, string>();
         var token = await _cacheProvider.Get(RelationTokenCacheKey);
         headers.Add(RelationOneConstant.AuthHeader, $"{CommonConstant.JwtPrefix} {token}");
+        _logger.LogDebug("Cached token is {token},message is {message}", token.ToString(),
+            JsonConvert.SerializeObject(message));
         await _httpClientProvider.PostAsync<SendMessageResponseDto>(GetUrl("api/v1/message/send"), message,
             headers);
     }
