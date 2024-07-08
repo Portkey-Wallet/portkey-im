@@ -117,6 +117,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         if (input.ToRelationId == _chatBotBasicInfoOptions.RelationId)
         {
             await _proxyMessageAppService.SendMessageAsync(input);
+            _logger.LogDebug("send message to bot {message}",JsonConvert.SerializeObject(input));
             var response = await _chatBotAppService.SendMessageToChatBotAsync(input.Content, input.From);
             _logger.LogDebug("Response from gpt is {response}", response);
             var message = new SendMessageRequestDto
