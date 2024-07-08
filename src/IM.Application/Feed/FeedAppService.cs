@@ -157,11 +157,10 @@ public class FeedAppService : ImAppService, IFeedAppService
                     Members = membersList
                 };
                 await _channelContactAppAppService.CreateChannelAsync(botChannelCreate);
-            }
-            var channelBot = await _channelProvider.GetBotChannelUuidAsync(userIndex.RelationId,
-                _chatBotBasicInfoOptions.RelationId);
-            _logger.LogDebug("No Channel,Create a new one {channel}", JsonConvert.SerializeObject(channelBot));
-            var item = new ListFeedResponseItemDto
+                var channelBot = await _channelProvider.GetBotChannelUuidAsync(userIndex.RelationId,
+                    _chatBotBasicInfoOptions.RelationId);
+                _logger.LogDebug("No Channel,Create a new one {channel}", JsonConvert.SerializeObject(channelBot));
+                var item = new ListFeedResponseItemDto
                 {
                     ChannelUuid = channelBot.Uuid,
                     ChannelIcon = _chatBotBasicInfoOptions.Avatar,
@@ -169,7 +168,6 @@ public class FeedAppService : ImAppService, IFeedAppService
                     ToRelationId = _chatBotBasicInfoOptions.RelationId,
                     BotChannel = true,
                     IsInit = true
-                    
                 };
                 var index = 0;
                 for (var i = 0; i < result.List.Count; i++)
@@ -182,34 +180,33 @@ public class FeedAppService : ImAppService, IFeedAppService
                     index = i + 1;
                     break;
                 }
+
                 result.List.Insert(index, item);
+            }
+            else
+            {
+                var item = result.List.Where(t => t.ChannelUuid == botChannel.Uuid).ToList().FirstOrDefault();
+                var botIndex = result.List.IndexOf(item);
+                var index = 0;
+                for (var i = 0; i < result.List.Count; i++)
+                {
+                    if (result.List[i].Pin)
+                    {
+                        continue;
+                    }
 
-            // var channelList = result.List.Select(t => t.ChannelUuid).ToList();
-            // if (botChannel is { Status: 0 } && !channelList.Contains(botChannel.Uuid))
-            // {
-            //     var item = new ListFeedResponseItemDto
-            //     {
-            //         ChannelUuid = botChannel.Uuid,
-            //         ChannelIcon = _chatBotBasicInfoOptions.Avatar,
-            //         ChannelType = "P",
-            //         DisplayName = _chatBotBasicInfoOptions.Name,
-            //         ToRelationId = _chatBotBasicInfoOptions.RelationId,
-            //         BotChannel = true,
-            //         IsInit = true
-            //     };
-            //     var index = 0;
-            //     for (var i = 0; i < result.List.Count; i++)
-            //     {
-            //         if (result.List[i].Pin)
-            //         {
-            //             continue;
-            //         }
-            //
-            //         index = i + 1;
-            //         break;
-            //     }
+                    index = i + 1;
+                    break;
+                }
 
-            //result.List.Insert(index, item);
+                if (botIndex != -1 && index != botIndex)
+                {
+                    item.BotChannel = true;
+                    item.IsInit = true;
+                    result.List.RemoveAt(botIndex);
+                    result.List.Insert(index, item);
+                }
+            }
         }
 
         var blockUserList = await _blockUserProvider.GetBlockUserListAsync(userIndex.RelationId);
