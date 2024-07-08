@@ -167,7 +167,9 @@ public class FeedAppService : ImAppService, IFeedAppService
                     ChannelIcon = _chatBotBasicInfoOptions.Avatar,
                     ChannelType = "P",
                     ToRelationId = _chatBotBasicInfoOptions.RelationId,
-                    BotChannel = true
+                    BotChannel = true,
+                    IsInit = true
+                    
                 };
                 var index = 0;
                 for (var i = 0; i < result.List.Count; i++)
@@ -194,7 +196,8 @@ public class FeedAppService : ImAppService, IFeedAppService
                     ChannelType = "P",
                     DisplayName = _chatBotBasicInfoOptions.Name,
                     ToRelationId = _chatBotBasicInfoOptions.RelationId,
-                    BotChannel = true
+                    BotChannel = true,
+                    IsInit = true
                 };
                 var index = 0;
                 for (var i = 0; i < result.List.Count; i++)

@@ -29,4 +29,6 @@ public class ListFeedResponseItemDto
     public RedPackageMessage RedPackage { get; set; } = new();
 
     public bool BotChannel { get; set; } = false;
+
+    public bool IsInit { get; set; }
 }
