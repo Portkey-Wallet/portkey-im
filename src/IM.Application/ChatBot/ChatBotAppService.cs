@@ -71,7 +71,6 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             model = _chatBotConfigOptions.Model,
             messages = messageList,
             max_tokens = _chatBotConfigOptions.Token,
-            //stop = null,
             temperature = 0.5
         });
 
@@ -89,13 +88,14 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             _logger.LogDebug("token has been init.");
             return;
         }
+
         try
         {
-            var pToken = await GetPortkeyToken();
+            /*var pToken = await GetPortkeyToken();
             var headers = new Dictionary<string, string>
             {
                 { CommonConstant.AuthHeader, pToken }
-            };
+            };*/
 
             var message = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
             var data = Encoding.UTF8.GetBytes(message).ComputeHash();
@@ -114,7 +114,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             _logger.LogDebug("Request to im url is {url}", GetUrl(ImUrlConstant.AddressToken));
             // var response = await _httpClientProvider.PostAsync<SignatureDto>(
             //     GetUrl(ImUrlConstant.AddressToken), signatureRequest, headers);
-
+            _logger.LogDebug("Param is {param}", JsonConvert.SerializeObject(signatureRequest));
             var result = await _userAppService.GetSignatureAsync(signatureRequest);
             //_logger.LogDebug("Portkey token is {token}", response.Token);
             var authToken = new AuthRequestDto
