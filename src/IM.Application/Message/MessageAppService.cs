@@ -64,6 +64,7 @@ public class MessageAppService : ImAppService, IMessageAppService
     private readonly ICacheProvider _cacheProvider;
     private readonly IChatBotAppService _chatBotAppService;
     private const string RelationTokenCacheKey = "IM:RelationTokenKey:";
+    private readonly IUserProvider _userProvider;
 
 
     public MessageAppService(IProxyMessageAppService proxyMessageAppService,
@@ -82,7 +83,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         IUserAppService userAppService, IChannelProvider channelProvider,
         IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions, IHttpClientProvider httpClientProvider,
         ICacheProvider cacheProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions,
-        IChatBotAppService chatBotAppService)
+        IChatBotAppService chatBotAppService, IUserProvider userProvider)
     {
         _proxyMessageAppService = proxyMessageAppService;
         _encryptionService = encryptionService;
@@ -103,6 +104,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         _httpClientProvider = httpClientProvider;
         _cacheProvider = cacheProvider;
         _chatBotAppService = chatBotAppService;
+        _userProvider = userProvider;
         _relationOneOptions = relationOneOptions.Value;
         _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
@@ -114,16 +116,18 @@ public class MessageAppService : ImAppService, IMessageAppService
 
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)
     {
+        var currentUser = await _userProvider.GetUserInfoByIdAsync(CurrentUser.GetId());
         if (input.ToRelationId == _chatBotBasicInfoOptions.RelationId)
         {
             await _proxyMessageAppService.SendMessageAsync(input);
-            _logger.LogDebug("send message to bot {message}",JsonConvert.SerializeObject(input));
+            _logger.LogDebug("send message to bot {message}", JsonConvert.SerializeObject(input));
             var response = await _chatBotAppService.SendMessageToChatBotAsync(input.Content, input.From);
             _logger.LogDebug("Response from gpt is {response}", response);
             var message = new SendMessageRequestDto
             {
-                ToRelationId = input.From,
+                ToRelationId = currentUser.RelationId,
                 ChannelUuid = input.ChannelUuid,
+                SendUuid = BuildSendUUid(input.ToRelationId, input.ChannelUuid),
                 Content = response,
                 From = input.ToRelationId,
                 Type = input.Type
@@ -146,6 +150,12 @@ public class MessageAppService : ImAppService, IMessageAppService
         var authToken = GetAuthFromHeader();
         _ = PublishMessageAsync(input, CurrentUser.GetId(), authToken);
         return responseDto;
+    }
+
+    private string BuildSendUUid(string toRelationId, string channelUuid)
+    {
+        return toRelationId + "-" + channelUuid + "-" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + "-" +
+               Guid.NewGuid();
     }
 
 
