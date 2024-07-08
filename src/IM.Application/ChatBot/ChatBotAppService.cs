@@ -15,6 +15,7 @@ using IM.User.Dtos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Orleans.Runtime;
 using RestSharp;
 using Volo.Abp;
 using Volo.Abp.Auditing;
@@ -116,6 +117,9 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             //     GetUrl(ImUrlConstant.AddressToken), signatureRequest, headers);
             _logger.LogDebug("Param is {param}", JsonConvert.SerializeObject(signatureRequest));
             var result = await _userAppService.GetSignatureAsync(signatureRequest);
+
+            _logger.LogDebug("result is {result}", result);
+
             //_logger.LogDebug("Portkey token is {token}", response.Token);
             var authToken = new AuthRequestDto
             {
