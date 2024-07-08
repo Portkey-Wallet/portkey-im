@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 using AElf;
@@ -11,11 +13,13 @@ using IM.Common;
 using IM.Commons;
 using IM.Options;
 using IM.RelationOne;
+using IM.RelationOne.Dtos;
 using IM.User;
 using IM.User.Dtos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Orleans.Runtime;
 using RestSharp;
 using Volo.Abp;
@@ -39,17 +43,19 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
     private readonly IHttpClientProvider _httpClientProvider;
     private readonly RelationOneOptions _relationOneOptions;
     private readonly IProxyUserAppService _proxyUserAppService;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public ChatBotAppService(ICacheProvider cacheProvider, IUserAppService userAppService,
         IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions,
         IOptionsSnapshot<ChatBotConfigOptions> chatBotConfigOptions, ILogger<ChatBotAppService> logger,
-        IHttpClientProvider httpClientProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions, IProxyUserAppService proxyUserAppService)
+        IHttpClientProvider httpClientProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions, IProxyUserAppService proxyUserAppService, IHttpClientFactory httpClientFactory)
     {
         _cacheProvider = cacheProvider;
         _userAppService = userAppService;
         _logger = logger;
         _httpClientProvider = httpClientProvider;
         _proxyUserAppService = proxyUserAppService;
+        _httpClientFactory = httpClientFactory;
         _relationOneOptions = relationOneOptions.Value;
         _chatBotConfigOptions = chatBotConfigOptions.Value;
         _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
@@ -131,6 +137,13 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             //var token = await _userAppService.GetAuthTokenAsync(authToken);
             
             var token = await _proxyUserAppService.GetAuthTokenAsync(authToken);
+            
+            var header = new Dictionary<string, string>()
+                { { RelationOneConstant.GetTokenHeader, $"{CommonConstant.JwtPrefix} {authToken.AddressAuthToken}" } };
+            var responseDto = await PostJsonAsync<RelationOneResponseDto>(ImUrlConstant.AuthToken,authToken,header);
+            
+
+
             _logger.LogDebug("Relation one Token is {token} ", token.Token);
             var expire = TimeSpan.FromHours(24);
             await _cacheProvider.Set(RelationTokenCacheKey, token.Token, expire);
@@ -227,4 +240,63 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
     {
         return $"{_relationOneOptions.BaseUrl.TrimEnd('/')}/{url}";
     }
+    
+    private async Task<T> PostJsonAsync<T>(string url, object paramObj, Dictionary<string, string> headers)
+    {
+        url = "http://10.10.32.99:9902/"+url;
+        var serializerSettings = new JsonSerializerSettings
+        {
+            ContractResolver = new CamelCasePropertyNamesContractResolver()
+        };
+        var requestInput = paramObj == null
+            ? string.Empty
+            : JsonConvert.SerializeObject(paramObj, Formatting.None, serializerSettings);
+
+        var requestContent = new StringContent(
+            requestInput,
+            Encoding.UTF8,
+            MediaTypeNames.Application.Json);
+
+        var client = GetClient();
+
+        if (headers is { Count: > 0 })
+        {
+            foreach (var header in headers)
+            {
+                client.DefaultRequestHeaders.Add(header.Key, header.Value);
+            }
+        }
+
+        var response = await client.PostAsync(url, requestContent);
+        var content = await response.Content.ReadAsStringAsync();
+
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            _logger.LogError("Response status code not good, code:{code}, message: {message}, params:{param}",
+                response.StatusCode, content, JsonConvert.SerializeObject(paramObj));
+
+            throw new UserFriendlyException(content, ((int)response.StatusCode).ToString());
+        }
+
+        return JsonConvert.DeserializeObject<T>(content);
+    }
+    
+    private HttpClient GetClient()
+    {
+        var client = _httpClientFactory.CreateClient(RelationOneConstant.ClientName);
+
+        // var auth = _httpContextAccessor?.HttpContext?.Request?.Headers[RelationOneConstant.AuthHeader]
+        //     .FirstOrDefault();
+        // _logger.LogDebug("auth is {auth}",auth);
+        // var authToken = _httpContextAccessor?.HttpContext?.Request?.Headers["Authorization"]
+        //     .FirstOrDefault();
+        // if (!auth.IsNullOrWhiteSpace())
+        // {
+        //     client.DefaultRequestHeaders.Add(HeaderNames.Authorization, auth);
+        // }
+
+        return client;
+    }
+    
+    
 }
