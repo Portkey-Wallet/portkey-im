@@ -31,7 +31,7 @@ public class ProxyUserAppService : ImAppService, IProxyUserAppService
         {
             var header = new Dictionary<string, string>()
                 { { RelationOneConstant.GetTokenHeader, $"{CommonConstant.JwtPrefix} {input.AddressAuthToken}" } };
-
+            
             return await _proxyRequestProvider.PostAsync<SignatureDto>(
                 ImUrlConstant.AuthToken, input, header);
         }

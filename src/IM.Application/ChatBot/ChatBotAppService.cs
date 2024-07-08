@@ -10,6 +10,7 @@ using IM.Cache;
 using IM.Common;
 using IM.Commons;
 using IM.Options;
+using IM.RelationOne;
 using IM.User;
 using IM.User.Dtos;
 using Microsoft.Extensions.Logging;
@@ -37,16 +38,18 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
     private readonly ILogger<ChatBotAppService> _logger;
     private readonly IHttpClientProvider _httpClientProvider;
     private readonly RelationOneOptions _relationOneOptions;
+    private readonly IProxyUserAppService _proxyUserAppService;
 
     public ChatBotAppService(ICacheProvider cacheProvider, IUserAppService userAppService,
         IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions,
         IOptionsSnapshot<ChatBotConfigOptions> chatBotConfigOptions, ILogger<ChatBotAppService> logger,
-        IHttpClientProvider httpClientProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions)
+        IHttpClientProvider httpClientProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions, IProxyUserAppService proxyUserAppService)
     {
         _cacheProvider = cacheProvider;
         _userAppService = userAppService;
         _logger = logger;
         _httpClientProvider = httpClientProvider;
+        _proxyUserAppService = proxyUserAppService;
         _relationOneOptions = relationOneOptions.Value;
         _chatBotConfigOptions = chatBotConfigOptions.Value;
         _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
@@ -125,7 +128,9 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             {
                 AddressAuthToken = result.Token
             };
-            var token = await _userAppService.GetAuthTokenAsync(authToken);
+            //var token = await _userAppService.GetAuthTokenAsync(authToken);
+            
+            var token = await _proxyUserAppService.GetAuthTokenAsync(authToken);
             _logger.LogDebug("Relation one Token is {token} ", token.Token);
             var expire = TimeSpan.FromHours(24);
             await _cacheProvider.Set(RelationTokenCacheKey, token.Token, expire);
