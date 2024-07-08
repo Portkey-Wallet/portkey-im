@@ -136,8 +136,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
                 AddressAuthToken = result.Token
             };
             //var token = await _userAppService.GetAuthTokenAsync(authToken);
-
-            var token = await _proxyUserAppService.GetAuthTokenAsync(authToken);
+            //var token = await _proxyUserAppService.GetAuthTokenAsync(authToken);
 
             var header = new Dictionary<string, string>()
                 { { RelationOneConstant.GetTokenHeader, $"{CommonConstant.JwtPrefix} {authToken.AddressAuthToken}" } };
@@ -318,4 +317,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
         throw new UserFriendlyException(responseMapping.Message, responseMapping.Code);
     }
+    
+    
+    
 }
