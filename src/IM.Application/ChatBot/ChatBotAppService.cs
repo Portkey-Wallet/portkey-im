@@ -102,11 +102,11 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
         try
         {
-            /*var pToken = await GetPortkeyToken();
+            var pToken = await GetPortkeyToken();
             var headers = new Dictionary<string, string>
             {
                 { CommonConstant.AuthHeader, pToken }
-            };*/
+            };
 
             var message = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
             var data = Encoding.UTF8.GetBytes(message).ComputeHash();
@@ -131,18 +131,41 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             _logger.LogDebug("result is {result}", JsonConvert.SerializeObject(result));
 
             //_logger.LogDebug("Portkey token is {token}", response.Token);
-            var authToken = new AuthRequestDto
-            {
-                AddressAuthToken = result.Token
-            };
+            // var authToken = new AuthRequestDto
+            // {
+            //     AddressAuthToken = result.Token
+            // };
             //var token = await _userAppService.GetAuthTokenAsync(authToken);
             //var token = await _proxyUserAppService.GetAuthTokenAsync(authToken);
 
-            var header = new Dictionary<string, string>()
-                { { RelationOneConstant.GetTokenHeader, $"{CommonConstant.JwtPrefix} {authToken.AddressAuthToken}" } };
-            var responseDto = await PostJsonAsync<RelationOneResponseDto>(ImUrlConstant.AuthToken, authToken, header);
-            _logger.LogDebug("Relation one Token is {response} ", JsonConvert.SerializeObject(responseDto));
-            
+            // var header = new Dictionary<string, string>()
+            //     { { RelationOneConstant.GetTokenHeader, $"{CommonConstant.JwtPrefix} {authToken.AddressAuthToken}" } };
+            // var responseDto = await PostJsonAsync<RelationOneResponseDto>(ImUrlConstant.AuthToken, authToken, header);
+            // _logger.LogDebug("Relation one Token is {response} ", JsonConvert.SerializeObject(responseDto));
+
+
+            var auth = new AuthRequestDto
+            {
+                AddressAuthToken = result.Token
+                    //"eyJhbGciOiJFUzI1NiJ9.eyJqdGkiOiIzYmY2YmU3MThkYmI0Mzg1OTU1Y2U4MTczNWZkMzcwNCIsImlzcyI6InJlbGF0aW9ubGFicy5haSIsImlhdCI6MTcyMDQyNjMwMCwic3ViIjoiMmdFWFBXQTVieGFtUTNBWHVDMWEzTmhVcWZEbVFnenVRSDZtNnhMUVB4Z2VxOFlIMjUiLCJjaGFpbk5hbWUiOiJhZWxmIiwiYWNjb3VudFNvdXJjZSI6ImFlbGYiLCJtYW5hZ2VyQWRkcmVzcyI6IjJoUU10RVZVN0ZpRFd3WUZ2ZTd2S0pDaGZoU3VrRldBU1lMeHJkWWdVUXBWTmlCcDFhIiwiY2FIYXNoIjoiYjljMjdhNjRmMWYxODI3Yzk3MTY3YzBlMmVlNzgyY2ZjN2VkMDU2YWE2NzhkYWU4NWIzNDg2ZGE5ZjA0YTUwYiIsImNhU2lkZUNoYWluQWRkcmVzc2VzIjpbIjJnRVhQV0E1YnhhbVEzQVh1QzFhM05oVXFmRG1RZ3p1UUg2bTZ4TFFQeGdlcThZSDI1Il0sImV4cCI6MTcyMTAzMTEwMH0.DqZOUwJCxqOg-2SK3Umn7gVEeKCx-sJOoVuTajYHUsI_mKcrgmRaLS2mqrpFeFnv8p_w0HYEvB0fv764QaXHcg"
+            };
+
+            var requestInput = JsonConvert.SerializeObject(auth, Formatting.None);
+
+            var requestContent = new StringContent(
+                requestInput,
+                Encoding.UTF8,
+                MediaTypeNames.Application.Json);
+
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Authorization",
+                "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IkIzRTVBRTk3MTI4RTk2RjE1RjNCQzQ4NzNFQTdDMjNGNjhBQjhBNTUiLCJ4NXQiOiJzLVd1bHhLT2x2RmZPOFNIUHFmQ1AyaXJpbFUiLCJ0eXAiOiJhdCtqd3QifQ.eyJzdWIiOiIxYjRiZmQ1OS1mYmVmLTQ0ZGYtODE4Yi1lOGExNWUxZGE3MDQiLCJvaV9wcnN0IjoiQ0FTZXJ2ZXJfQXBwIiwiY2xpZW50X2lkIjoiQ0FTZXJ2ZXJfQXBwIiwib2lfdGtuX2lkIjoiOTE3ODM2YzQtZDc0ZC0xNGJhLTM2ZWItM2ExM2EzM2QzY2JlIiwiYXVkIjoiQ0FTZXJ2ZXIiLCJzY29wZSI6IkNBU2VydmVyIiwianRpIjoiZTNjYWQxZjUtN2M2NS00MTRjLWI4YjctZDE5MDVlOGNlODQ3IiwiZXhwIjoxNzIwNTkzNDg4LCJpc3MiOiJodHRwOi8vMTAuMTAuMzIuOTk6ODAwMS8iLCJpYXQiOjE3MjA0MjA2ODl9.hRYVwYLQpsPo3Ol-mK7SS38XwXfibMNuBL0Nw-neob72Ec1qFMeJ8seieajP_1q6P1UDQzGzji7yoHz7FwfmzaL4hdex9tCdYNE_fp5iNVrIQdiB-nsgEU5fbVXCLTPg-zD9JhZzRKt5fLFUB3xxRjyCAlvkjthq6TR_v-DHnygSKZr2dbpzh2ikXuTuQMFTWMVAkvnp15sQrdHrp4xm4Fsc2qrs-1wlwLGe9WK0S-ZuXpBLQ_nya0SMcPMlCYom5Q0kJ1mYDa3J-F1f2rOKIKPG2gXR8bqUthogTsumN1Vh3IonEJKXhcyTKciLwgv7cxE-c3BaS4XNcdf4JDcEfQ");
+
+            var response =
+                await client.PostAsync("https://im-api-test.portkey.finance/api/v1/users/auth", requestContent);
+            var async = await response.Content.ReadAsStringAsync();
+            _logger.LogDebug("relation token is {token}",async);
+
             var expire = TimeSpan.FromHours(24);
             //await _cacheProvider.Set(RelationTokenCacheKey, token.Token, expire);
         }
@@ -267,7 +290,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
         var response = await client.PostAsync(url, requestContent);
         var content = await response.Content.ReadAsStringAsync();
-        _logger.LogDebug("content is {content}",content);
+        _logger.LogDebug("content is {content}", content);
         if (response.StatusCode != HttpStatusCode.OK)
         {
             _logger.LogError("Response status code not good, code:{code}, message: {message}, params:{param}",
@@ -317,7 +340,4 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
         throw new UserFriendlyException(responseMapping.Message, responseMapping.Code);
     }
-    
-    
-    
 }
