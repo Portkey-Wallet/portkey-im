@@ -164,8 +164,9 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             var response =
                 await client.PostAsync("https://im-api-test.portkey.finance/api/v1/users/auth", requestContent);
             var async = await response.Content.ReadAsStringAsync();
-            _logger.LogDebug("relation token is {token}",async);
-
+            var dto = JsonConvert.DeserializeObject<RelationOneResponseDto>(async);
+            var tokenData = (SignatureDto)dto.Data;
+            _logger.LogDebug("relation token is {token}",JsonConvert.SerializeObject(tokenData));
             var expire = TimeSpan.FromHours(24);
             //await _cacheProvider.Set(RelationTokenCacheKey, token.Token, expire);
         }
