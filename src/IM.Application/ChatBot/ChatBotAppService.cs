@@ -118,7 +118,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             _logger.LogDebug("Param is {param}", JsonConvert.SerializeObject(signatureRequest));
             var result = await _userAppService.GetSignatureAsync(signatureRequest);
 
-            _logger.LogDebug("result is {result}", result);
+            _logger.LogDebug("result is {result}", JsonConvert.SerializeObject(result));
 
             //_logger.LogDebug("Portkey token is {token}", response.Token);
             var authToken = new AuthRequestDto
