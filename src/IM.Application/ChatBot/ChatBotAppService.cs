@@ -48,7 +48,8 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
     public ChatBotAppService(ICacheProvider cacheProvider, IUserAppService userAppService,
         IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions,
         IOptionsSnapshot<ChatBotConfigOptions> chatBotConfigOptions, ILogger<ChatBotAppService> logger,
-        IHttpClientProvider httpClientProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions, IProxyUserAppService proxyUserAppService, IHttpClientFactory httpClientFactory)
+        IHttpClientProvider httpClientProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions,
+        IProxyUserAppService proxyUserAppService, IHttpClientFactory httpClientFactory)
     {
         _cacheProvider = cacheProvider;
         _userAppService = userAppService;
@@ -135,18 +136,16 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
                 AddressAuthToken = result.Token
             };
             //var token = await _userAppService.GetAuthTokenAsync(authToken);
-            
+
             var token = await _proxyUserAppService.GetAuthTokenAsync(authToken);
-            
+
             var header = new Dictionary<string, string>()
                 { { RelationOneConstant.GetTokenHeader, $"{CommonConstant.JwtPrefix} {authToken.AddressAuthToken}" } };
-            var responseDto = await PostJsonAsync<RelationOneResponseDto>(ImUrlConstant.AuthToken,authToken,header);
+            var responseDto = await PostJsonAsync<RelationOneResponseDto>(ImUrlConstant.AuthToken, authToken, header);
+            _logger.LogDebug("Relation one Token is {response} ", JsonConvert.SerializeObject(responseDto.Data));
             
-
-
-            _logger.LogDebug("Relation one Token is {token} ", token.Token);
             var expire = TimeSpan.FromHours(24);
-            await _cacheProvider.Set(RelationTokenCacheKey, token.Token, expire);
+            //await _cacheProvider.Set(RelationTokenCacheKey, token.Token, expire);
         }
         catch (Exception e)
         {
@@ -240,10 +239,10 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
     {
         return $"{_relationOneOptions.BaseUrl.TrimEnd('/')}/{url}";
     }
-    
+
     private async Task<T> PostJsonAsync<T>(string url, object paramObj, Dictionary<string, string> headers)
     {
-        url = "http://10.10.32.99:9902/"+url;
+        url = "http://10.10.32.99:9902/" + url;
         var serializerSettings = new JsonSerializerSettings
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver()
@@ -280,7 +279,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
         return JsonConvert.DeserializeObject<T>(content);
     }
-    
+
     private HttpClient GetClient()
     {
         var client = _httpClientFactory.CreateClient(RelationOneConstant.ClientName);
@@ -297,6 +296,26 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
         return client;
     }
-    
-    
+
+    private T GetData<T>(RelationOneResponseDto<T> response)
+    {
+        if (response.Code == RelationOneConstant.SuccessCode)
+        {
+            return response.Data;
+        }
+
+        if (response.Code == RelationOneConstant.FailCode)
+        {
+            throw new UserFriendlyException(response.Desc,
+                RelationOneConstant.ImResponseMappings[RelationOneConstant.FailCode].Code);
+        }
+
+        var responseMapping = RelationOneConstant.ImResponseMappings.GetOrDefault(response.Code);
+        if (responseMapping == null)
+        {
+            throw new UserFriendlyException(response.Desc, response.Code);
+        }
+
+        throw new UserFriendlyException(responseMapping.Message, responseMapping.Code);
+    }
 }
