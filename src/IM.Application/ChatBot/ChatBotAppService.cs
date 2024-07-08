@@ -141,7 +141,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             var header = new Dictionary<string, string>()
                 { { RelationOneConstant.GetTokenHeader, $"{CommonConstant.JwtPrefix} {authToken.AddressAuthToken}" } };
             var responseDto = await PostJsonAsync<RelationOneResponseDto>(ImUrlConstant.AuthToken, authToken, header);
-            _logger.LogDebug("Relation one Token is {response} ", JsonConvert.SerializeObject(responseDto.Data));
+            _logger.LogDebug("Relation one Token is {response} ", JsonConvert.SerializeObject(responseDto));
             
             var expire = TimeSpan.FromHours(24);
             //await _cacheProvider.Set(RelationTokenCacheKey, token.Token, expire);
@@ -267,7 +267,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
         var response = await client.PostAsync(url, requestContent);
         var content = await response.Content.ReadAsStringAsync();
-
+        _logger.LogDebug("content is {content}",content);
         if (response.StatusCode != HttpStatusCode.OK)
         {
             _logger.LogError("Response status code not good, code:{code}, message: {message}, params:{param}",
