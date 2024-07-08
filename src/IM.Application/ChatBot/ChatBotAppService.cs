@@ -20,7 +20,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using Orleans.Runtime;
 using RestSharp;
 using Volo.Abp;
 using Volo.Abp.Auditing;
@@ -40,22 +39,18 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
     private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
     private readonly ChatBotConfigOptions _chatBotConfigOptions;
     private readonly ILogger<ChatBotAppService> _logger;
-    private readonly IHttpClientProvider _httpClientProvider;
     private readonly RelationOneOptions _relationOneOptions;
-    private readonly IProxyUserAppService _proxyUserAppService;
     private readonly IHttpClientFactory _httpClientFactory;
 
     public ChatBotAppService(ICacheProvider cacheProvider, IUserAppService userAppService,
         IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions,
         IOptionsSnapshot<ChatBotConfigOptions> chatBotConfigOptions, ILogger<ChatBotAppService> logger,
-        IHttpClientProvider httpClientProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions,
-        IProxyUserAppService proxyUserAppService, IHttpClientFactory httpClientFactory)
+        IOptionsSnapshot<RelationOneOptions> relationOneOptions,
+        IHttpClientFactory httpClientFactory)
     {
         _cacheProvider = cacheProvider;
         _userAppService = userAppService;
         _logger = logger;
-        _httpClientProvider = httpClientProvider;
-        _proxyUserAppService = proxyUserAppService;
         _httpClientFactory = httpClientFactory;
         _relationOneOptions = relationOneOptions.Value;
         _chatBotConfigOptions = chatBotConfigOptions.Value;
@@ -73,9 +68,11 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
         request.AddHeader("Authorization", "Bearer " + apiKey);
         var messageList = new List<Dictionary<string, string>>();
-        var dic = new Dictionary<string, string>();
-        dic.Add("role", "user");
-        dic.Add("content", content);
+        var dic = new Dictionary<string, string>
+        {
+            { "role", "user" },
+            { "content", content }
+        };
         messageList.Add(dic);
         request.AddJsonBody(new
         {
@@ -85,10 +82,18 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             temperature = 0.5
         });
 
-        var response = await client.ExecuteAsync(request);
-        var chatBotResponseDto = JsonConvert.DeserializeObject<ChatBotResponseDto>(response.Content);
-        await _cacheProvider.AddScoreAsync(BotUsageRankKey, apiKey, 1);
-        return chatBotResponseDto.Choices.First().Message.Content;
+        try
+        {
+            var response = await client.ExecuteAsync(request);
+            var chatBotResponseDto = JsonConvert.DeserializeObject<ChatBotResponseDto>(response.Content);
+            await _cacheProvider.AddScoreAsync(BotUsageRankKey, apiKey, 1);
+            return chatBotResponseDto.Choices.First().Message.Content;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Send message to GPT Error,ex is {error}", e.Message);
+            throw new UserFriendlyException("Please try again later.");
+        }
     }
 
     public async Task RefreshBotTokenAsync()
@@ -96,15 +101,14 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         var value = await _cacheProvider.Get(RelationTokenCacheKey);
         if (value.HasValue)
         {
-            _logger.LogDebug("token has been init.");
+            _logger.LogDebug("Token has been init.");
             return;
         }
 
         try
         {
             var pToken = await GetPortkeyToken();
-            
-            _logger.LogDebug("Portkey token is {token}",pToken);
+            _logger.LogDebug("Portkey token is {token}", pToken);
             var headers = new Dictionary<string, string>
             {
                 { CommonConstant.AuthHeader, pToken }
@@ -124,10 +128,24 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
                 Signature = signature.ToHex()
             };
 
-            _logger.LogDebug("Request to im url is {url}", GetUrl(ImUrlConstant.AddressToken));
-            // var response = await _httpClientProvider.PostAsync<SignatureDto>(
-            //     GetUrl(ImUrlConstant.AddressToken), signatureRequest, headers);
-            _logger.LogDebug("Param is {param}", JsonConvert.SerializeObject(signatureRequest));
+            var input = JsonConvert.SerializeObject(signatureRequest, Formatting.None);
+            var request = new StringContent(
+                input,
+                Encoding.UTF8,
+                MediaTypeNames.Application.Json);
+
+            // var tokenClient = new HttpClient();
+            // tokenClient.DefaultRequestHeaders.Add("Authorization", $"{CommonConstant.JwtPrefix} {pToken}");
+            // //"Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IkIzRTVBRTk3MTI4RTk2RjE1RjNCQzQ4NzNFQTdDMjNGNjhBQjhBNTUiLCJ4NXQiOiJzLVd1bHhLT2x2RmZPOFNIUHFmQ1AyaXJpbFUiLCJ0eXAiOiJhdCtqd3QifQ.eyJzdWIiOiIxYjRiZmQ1OS1mYmVmLTQ0ZGYtODE4Yi1lOGExNWUxZGE3MDQiLCJvaV9wcnN0IjoiQ0FTZXJ2ZXJfQXBwIiwiY2xpZW50X2lkIjoiQ0FTZXJ2ZXJfQXBwIiwib2lfdGtuX2lkIjoiOTE3ODM2YzQtZDc0ZC0xNGJhLTM2ZWItM2ExM2EzM2QzY2JlIiwiYXVkIjoiQ0FTZXJ2ZXIiLCJzY29wZSI6IkNBU2VydmVyIiwianRpIjoiZTNjYWQxZjUtN2M2NS00MTRjLWI4YjctZDE5MDVlOGNlODQ3IiwiZXhwIjoxNzIwNTkzNDg4LCJpc3MiOiJodHRwOi8vMTAuMTAuMzIuOTk6ODAwMS8iLCJpYXQiOjE3MjA0MjA2ODl9.hRYVwYLQpsPo3Ol-mK7SS38XwXfibMNuBL0Nw-neob72Ec1qFMeJ8seieajP_1q6P1UDQzGzji7yoHz7FwfmzaL4hdex9tCdYNE_fp5iNVrIQdiB-nsgEU5fbVXCLTPg-zD9JhZzRKt5fLFUB3xxRjyCAlvkjthq6TR_v-DHnygSKZr2dbpzh2ikXuTuQMFTWMVAkvnp15sQrdHrp4xm4Fsc2qrs-1wlwLGe9WK0S-ZuXpBLQ_nya0SMcPMlCYom5Q0kJ1mYDa3J-F1f2rOKIKPG2gXR8bqUthogTsumN1Vh3IonEJKXhcyTKciLwgv7cxE-c3BaS4XNcdf4JDcEfQ");
+            //
+            // var tokenResponse =
+            //     await tokenClient.PostAsync("https://im-api-test.portkey.finance/api/v1/users/token", request);
+            //
+            // var portkeyData = await tokenResponse.Content.ReadAsStringAsync();
+            // var tokenDto = JsonConvert.DeserializeObject<RelationOneResponseDto>(portkeyData);
+            // var signatureDto = JsonConvert.DeserializeObject<SignatureDto>(tokenDto.Data.ToString());
+
+
             var result = await _userAppService.GetSignatureAsync(signatureRequest);
 
             _logger.LogDebug("result is {result}", JsonConvert.SerializeObject(result));
@@ -149,26 +167,26 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             var auth = new AuthRequestDto
             {
                 AddressAuthToken = result.Token
-                    //"eyJhbGciOiJFUzI1NiJ9.eyJqdGkiOiIzYmY2YmU3MThkYmI0Mzg1OTU1Y2U4MTczNWZkMzcwNCIsImlzcyI6InJlbGF0aW9ubGFicy5haSIsImlhdCI6MTcyMDQyNjMwMCwic3ViIjoiMmdFWFBXQTVieGFtUTNBWHVDMWEzTmhVcWZEbVFnenVRSDZtNnhMUVB4Z2VxOFlIMjUiLCJjaGFpbk5hbWUiOiJhZWxmIiwiYWNjb3VudFNvdXJjZSI6ImFlbGYiLCJtYW5hZ2VyQWRkcmVzcyI6IjJoUU10RVZVN0ZpRFd3WUZ2ZTd2S0pDaGZoU3VrRldBU1lMeHJkWWdVUXBWTmlCcDFhIiwiY2FIYXNoIjoiYjljMjdhNjRmMWYxODI3Yzk3MTY3YzBlMmVlNzgyY2ZjN2VkMDU2YWE2NzhkYWU4NWIzNDg2ZGE5ZjA0YTUwYiIsImNhU2lkZUNoYWluQWRkcmVzc2VzIjpbIjJnRVhQV0E1YnhhbVEzQVh1QzFhM05oVXFmRG1RZ3p1UUg2bTZ4TFFQeGdlcThZSDI1Il0sImV4cCI6MTcyMTAzMTEwMH0.DqZOUwJCxqOg-2SK3Umn7gVEeKCx-sJOoVuTajYHUsI_mKcrgmRaLS2mqrpFeFnv8p_w0HYEvB0fv764QaXHcg"
+                //AddressAuthToken = signatureDto.Token,
             };
 
             var requestInput = JsonConvert.SerializeObject(auth, Formatting.None);
-
             var requestContent = new StringContent(
                 requestInput,
                 Encoding.UTF8,
                 MediaTypeNames.Application.Json);
 
             var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("Authorization",
-                "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IkIzRTVBRTk3MTI4RTk2RjE1RjNCQzQ4NzNFQTdDMjNGNjhBQjhBNTUiLCJ4NXQiOiJzLVd1bHhLT2x2RmZPOFNIUHFmQ1AyaXJpbFUiLCJ0eXAiOiJhdCtqd3QifQ.eyJzdWIiOiIxYjRiZmQ1OS1mYmVmLTQ0ZGYtODE4Yi1lOGExNWUxZGE3MDQiLCJvaV9wcnN0IjoiQ0FTZXJ2ZXJfQXBwIiwiY2xpZW50X2lkIjoiQ0FTZXJ2ZXJfQXBwIiwib2lfdGtuX2lkIjoiOTE3ODM2YzQtZDc0ZC0xNGJhLTM2ZWItM2ExM2EzM2QzY2JlIiwiYXVkIjoiQ0FTZXJ2ZXIiLCJzY29wZSI6IkNBU2VydmVyIiwianRpIjoiZTNjYWQxZjUtN2M2NS00MTRjLWI4YjctZDE5MDVlOGNlODQ3IiwiZXhwIjoxNzIwNTkzNDg4LCJpc3MiOiJodHRwOi8vMTAuMTAuMzIuOTk6ODAwMS8iLCJpYXQiOjE3MjA0MjA2ODl9.hRYVwYLQpsPo3Ol-mK7SS38XwXfibMNuBL0Nw-neob72Ec1qFMeJ8seieajP_1q6P1UDQzGzji7yoHz7FwfmzaL4hdex9tCdYNE_fp5iNVrIQdiB-nsgEU5fbVXCLTPg-zD9JhZzRKt5fLFUB3xxRjyCAlvkjthq6TR_v-DHnygSKZr2dbpzh2ikXuTuQMFTWMVAkvnp15sQrdHrp4xm4Fsc2qrs-1wlwLGe9WK0S-ZuXpBLQ_nya0SMcPMlCYom5Q0kJ1mYDa3J-F1f2rOKIKPG2gXR8bqUthogTsumN1Vh3IonEJKXhcyTKciLwgv7cxE-c3BaS4XNcdf4JDcEfQ");
+            client.DefaultRequestHeaders.Add("Authorization", $"{CommonConstant.JwtPrefix} {pToken}");
+            //"Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IkIzRTVBRTk3MTI4RTk2RjE1RjNCQzQ4NzNFQTdDMjNGNjhBQjhBNTUiLCJ4NXQiOiJzLVd1bHhLT2x2RmZPOFNIUHFmQ1AyaXJpbFUiLCJ0eXAiOiJhdCtqd3QifQ.eyJzdWIiOiIxYjRiZmQ1OS1mYmVmLTQ0ZGYtODE4Yi1lOGExNWUxZGE3MDQiLCJvaV9wcnN0IjoiQ0FTZXJ2ZXJfQXBwIiwiY2xpZW50X2lkIjoiQ0FTZXJ2ZXJfQXBwIiwib2lfdGtuX2lkIjoiOTE3ODM2YzQtZDc0ZC0xNGJhLTM2ZWItM2ExM2EzM2QzY2JlIiwiYXVkIjoiQ0FTZXJ2ZXIiLCJzY29wZSI6IkNBU2VydmVyIiwianRpIjoiZTNjYWQxZjUtN2M2NS00MTRjLWI4YjctZDE5MDVlOGNlODQ3IiwiZXhwIjoxNzIwNTkzNDg4LCJpc3MiOiJodHRwOi8vMTAuMTAuMzIuOTk6ODAwMS8iLCJpYXQiOjE3MjA0MjA2ODl9.hRYVwYLQpsPo3Ol-mK7SS38XwXfibMNuBL0Nw-neob72Ec1qFMeJ8seieajP_1q6P1UDQzGzji7yoHz7FwfmzaL4hdex9tCdYNE_fp5iNVrIQdiB-nsgEU5fbVXCLTPg-zD9JhZzRKt5fLFUB3xxRjyCAlvkjthq6TR_v-DHnygSKZr2dbpzh2ikXuTuQMFTWMVAkvnp15sQrdHrp4xm4Fsc2qrs-1wlwLGe9WK0S-ZuXpBLQ_nya0SMcPMlCYom5Q0kJ1mYDa3J-F1f2rOKIKPG2gXR8bqUthogTsumN1Vh3IonEJKXhcyTKciLwgv7cxE-c3BaS4XNcdf4JDcEfQ");
 
             var response =
                 await client.PostAsync("https://im-api-test.portkey.finance/api/v1/users/auth", requestContent);
-            var async = await response.Content.ReadAsStringAsync();
-            var dto = JsonConvert.DeserializeObject<RelationOneResponseDto>(async);
+                //await client.PostAsync(_chatBotConfigOptions.AuthUrl, requestContent);
+            var responseData = await response.Content.ReadAsStringAsync();
+            var dto = JsonConvert.DeserializeObject<RelationOneResponseDto>(responseData);
             var tokenData = JsonConvert.DeserializeObject<SignatureDto>(dto.Data.ToString());
-            _logger.LogDebug("relation token is {token}",JsonConvert.SerializeObject(tokenData));
+            _logger.LogDebug("relation token is {token}", JsonConvert.SerializeObject(tokenData));
             var expire = TimeSpan.FromMinutes(5);
             await _cacheProvider.Set(RelationTokenCacheKey, tokenData.Token, expire);
         }
@@ -203,19 +221,21 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         dict.Add("grant_type", "signature");
         dict.Add("pubkey",
             "04ef8c06f061c7e80b5b1d7901212c836c78608ca40afa9eecb373c9c51fff87ee79b208cf3cc0b46f1a991470c071dcdacba3a82222245100b0bba56fcf210750");
+        //dict.Add("pubkey", _chatBotBasicInfoOptions.Pubkey);
         dict.Add("signature", signature.ToHex());
         dict.Add("timestamp", now.ToString());
 
         using var client = new HttpClient();
         using var req =
             new HttpRequestMessage(HttpMethod.Post, "https://auth-aa-portkey-test.portkey.finance/connect/token")
+            //new HttpRequestMessage(HttpMethod.Post, _chatBotConfigOptions.PortkeyTokenUrl)
                 { Content = new FormUrlEncodedContent(dict) };
         using var res = await client.SendAsync(req);
 
         var stringAsync = await res.Content.ReadAsStringAsync();
         var authTokenDto = JsonConvert.DeserializeObject<AuthResponseDto>(stringAsync);
         _logger.LogDebug("GetToken is {token}", JsonConvert.SerializeObject(authTokenDto));
-        var expire = TimeSpan.FromDays(1);
+        var expire = TimeSpan.FromHours(3);
         await _cacheProvider.Set(PortkeyTokenCacheKey, authTokenDto.AccessToken, expire);
         return authTokenDto.AccessToken;
     }
@@ -231,12 +251,6 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         }
 
         var botKeys = _chatBotConfigOptions.BotKeys;
-        _logger.LogDebug("Keys length is {length}", botKeys.Count);
-        foreach (var key in botKeys)
-        {
-            _logger.LogDebug("BotKey is {key}", key);
-        }
-
         foreach (var key in botKeys)
         {
             await _cacheProvider.AddScoreAsync(BotUsageRankKey, key, 0);
@@ -260,87 +274,4 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         return rank.First().Element;
     }
 
-    private string GetUrl(string url)
-    {
-        return $"{_relationOneOptions.BaseUrl.TrimEnd('/')}/{url}";
-    }
-
-    private async Task<T> PostJsonAsync<T>(string url, object paramObj, Dictionary<string, string> headers)
-    {
-        url = "http://10.10.32.99:9902/" + url;
-        var serializerSettings = new JsonSerializerSettings
-        {
-            ContractResolver = new CamelCasePropertyNamesContractResolver()
-        };
-        var requestInput = paramObj == null
-            ? string.Empty
-            : JsonConvert.SerializeObject(paramObj, Formatting.None, serializerSettings);
-
-        var requestContent = new StringContent(
-            requestInput,
-            Encoding.UTF8,
-            MediaTypeNames.Application.Json);
-
-        var client = GetClient();
-
-        if (headers is { Count: > 0 })
-        {
-            foreach (var header in headers)
-            {
-                client.DefaultRequestHeaders.Add(header.Key, header.Value);
-            }
-        }
-
-        var response = await client.PostAsync(url, requestContent);
-        var content = await response.Content.ReadAsStringAsync();
-        _logger.LogDebug("content is {content}", content);
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            _logger.LogError("Response status code not good, code:{code}, message: {message}, params:{param}",
-                response.StatusCode, content, JsonConvert.SerializeObject(paramObj));
-
-            throw new UserFriendlyException(content, ((int)response.StatusCode).ToString());
-        }
-
-        return JsonConvert.DeserializeObject<T>(content);
-    }
-
-    private HttpClient GetClient()
-    {
-        var client = _httpClientFactory.CreateClient(RelationOneConstant.ClientName);
-
-        // var auth = _httpContextAccessor?.HttpContext?.Request?.Headers[RelationOneConstant.AuthHeader]
-        //     .FirstOrDefault();
-        // _logger.LogDebug("auth is {auth}",auth);
-        // var authToken = _httpContextAccessor?.HttpContext?.Request?.Headers["Authorization"]
-        //     .FirstOrDefault();
-        // if (!auth.IsNullOrWhiteSpace())
-        // {
-        //     client.DefaultRequestHeaders.Add(HeaderNames.Authorization, auth);
-        // }
-
-        return client;
-    }
-
-    private T GetData<T>(RelationOneResponseDto<T> response)
-    {
-        if (response.Code == RelationOneConstant.SuccessCode)
-        {
-            return response.Data;
-        }
-
-        if (response.Code == RelationOneConstant.FailCode)
-        {
-            throw new UserFriendlyException(response.Desc,
-                RelationOneConstant.ImResponseMappings[RelationOneConstant.FailCode].Code);
-        }
-
-        var responseMapping = RelationOneConstant.ImResponseMappings.GetOrDefault(response.Code);
-        if (responseMapping == null)
-        {
-            throw new UserFriendlyException(response.Desc, response.Code);
-        }
-
-        throw new UserFriendlyException(responseMapping.Message, responseMapping.Code);
-    }
 }

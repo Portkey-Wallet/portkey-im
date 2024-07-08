@@ -20,7 +20,6 @@ using IM.Grains.Grain.Message;
 using IM.Grains.Grain.RedPackage;
 using IM.Message.Dtos;
 using IM.Message.Etos;
-using IM.Message.Provider;
 using IM.Options;
 using IM.PinMessage;
 using IM.PinMessage.Dtos;
@@ -63,12 +62,10 @@ public class MessageAppService : ImAppService, IMessageAppService
     private readonly IUserAppService _userAppService;
     private readonly IChannelProvider _channelProvider;
     private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
-    private readonly IHttpClientProvider _httpClientProvider;
     private readonly RelationOneOptions _relationOneOptions;
     private readonly ICacheProvider _cacheProvider;
     private readonly IChatBotAppService _chatBotAppService;
     private const string RelationTokenCacheKey = "IM:RelationTokenKey:";
-    private readonly IUserProvider _userProvider;
     private readonly IHttpClientFactory _httpClientFactory;
 
 
@@ -86,9 +83,9 @@ public class MessageAppService : ImAppService, IMessageAppService
         INESTRepository<UserIndex, Guid> userRepository,
         IRefreshRepository<PinMessageIndex, string> pinMessageRepository,
         IUserAppService userAppService, IChannelProvider channelProvider,
-        IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions, IHttpClientProvider httpClientProvider,
+        IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions, 
         ICacheProvider cacheProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions,
-        IChatBotAppService chatBotAppService, IUserProvider userProvider, IHttpClientFactory httpClientFactory)
+        IChatBotAppService chatBotAppService,  IHttpClientFactory httpClientFactory)
     {
         _proxyMessageAppService = proxyMessageAppService;
         _encryptionService = encryptionService;
@@ -106,10 +103,8 @@ public class MessageAppService : ImAppService, IMessageAppService
         _messagePushOptions = messagePushOptions.Value;
         _userAppService = userAppService;
         _channelProvider = channelProvider;
-        _httpClientProvider = httpClientProvider;
         _cacheProvider = cacheProvider;
         _chatBotAppService = chatBotAppService;
-        _userProvider = userProvider;
         _httpClientFactory = httpClientFactory;
         _relationOneOptions = relationOneOptions.Value;
         _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
@@ -122,16 +117,13 @@ public class MessageAppService : ImAppService, IMessageAppService
 
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)
     {
-        //var currentUser = await _userProvider.GetUserInfoByIdAsync(CurrentUser.GetId());
         if (input.ToRelationId == _chatBotBasicInfoOptions.RelationId)
         {
             await _proxyMessageAppService.SendMessageAsync(input);
-            _logger.LogDebug("send message to bot {message}", JsonConvert.SerializeObject(input));
             var response = await _chatBotAppService.SendMessageToChatBotAsync(input.Content, input.From);
             _logger.LogDebug("Response from gpt is {response}", response);
             var message = new SendMessageRequestDto
             {
-                //ToRelationId = currentUser.RelationId,
                 ChannelUuid = input.ChannelUuid,
                 SendUuid = BuildSendUUid(input.ToRelationId, input.ChannelUuid),
                 Content = response,
@@ -655,18 +647,6 @@ public class MessageAppService : ImAppService, IMessageAppService
 
     private async Task SendBotMessageAsync(SendMessageRequestDto message)
     {
-        // var headers = new Dictionary<string, string>();
-        // var token = await _cacheProvider.Get(RelationTokenCacheKey);
-        // headers.Add(RelationOneConstant.AuthHeader, $"{CommonConstant.JwtPrefix} {token}");
-        // _logger.LogDebug("Cached token is {token},message is {message}", token.ToString(),
-        //     JsonConvert.SerializeObject(message));
-        // _logger.LogDebug("Url is {url}",GetUrl("api/v1/message/send"));
-        // var response = await _httpClientProvider.PostAsync<SendMessageResponseDto>("http://10.10.32.99:9900/api/v1/message/send",
-        //     message,
-        //     headers);
-        // _logger.LogDebug("Bot send message to user response is {response}", JsonConvert.SerializeObject(response));
-        
-        
         var url = GetRealUrl("api/v1/message/send");
         var serializerSettings = new JsonSerializerSettings
         {
@@ -683,17 +663,8 @@ public class MessageAppService : ImAppService, IMessageAppService
 
         var client = await GetClient();
 
-        // if (headers is { Count: > 0 })
-        // {
-        //     foreach (var header in headers)
-        //     {
-        //         client.DefaultRequestHeaders.Add(header.Key, header.Value);
-        //     }
-        // }
-
         var response = await client.PostAsync(url, requestContent);
         var content = await response.Content.ReadAsStringAsync();
-        _logger.LogDebug("Send message get response from IM {0}",content);
         if (response.StatusCode != HttpStatusCode.OK)
         {
             _logger.LogError("Response status code not good, code:{code}, message: {message}, params:{param}",
@@ -701,16 +672,7 @@ public class MessageAppService : ImAppService, IMessageAppService
 
             throw new UserFriendlyException(content, ((int)response.StatusCode).ToString());
         }
-        
-        //return JsonConvert.DeserializeObject<T>(content);
     }
-
-
-    private string GetUrl(string url)
-    {
-        return $"{_relationOneOptions.BaseUrl.TrimEnd('/')}/{url}";
-    }
-    
     
     private string GetRealUrl(string url)
     {
@@ -726,13 +688,7 @@ public class MessageAppService : ImAppService, IMessageAppService
     private async Task<HttpClient> GetClient()
     {
         var client = _httpClientFactory.CreateClient(RelationOneConstant.ClientName);
-
         var auth = await _cacheProvider.Get(RelationTokenCacheKey);
-        // var auth = _httpContextAccessor?.HttpContext?.Request?.Headers[RelationOneConstant.AuthHeader]
-        //     .FirstOrDefault();
-        // _logger.LogDebug("auth is {auth}",auth);
-        // var authToken = _httpContextAccessor?.HttpContext?.Request?.Headers["Authorization"]
-        //     .FirstOrDefault();
         if (auth.HasValue)
         {
             client.DefaultRequestHeaders.Add(HeaderNames.Authorization, $"{CommonConstant.JwtPrefix} {auth}");

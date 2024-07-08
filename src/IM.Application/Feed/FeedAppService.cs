@@ -186,28 +186,32 @@ public class FeedAppService : ImAppService, IFeedAppService
             else
             {
                 var item = result.List.Where(t => t.ChannelUuid == botChannel.Uuid).ToList().FirstOrDefault();
-                var botIndex = result.List.IndexOf(item);
-                var index = 0;
-                for (var i = 0; i < result.List.Count; i++)
+                if (item is { Pin: false })
                 {
-                    if (result.List[i].Pin)
+                    var botIndex = result.List.IndexOf(item);
+                    var index = 0;
+                    for (var i = 0; i < result.List.Count; i++)
                     {
-                        continue;
+                        if (result.List[i].Pin)
+                        {
+                            continue;
+                        }
+
+                        index = i + 1;
+                        break;
                     }
 
-                    index = i + 1;
-                    break;
-                }
-
-                if (botIndex != -1 && index != botIndex)
-                {
-                    item.BotChannel = true;
-                    if (item.LastPostAt == null)
+                    if (botIndex != -1 && index != botIndex)
                     {
-                        item.IsInit = true;
+                        item.BotChannel = true;
+                        if (item.LastPostAt == null)
+                        {
+                            item.IsInit = true;
+                        }
+
+                        result.List.RemoveAt(botIndex);
+                        result.List.Insert(index, item);
                     }
-                    result.List.RemoveAt(botIndex);
-                    result.List.Insert(index, item);
                 }
             }
         }

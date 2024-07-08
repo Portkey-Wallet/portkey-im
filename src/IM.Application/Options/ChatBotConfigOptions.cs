@@ -9,6 +9,13 @@ public class ChatBotConfigOptions
     public string Model { get; set; }
 
     public int Token { get; set; }
+
+    public string TokenUrl { get; set; }
+    
+    public string AuthUrl { get; set; }
+    
+    public string PortkeyTokenUrl { get; set; }
     
     
+
 }
