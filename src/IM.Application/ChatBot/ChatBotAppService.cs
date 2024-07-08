@@ -112,14 +112,14 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             };
 
             _logger.LogDebug("Request to im url is {url}", GetUrl(ImUrlConstant.AddressToken));
-            var response = await _httpClientProvider.PostAsync<SignatureDto>(
-                GetUrl(ImUrlConstant.AddressToken), signatureRequest, headers);
+            // var response = await _httpClientProvider.PostAsync<SignatureDto>(
+            //     GetUrl(ImUrlConstant.AddressToken), signatureRequest, headers);
 
-            // var result = await _userAppService.GetSignatureAsync(signatureRequest);
-            _logger.LogDebug("Portkey token is {token}", response.Token);
+            var result = await _userAppService.GetSignatureAsync(signatureRequest);
+            //_logger.LogDebug("Portkey token is {token}", response.Token);
             var authToken = new AuthRequestDto
             {
-                AddressAuthToken = response.Token
+                AddressAuthToken = result.Token
             };
             var token = await _userAppService.GetAuthTokenAsync(authToken);
             _logger.LogDebug("Relation one Token is {token} ", token.Token);
