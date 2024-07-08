@@ -693,7 +693,7 @@ public class MessageAppService : ImAppService, IMessageAppService
 
         var response = await client.PostAsync(url, requestContent);
         var content = await response.Content.ReadAsStringAsync();
-        _logger.LogDebug("Send message get response from IM {0}",response);
+        _logger.LogDebug("Send message get response from IM {0}",content);
         if (response.StatusCode != HttpStatusCode.OK)
         {
             _logger.LogError("Response status code not good, code:{code}, message: {message}, params:{param}",
