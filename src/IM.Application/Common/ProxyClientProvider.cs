@@ -137,7 +137,6 @@ public class ProxyClientProvider : IProxyClientProvider, ISingletonDependency
 
         var response = await client.PostAsync(url, requestContent);
         var content = await response.Content.ReadAsStringAsync();
-        _logger.LogDebug("Send message get response from IM {0}",response);
         if (response.StatusCode != HttpStatusCode.OK)
         {
             _logger.LogError("Response status code not good, code:{code}, message: {message}, params:{param}",
@@ -186,10 +185,8 @@ public class ProxyClientProvider : IProxyClientProvider, ISingletonDependency
     private HttpClient GetClient()
     {
         var client = _httpClientFactory.CreateClient(RelationOneConstant.ClientName);
-
         var auth = _httpContextAccessor?.HttpContext?.Request?.Headers[RelationOneConstant.AuthHeader]
             .FirstOrDefault();
-        _logger.LogDebug("auth is {auth}",auth);
         var authToken = _httpContextAccessor?.HttpContext?.Request?.Headers["Authorization"]
             .FirstOrDefault();
         if (!auth.IsNullOrWhiteSpace())
