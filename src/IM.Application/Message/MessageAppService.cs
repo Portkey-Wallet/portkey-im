@@ -654,7 +654,8 @@ public class MessageAppService : ImAppService, IMessageAppService
         headers.Add(RelationOneConstant.AuthHeader, $"{CommonConstant.JwtPrefix} {token}");
         _logger.LogDebug("Cached token is {token},message is {message}", token.ToString(),
             JsonConvert.SerializeObject(message));
-        var response = await _httpClientProvider.PostAsync<SendMessageResponseDto>(GetUrl("api/v1/message/send"),
+        _logger.LogDebug("Url is {url}",GetUrl("api/v1/message/send"));
+        var response = await _httpClientProvider.PostAsync<SendMessageResponseDto>("http://10.10.32.99:9902/api/v1/message/send",
             message,
             headers);
         _logger.LogDebug("Bot send message to user response is {response}", JsonConvert.SerializeObject(response));
