@@ -88,12 +88,12 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
     public async Task RefreshBotTokenAsync()
     {
-        //var value = await _cacheProvider.Get(RelationTokenCacheKey);
-        // if (value.HasValue)
-        // {
-        //     _logger.LogDebug("Token has been init.");
-        //     return;
-        // }
+        var value = await _cacheProvider.Get(RelationTokenCacheKey);
+         if (value.HasValue)
+         {
+             _logger.LogDebug("Token has been init.");
+             return;
+         }
         try
         {
             var pToken = await GetPortkeyTokenAsync();
@@ -168,12 +168,12 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
 
     private async Task<string> GetPortkeyTokenAsync()
     {
-        // var cacheToken = await _cacheProvider.Get(PortkeyTokenCacheKey);
-        // if (cacheToken.HasValue)
-        // {
-        //     _logger.LogDebug("Token is exist,{token}", cacheToken);
-        //     return cacheToken;
-        // }
+        var cacheToken = await _cacheProvider.Get(PortkeyTokenCacheKey);
+        if (cacheToken.HasValue)
+        {
+            _logger.LogDebug("Token is exist,{token}", cacheToken);
+            return cacheToken;
+        }
 
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var data = Encoding.UTF8.GetBytes(_chatBotBasicInfoOptions.Address + "-" + now).ComputeHash();
@@ -189,15 +189,12 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         dict.Add("client_id", "CAServer_App");
         dict.Add("scope", "CAServer");
         dict.Add("grant_type", "signature");
-        //dict.Add("pubkey",
-        //"04ef8c06f061c7e80b5b1d7901212c836c78608ca40afa9eecb373c9c51fff87ee79b208cf3cc0b46f1a991470c071dcdacba3a82222245100b0bba56fcf210750");
         dict.Add("pubkey", _chatBotBasicInfoOptions.Pubkey);
         dict.Add("signature", signature.ToHex());
         dict.Add("timestamp", now.ToString());
 
         var client = new HttpClient();
         var req =
-            //new HttpRequestMessage(HttpMethod.Post, "https://auth-aa-portkey-test.portkey.finance/connect/token")
             new HttpRequestMessage(HttpMethod.Post, _chatBotConfigOptions.PortkeyTokenUrl)
                 { Content = new FormUrlEncodedContent(dict) };
         var res = await client.SendAsync(req);
