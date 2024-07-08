@@ -188,6 +188,7 @@ public class ProxyClientProvider : IProxyClientProvider, ISingletonDependency
 
         var auth = _httpContextAccessor?.HttpContext?.Request?.Headers[RelationOneConstant.AuthHeader]
             .FirstOrDefault();
+        _logger.LogDebug("auth is {auth}",auth);
         var authToken = _httpContextAccessor?.HttpContext?.Request?.Headers["Authorization"]
             .FirstOrDefault();
         if (!auth.IsNullOrWhiteSpace())
