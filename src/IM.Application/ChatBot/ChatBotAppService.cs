@@ -103,6 +103,8 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         try
         {
             var pToken = await GetPortkeyToken();
+            
+            _logger.LogDebug("Portkey token is {token}",pToken);
             var headers = new Dictionary<string, string>
             {
                 { CommonConstant.AuthHeader, pToken }
@@ -165,7 +167,7 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
                 await client.PostAsync("https://im-api-test.portkey.finance/api/v1/users/auth", requestContent);
             var async = await response.Content.ReadAsStringAsync();
             var dto = JsonConvert.DeserializeObject<RelationOneResponseDto>(async);
-            var tokenData = (SignatureDto)dto.Data;
+            var tokenData = JsonConvert.DeserializeObject<SignatureDto>(dto.Data.ToString());
             _logger.LogDebug("relation token is {token}",JsonConvert.SerializeObject(tokenData));
             var expire = TimeSpan.FromHours(24);
             //await _cacheProvider.Set(RelationTokenCacheKey, token.Token, expire);
