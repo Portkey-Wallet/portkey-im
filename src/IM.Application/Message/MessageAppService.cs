@@ -735,7 +735,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         //     .FirstOrDefault();
         if (auth.HasValue)
         {
-            client.DefaultRequestHeaders.Add(HeaderNames.Authorization, auth);
+            client.DefaultRequestHeaders.Add(HeaderNames.Authorization, $"{CommonConstant.JwtPrefix} {auth}");
         }
         return client;
     }
