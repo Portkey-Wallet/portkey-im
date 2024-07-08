@@ -132,12 +132,13 @@ public class FeedAppService : ImAppService, IFeedAppService
         var result = await FetchFeedListAsync(input, headers);
         foreach (var feed in result.List)
         {
-            _logger.LogDebug("channel is {channel}",JsonConvert.SerializeObject(feed));
+            _logger.LogDebug("channel is {channel}", JsonConvert.SerializeObject(feed));
         }
+
         var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
         var botChannel = await _channelProvider.GetBotChannelUuidAsync(userIndex.RelationId,
             _chatBotBasicInfoOptions.RelationId);
-        _logger.LogDebug("AI Channel is {channel}",JsonConvert.SerializeObject(botChannel));
+        _logger.LogDebug("AI Channel is {channel}", JsonConvert.SerializeObject(botChannel));
         if (result.List.Count > 0)
         {
             if (botChannel == null)
@@ -147,7 +148,7 @@ public class FeedAppService : ImAppService, IFeedAppService
                     userIndex.RelationId,
                     _chatBotBasicInfoOptions.RelationId
                 };
-                
+
                 var botChannelCreate = new CreateChannelRequestDto
                 {
                     Name = _chatBotBasicInfoOptions.Name,
@@ -158,8 +159,8 @@ public class FeedAppService : ImAppService, IFeedAppService
                 await _channelContactAppAppService.CreateChannelAsync(botChannelCreate);
                 var channelBot = await _channelProvider.GetBotChannelUuidAsync(userIndex.RelationId,
                     _chatBotBasicInfoOptions.RelationId);
-                _logger.LogDebug("No Channel,Create a new one {channel}",JsonConvert.SerializeObject(channelBot));
-                
+                _logger.LogDebug("No Channel,Create a new one {channel}", JsonConvert.SerializeObject(channelBot));
+
                 var item = new ListFeedResponseItemDto
                 {
                     ChannelUuid = channelBot.Uuid,
@@ -241,6 +242,11 @@ public class FeedAppService : ImAppService, IFeedAppService
             {
                 await BuildRedPackageLastMessageAsync(listFeedResponseItemDto);
             }
+        }
+
+        foreach (var feed in result.List)
+        {
+            _logger.LogDebug("result is {channel}", JsonConvert.SerializeObject(feed));
         }
 
         return result;
