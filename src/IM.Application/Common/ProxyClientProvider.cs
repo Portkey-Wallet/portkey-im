@@ -112,7 +112,6 @@ public class ProxyClientProvider : IProxyClientProvider, ISingletonDependency
     private async Task<T> PostJsonAsync<T>(string url, object paramObj, Dictionary<string, string> headers)
     {
         url = GetUrl(url);
-        _logger.Debug("Send message by IM  url is {0}",url);
         var serializerSettings = new JsonSerializerSettings
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver()
