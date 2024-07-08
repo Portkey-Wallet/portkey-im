@@ -169,8 +169,8 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
             var dto = JsonConvert.DeserializeObject<RelationOneResponseDto>(async);
             var tokenData = JsonConvert.DeserializeObject<SignatureDto>(dto.Data.ToString());
             _logger.LogDebug("relation token is {token}",JsonConvert.SerializeObject(tokenData));
-            var expire = TimeSpan.FromHours(24);
-            //await _cacheProvider.Set(RelationTokenCacheKey, token.Token, expire);
+            var expire = TimeSpan.FromMinutes(5);
+            await _cacheProvider.Set(RelationTokenCacheKey, tokenData.Token, expire);
         }
         catch (Exception e)
         {
