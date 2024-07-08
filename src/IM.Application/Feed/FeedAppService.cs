@@ -202,7 +202,10 @@ public class FeedAppService : ImAppService, IFeedAppService
                 if (botIndex != -1 && index != botIndex)
                 {
                     item.BotChannel = true;
-                    item.IsInit = true;
+                    if (item.LastPostAt == null)
+                    {
+                        item.IsInit = true;
+                    }
                     result.List.RemoveAt(botIndex);
                     result.List.Insert(index, item);
                 }
