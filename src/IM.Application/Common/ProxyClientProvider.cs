@@ -14,6 +14,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Orleans.Runtime;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 
@@ -111,6 +112,7 @@ public class ProxyClientProvider : IProxyClientProvider, ISingletonDependency
     private async Task<T> PostJsonAsync<T>(string url, object paramObj, Dictionary<string, string> headers)
     {
         url = GetUrl(url);
+        _logger.Debug("Send message by IM  url is {0}",url);
         var serializerSettings = new JsonSerializerSettings
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver()
@@ -136,7 +138,7 @@ public class ProxyClientProvider : IProxyClientProvider, ISingletonDependency
 
         var response = await client.PostAsync(url, requestContent);
         var content = await response.Content.ReadAsStringAsync();
-
+        _logger.LogDebug("Send message get response from IM {0}",response);
         if (response.StatusCode != HttpStatusCode.OK)
         {
             _logger.LogError("Response status code not good, code:{code}, message: {message}, params:{param}",

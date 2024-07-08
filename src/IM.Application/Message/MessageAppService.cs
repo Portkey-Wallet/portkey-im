@@ -116,7 +116,7 @@ public class MessageAppService : ImAppService, IMessageAppService
 
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)
     {
-        var currentUser = await _userProvider.GetUserInfoByIdAsync(CurrentUser.GetId());
+        //var currentUser = await _userProvider.GetUserInfoByIdAsync(CurrentUser.GetId());
         if (input.ToRelationId == _chatBotBasicInfoOptions.RelationId)
         {
             await _proxyMessageAppService.SendMessageAsync(input);
@@ -125,7 +125,7 @@ public class MessageAppService : ImAppService, IMessageAppService
             _logger.LogDebug("Response from gpt is {response}", response);
             var message = new SendMessageRequestDto
             {
-                ToRelationId = currentUser.RelationId,
+                //ToRelationId = currentUser.RelationId,
                 ChannelUuid = input.ChannelUuid,
                 SendUuid = BuildSendUUid(input.ToRelationId, input.ChannelUuid),
                 Content = response,
