@@ -33,6 +33,7 @@ using Nest;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Orleans;
+using Orleans.Runtime;
 using Volo.Abp;
 using Volo.Abp.Auditing;
 using Volo.Abp.EventBus.Distributed;
@@ -135,6 +136,7 @@ public class MessageAppService : ImAppService, IMessageAppService
                 Type = "TEXT"
             };
             await SendBotMessageAsync(message);
+            _logger.Debug("Bot send user message is {message}",JsonConvert.SerializeObject(message));
             return responseDto;
         }
 
