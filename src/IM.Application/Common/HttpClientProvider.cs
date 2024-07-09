@@ -107,7 +107,6 @@ public class HttpClientProvider : IHttpClientProvider, ISingletonDependency
 
         var response = await client.PostAsync(url, requestContent);
         var content = await response.Content.ReadAsStringAsync();
-        _logger.LogDebug("Chat Bot send message to user,response is {0}",JsonConvert.SerializeObject(content));
         if (!ResponseSuccess(response.StatusCode))
         {
             _logger.LogError(

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using IM.ChannelContact;
 using IM.ChannelContact.Dto;
@@ -45,6 +46,12 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
 
         // add group information asynchronously
         _ = _groupProvider.AddGroupAsync(responseDto?.ChannelUuid, authToken);
+        var chatBot = requestDto.Members.Select(t=>t == _chatBotBasicInfoOptions.RelationId).FirstOrDefault();
+        if (chatBot)
+        {
+            responseDto.BotChannel = true;
+        }
+
         return responseDto;
     }
 
