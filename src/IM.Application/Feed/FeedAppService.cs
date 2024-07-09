@@ -7,6 +7,8 @@ using IM.ChannelContact;
 using IM.ChannelContact.Dto;
 using IM.ChannelContactService.Provider;
 using IM.Commons;
+using IM.Contact;
+using IM.Contact.Dtos;
 using IM.Feed.Dtos;
 using IM.Feed.Etos;
 using IM.Grains.Grain.Feed;
@@ -46,6 +48,7 @@ public class FeedAppService : ImAppService, IFeedAppService
     private readonly IChannelProvider _channelProvider;
     private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
     private readonly IChannelContactAppService _channelContactAppAppService;
+    private readonly IContactAppService _contactAppService;
 
     public FeedAppService(IClusterClient clusterClient, IDistributedEventBus distributedEventBus,
         IHttpContextAccessor httpContextAccessor, IProxyFeedAppService proxyFeedAppService,
@@ -53,7 +56,7 @@ public class FeedAppService : ImAppService, IFeedAppService
         INESTRepository<FeedInfoIndex, string> feedInfoIndex,
         IUserProvider userProvider, IBlockUserProvider blockUserProvider, IChannelProvider channelProvider,
         IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions,
-        IChannelContactAppService channelContactAppAppService)
+        IChannelContactAppService channelContactAppAppService, IContactAppService contactAppService)
     {
         _clusterClient = clusterClient;
         _distributedEventBus = distributedEventBus;
@@ -66,6 +69,7 @@ public class FeedAppService : ImAppService, IFeedAppService
         _blockUserProvider = blockUserProvider;
         _channelProvider = channelProvider;
         _channelContactAppAppService = channelContactAppAppService;
+        _contactAppService = contactAppService;
         _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
 
@@ -184,6 +188,13 @@ public class FeedAppService : ImAppService, IFeedAppService
             else
             {
                 var item = result.List.Where(t => t.ChannelUuid == botChannel.Uuid).ToList().FirstOrDefault();
+                
+                var requestDto = new ContactProfileRequestDto()
+                {
+                    RelationId = _chatBotBasicInfoOptions.RelationId
+                };
+                var bot = await _contactAppService.GetContactProfileAsync(requestDto);
+                
                 if (item is { Pin: false })
                 {
                     result.List.Remove(item);
@@ -204,7 +215,7 @@ public class FeedAppService : ImAppService, IFeedAppService
                     {
                         item.IsInit = true;
                     }
-
+                    item.DisplayName = !bot.Name.IsNullOrEmpty() ? bot.Name : _chatBotBasicInfoOptions.Name;
                     pinList.Add(item);
                     pinList.AddRange(noPinList);
                     result.List = pinList;
