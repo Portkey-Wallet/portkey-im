@@ -112,7 +112,7 @@ public class ContactAppService : ImAppService, IContactAppService
         else
         {
             var result = await GetByRelationIdAsync(input.RelationId);
-            _logger.LogDebug("contact is {contact}",JsonConvert.SerializeObject(result));
+            _logger.LogDebug("query by relation id contact is {contact}",JsonConvert.SerializeObject(result));
             contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
             if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
             {
@@ -199,7 +199,7 @@ public class ContactAppService : ImAppService, IContactAppService
         var contactProfileDto = new ContactProfileDto();
 
         var contact = await _userAppService.GetContactAsync(portkeyId);
-        _logger.LogDebug("contact is {contact}", JsonConvert.SerializeObject(contact));
+        _logger.LogDebug("query by porytkey id contact is {contact}", JsonConvert.SerializeObject(contact));
 
         if (contact != null)
         {
@@ -255,7 +255,7 @@ public class ContactAppService : ImAppService, IContactAppService
         };
 
         var user = await _userProvider.GetUserInfoAsync(relationId);
-        _logger.LogDebug("contact is {contact}", JsonConvert.SerializeObject(user));
+        _logger.LogDebug("query from userIndex contact is {contact}", JsonConvert.SerializeObject(user));
 
         var userInfo = await _proxyUserAppService.GetUserInfoAsync(userInfoRequestDto);
 
