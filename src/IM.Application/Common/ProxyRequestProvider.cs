@@ -71,7 +71,6 @@ public class ProxyRequestProvider : IProxyRequestProvider, ISingletonDependency
 
     private T GetData<T>(RelationOneResponseDto<T> response)
     {
-        _logger.LogDebug("Response is {result}",JsonConvert.SerializeObject(response));
         if (response.Code == RelationOneConstant.SuccessCode)
         {
             return response.Data;
