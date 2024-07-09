@@ -11,7 +11,6 @@ using IM.Cache;
 using IM.ChannelContactService.Provider;
 using IM.Chat;
 using IM.ChatBot;
-using IM.Common;
 using IM.Commons;
 using IM.Dtos;
 using IM.Entities.Es;
@@ -26,7 +25,6 @@ using IM.PinMessage.Dtos;
 using IM.RedPackage;
 using IM.Repository;
 using IM.User;
-using IM.User.Provider;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -83,9 +81,9 @@ public class MessageAppService : ImAppService, IMessageAppService
         INESTRepository<UserIndex, Guid> userRepository,
         IRefreshRepository<PinMessageIndex, string> pinMessageRepository,
         IUserAppService userAppService, IChannelProvider channelProvider,
-        IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions, 
+        IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions,
         ICacheProvider cacheProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions,
-        IChatBotAppService chatBotAppService,  IHttpClientFactory httpClientFactory)
+        IChatBotAppService chatBotAppService, IHttpClientFactory httpClientFactory)
     {
         _proxyMessageAppService = proxyMessageAppService;
         _encryptionService = encryptionService;
@@ -117,9 +115,14 @@ public class MessageAppService : ImAppService, IMessageAppService
 
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)
     {
+        var responseDto = await _proxyMessageAppService.SendMessageAsync(input);
+        if (responseDto == null || responseDto.ChannelUuid.IsNullOrEmpty())
+        {
+            return responseDto;
+        }
+
         if (input.ToRelationId == _chatBotBasicInfoOptions.RelationId)
         {
-            await _proxyMessageAppService.SendMessageAsync(input);
             var response = await _chatBotAppService.SendMessageToChatBotAsync(input.Content, input.From);
             _logger.LogDebug("Response from gpt is {response}", response);
             var message = new SendMessageRequestDto
@@ -131,17 +134,6 @@ public class MessageAppService : ImAppService, IMessageAppService
                 Type = input.Type
             };
             await SendBotMessageAsync(message);
-            return new SendMessageResponseDto
-            {
-                ChannelUuid = input.ChannelUuid,
-                ChatBotResponse = response
-            };
-        }
-
-
-        var responseDto = await _proxyMessageAppService.SendMessageAsync(input);
-        if (responseDto == null || responseDto.ChannelUuid.IsNullOrEmpty())
-        {
             return responseDto;
         }
 
@@ -216,7 +208,6 @@ public class MessageAppService : ImAppService, IMessageAppService
                 SendUuid = sendUuid,
                 Content = JsonConvert.SerializeObject(pinMessageSysInfo, settings)
             };
-
             await SendMessageAsync(messageRequest);
         }
 
@@ -660,31 +651,27 @@ public class MessageAppService : ImAppService, IMessageAppService
             requestInput,
             Encoding.UTF8,
             MediaTypeNames.Application.Json);
-
         var client = await GetClient();
-
         var response = await client.PostAsync(url, requestContent);
         var content = await response.Content.ReadAsStringAsync();
         if (response.StatusCode != HttpStatusCode.OK)
         {
             _logger.LogError("Response status code not good, code:{code}, message: {message}, params:{param}",
                 response.StatusCode, content, JsonConvert.SerializeObject(message));
-
             throw new UserFriendlyException(content, ((int)response.StatusCode).ToString());
         }
     }
-    
+
     private string GetRealUrl(string url)
     {
         if (_relationOneOptions == null || _relationOneOptions.UrlPrefix.IsNullOrWhiteSpace())
         {
             return url;
         }
-
         return $"{_relationOneOptions.UrlPrefix.TrimEnd('/')}/{url}";
     }
-    
-    
+
+
     private async Task<HttpClient> GetClient()
     {
         var client = _httpClientFactory.CreateClient(RelationOneConstant.ClientName);
@@ -695,6 +682,4 @@ public class MessageAppService : ImAppService, IMessageAppService
         }
         return client;
     }
-    
-    
 }

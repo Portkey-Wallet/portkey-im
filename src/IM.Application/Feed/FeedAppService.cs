@@ -130,11 +130,6 @@ public class FeedAppService : ImAppService, IFeedAppService
         [CanBeNull] IDictionary<string, string> headers)
     {
         var result = await FetchFeedListAsync(input, headers);
-        foreach (var feed in result.List)
-        {
-            _logger.LogDebug("channel is {channel}", JsonConvert.SerializeObject(feed));
-        }
-
         var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
         var botChannel = await _channelProvider.GetBotChannelUuidAsync(userIndex.RelationId,
             _chatBotBasicInfoOptions.RelationId);
@@ -159,59 +154,54 @@ public class FeedAppService : ImAppService, IFeedAppService
                 await _channelContactAppAppService.CreateChannelAsync(botChannelCreate);
                 var channelBot = await _channelProvider.GetBotChannelUuidAsync(userIndex.RelationId,
                     _chatBotBasicInfoOptions.RelationId);
-                _logger.LogDebug("No Channel,Create a new one {channel}", JsonConvert.SerializeObject(channelBot));
+                _logger.LogDebug("No Bot Channel,Create a new one {channel}", JsonConvert.SerializeObject(channelBot));
                 var item = new ListFeedResponseItemDto
                 {
                     ChannelUuid = channelBot.Uuid,
+                    DisplayName = _chatBotBasicInfoOptions.Name,
                     ChannelIcon = _chatBotBasicInfoOptions.Avatar,
                     ChannelType = "P",
                     ToRelationId = _chatBotBasicInfoOptions.RelationId,
                     BotChannel = true,
                     IsInit = true
                 };
-                var index = 0;
-                for (var i = 0; i < result.List.Count; i++)
+                var pinList = new List<ListFeedResponseItemDto>();
+                var noPinList = new List<ListFeedResponseItemDto>();
+                foreach (var feed in result.List)
                 {
-                    if (result.List[i].Pin)
+                    if (feed.Pin)
                     {
-                        continue;
+                        pinList.Add(feed);
                     }
 
-                    index = i + 1;
-                    break;
+                    noPinList.Add(feed);
                 }
 
-                result.List.Insert(index, item);
+                pinList.Add(item);
+                pinList.AddRange(noPinList);
+                result.List = pinList;
             }
             else
             {
                 var item = result.List.Where(t => t.ChannelUuid == botChannel.Uuid).ToList().FirstOrDefault();
                 if (item is { Pin: false })
                 {
-                    var botIndex = result.List.IndexOf(item);
-                    var index = 0;
-                    for (var i = 0; i < result.List.Count; i++)
+                    result.List.Remove(item);
+                    var pinList = new List<ListFeedResponseItemDto>();
+                    var noPinList = new List<ListFeedResponseItemDto>();
+                    foreach (var feed in result.List)
                     {
-                        if (result.List[i].Pin)
+                        if (feed.Pin)
                         {
-                            continue;
+                            pinList.Add(feed);
                         }
 
-                        index = i + 1;
-                        break;
+                        noPinList.Add(feed);
                     }
 
-                    if (botIndex != -1 && index != botIndex)
-                    {
-                        item.BotChannel = true;
-                        if (item.LastPostAt == null)
-                        {
-                            item.IsInit = true;
-                        }
-
-                        result.List.RemoveAt(botIndex);
-                        result.List.Insert(index, item);
-                    }
+                    pinList.Add(item);
+                    pinList.AddRange(noPinList);
+                    result.List = pinList;
                 }
             }
         }
