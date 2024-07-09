@@ -131,7 +131,7 @@ public class MessageAppService : ImAppService, IMessageAppService
                 SendUuid = BuildSendUUid(input.ToRelationId, input.ChannelUuid),
                 Content = response,
                 From = input.ToRelationId,
-                Type = input.Type
+                Type = "TEXT"
             };
             await SendBotMessageAsync(message);
             return responseDto;
