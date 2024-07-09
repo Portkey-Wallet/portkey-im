@@ -187,6 +187,7 @@ public class FeedAppService : ImAppService, IFeedAppService
                 if (item is { Pin: false })
                 {
                     result.List.Remove(item);
+                    item.BotChannel = true;
                     var pinList = new List<ListFeedResponseItemDto>();
                     var noPinList = new List<ListFeedResponseItemDto>();
                     foreach (var feed in result.List)
@@ -197,6 +198,11 @@ public class FeedAppService : ImAppService, IFeedAppService
                         }
 
                         noPinList.Add(feed);
+                    }
+
+                    if (item.LastPostAt == null)
+                    {
+                        item.IsInit = true;
                     }
 
                     pinList.Add(item);
