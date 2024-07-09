@@ -189,11 +189,11 @@ public class FeedAppService : ImAppService, IFeedAppService
             {
                 var item = result.List.Where(t => t.ChannelUuid == botChannel.Uuid).ToList().FirstOrDefault();
                 
-                // var requestDto = new ContactProfileRequestDto()
-                // {
-                //     RelationId = _chatBotBasicInfoOptions.RelationId
-                // };
-                // var bot = await _contactAppService.GetContactProfileAsync(requestDto);
+                var requestDto = new ContactProfileRequestDto()
+                {
+                    RelationId = _chatBotBasicInfoOptions.RelationId
+                };
+                var bot = await _contactAppService.GetContactProfileAsync(requestDto);
                 
                 if (item is { Pin: false })
                 {
@@ -215,7 +215,7 @@ public class FeedAppService : ImAppService, IFeedAppService
                     {
                         item.IsInit = true;
                     }
-                    //item.DisplayName = !bot.Name.IsNullOrEmpty() ? bot.Name : _chatBotBasicInfoOptions.Name;
+                    item.DisplayName = !bot.Name.IsNullOrEmpty() ? bot.Name : _chatBotBasicInfoOptions.Name;
                     pinList.Add(item);
                     pinList.AddRange(noPinList);
                     result.List = pinList;
