@@ -116,6 +116,7 @@ public class MessageAppService : ImAppService, IMessageAppService
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)
     {
         var responseDto = await _proxyMessageAppService.SendMessageAsync(input);
+        _logger.LogDebug("Send Message to user {message}",JsonConvert.SerializeObject(input));
         if (responseDto == null || responseDto.ChannelUuid.IsNullOrEmpty())
         {
             return responseDto;
