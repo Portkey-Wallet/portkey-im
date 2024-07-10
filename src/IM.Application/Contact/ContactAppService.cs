@@ -135,6 +135,7 @@ public class ContactAppService : ImAppService, IContactAppService
             if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
             {
                 contactProfileDto.Addresses = new List<ContactAddressDto>();
+                contactProfileDto.CaHolderInfo = null;
             }
 
             _logger.LogDebug("Contact is {Contact}", JsonConvert.SerializeObject(contactProfileDto));
