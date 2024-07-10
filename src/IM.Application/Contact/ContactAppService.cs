@@ -136,6 +136,7 @@ public class ContactAppService : ImAppService, IContactAppService
             {
                 contactProfileDto.Addresses = new List<ContactAddressDto>();
                 contactProfileDto.CaHolderInfo = null;
+                contactProfileDto.ContactType = 1;
             }
 
             _logger.LogDebug("Contact is {Contact}", JsonConvert.SerializeObject(contactProfileDto));
