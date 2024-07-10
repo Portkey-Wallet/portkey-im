@@ -427,7 +427,7 @@ public class ContactAppService : ImAppService, IContactAppService
         {
             { CommonConstant.AuthHeader, token }
         };
-
+        _logger.LogDebug("Relation is {relationId}", contactId);
         var param = new ChatBotRequestDto
         {
             RelationId = contactId,
