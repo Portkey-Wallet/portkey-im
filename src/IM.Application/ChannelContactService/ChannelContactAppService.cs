@@ -105,7 +105,7 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
     {
         if (ownerTransferRequestDto.RelationId == _chatBotBasicInfoOptions.RelationId)
         {
-            return "";
+            throw new UserFriendlyException("You can not transfer group owner to AI!");
         }
 
         return await _proxyChannelContactAppService.ChannelOwnerTransferAsync(ownerTransferRequestDto);
