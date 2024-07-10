@@ -111,14 +111,12 @@ public class ContactAppService : ImAppService, IContactAppService
         }
         else
         {
-            var result = await GetByRelationIdAsync(input.RelationId);
-            _logger.LogDebug("query by relation id contact is {contact}",JsonConvert.SerializeObject(result));
-            contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
             if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
             {
+                var result = await GetByRelationIdAsync(input.RelationId);
                 return new ContactInfoDto
                 {
-                    Id = result.Id.ToString(),
+                    Id = contactProfileDto.Id.ToString(),
                     Name = result.Name,
                     Index = result.Index,
                     UserId = result.UserId.ToString(),
@@ -132,6 +130,7 @@ public class ContactAppService : ImAppService, IContactAppService
                     ContactType = 1
                 };
             }
+            contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
         }
 
         Logger.LogDebug(
