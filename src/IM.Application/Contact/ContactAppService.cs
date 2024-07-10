@@ -116,7 +116,7 @@ public class ContactAppService : ImAppService, IContactAppService
                 var result = await GetByRelationIdAsync(input.RelationId);
                 return new ContactInfoDto
                 {
-                    Id = contactProfileDto.Id.ToString(),
+                    Id = result.Id.ToString(),
                     Name = result.Name,
                     Index = result.Index,
                     UserId = result.UserId.ToString(),
@@ -125,7 +125,7 @@ public class ContactAppService : ImAppService, IContactAppService
                     {
                         Name = result.ImInfo.Name,
                         RelationId = _chatBotBasicInfoOptions.RelationId,
-                        PortkeyId = contactProfileDto.ImInfo.PortkeyId
+                        PortkeyId = result.ImInfo.PortkeyId
                     },
                     ContactType = 1
                 };
