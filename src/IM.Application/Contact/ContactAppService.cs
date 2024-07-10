@@ -111,27 +111,28 @@ public class ContactAppService : ImAppService, IContactAppService
         }
         else
         {
-            if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
-            {
-                var result = await GetByRelationIdAsync(input.RelationId);
-                return new ContactInfoDto
-                {
-                    Id = result.Id.ToString(),
-                    Name = result.Name,
-                    Index = result.Index,
-                    UserId = result.UserId.ToString(),
-                    Avatar = _chatBotBasicInfoOptions.Avatar,
-                    ImInfo = new ImInfoDto
-                    {
-                        Name = result.ImInfo.Name,
-                        RelationId = _chatBotBasicInfoOptions.RelationId,
-                        PortkeyId = result.ImInfo.PortkeyId
-                    },
-                    ContactType = 1
-                };
-            }
+            // if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
+            // {
+            //     var result = await GetByRelationIdAsync(input.RelationId);
+            //     return new ContactInfoDto
+            //     {
+            //         Id = result.Id.ToString(),
+            //         Name = result.Name,
+            //         Index = result.Index,
+            //         UserId = result.UserId.ToString(),
+            //         Avatar = _chatBotBasicInfoOptions.Avatar,
+            //         ImInfo = new ImInfoDto
+            //         {
+            //             Name = result.ImInfo.Name,
+            //             RelationId = _chatBotBasicInfoOptions.RelationId,
+            //             PortkeyId = result.ImInfo.PortkeyId
+            //         },
+            //         ContactType = 1
+            //     };
+            // }
 
             contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
+            _logger.LogDebug("Contact is {Contact}", JsonConvert.SerializeObject(contactProfileDto));
         }
 
         Logger.LogDebug(
