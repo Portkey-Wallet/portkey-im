@@ -195,10 +195,11 @@ public class FeedAppService : ImAppService, IFeedAppService
                 };
                 var bot = await _contactAppService.GetContactProfileAsync(requestDto);
                 
+                item.BotChannel = true;
+                item.DisplayName = !bot.Name.IsNullOrEmpty() ? bot.Name : _chatBotBasicInfoOptions.Name;
                 if (item is { Pin: false })
                 {
                     result.List.Remove(item);
-                    item.BotChannel = true;
                     var pinList = new List<ListFeedResponseItemDto>();
                     var noPinList = new List<ListFeedResponseItemDto>();
                     foreach (var feed in result.List)
@@ -207,19 +208,17 @@ public class FeedAppService : ImAppService, IFeedAppService
                         {
                             pinList.Add(feed);
                         }
-
                         noPinList.Add(feed);
                     }
-
                     if (item.LastPostAt == null)
                     {
                         item.IsInit = true;
                     }
-                    item.DisplayName = !bot.Name.IsNullOrEmpty() ? bot.Name : _chatBotBasicInfoOptions.Name;
-                    pinList.Add(item);
+                    pinList.AddLast(item);
                     pinList.AddRange(noPinList);
                     result.List = pinList;
                 }
+                
             }
         }
 
