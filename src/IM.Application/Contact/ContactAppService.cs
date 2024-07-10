@@ -132,6 +132,11 @@ public class ContactAppService : ImAppService, IContactAppService
             // }
 
             contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
+            if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
+            {
+                contactProfileDto.Addresses = new List<ContactAddressDto>();
+            }
+
             _logger.LogDebug("Contact is {Contact}", JsonConvert.SerializeObject(contactProfileDto));
         }
 
