@@ -130,6 +130,7 @@ public class ContactAppService : ImAppService, IContactAppService
                     ContactType = 1
                 };
             }
+
             contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
         }
 
@@ -431,11 +432,10 @@ public class ContactAppService : ImAppService, IContactAppService
         {
             RelationId = contactId,
             UserId = (Guid)CurrentUser.Id
-            
         };
         var contactProfileDto = await _httpClientProvider.PostAsync<ContactProfileDto>(
             _caServerOptions.BaseUrl + CAServerConstant.ContactsGetByRelationId, param, headers);
-
+        _logger.LogDebug("Query from CAServer Contact is {contact}", JsonConvert.SerializeObject(contactProfileDto));
         if (contactProfileDto.CaHolderInfo == null || contactProfileDto.CaHolderInfo.UserId == Guid.Empty)
         {
             return contactProfileDto;
