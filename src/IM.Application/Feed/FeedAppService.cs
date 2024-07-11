@@ -187,48 +187,48 @@ public class FeedAppService : ImAppService, IFeedAppService
             }
             else
             {
-                var currentResult = await FetchFeedListAsync(input, headers);   
-                var channelBot = await _channelProvider.GetBotChannelUuidAsync(userIndex.RelationId,
-                    _chatBotBasicInfoOptions.RelationId);
-                var item = currentResult.List.Where(t => t.ChannelUuid == channelBot.Uuid).ToList().FirstOrDefault();
+                var item = result.List.Where(t => t.ChannelUuid == botChannel.Uuid).ToList().FirstOrDefault();
                 _logger.LogDebug("item is {item}", JsonConvert.SerializeObject(item));
-                var requestDto = new ContactProfileRequestDto()
+                if (item != null)
                 {
-                    RelationId = _chatBotBasicInfoOptions.RelationId
-                };
-                var bot = await _contactAppService.GetContactProfileAsync(requestDto);
-                _logger.LogDebug("bot info is {bot}", JsonConvert.SerializeObject(bot));
-                item.BotChannel = true;
-                item.DisplayName = !bot.Name.IsNullOrEmpty() ? bot.Name : _chatBotBasicInfoOptions.Name;
-                if (item is { Pin: false })
-                {
-                    foreach (var feed in result.List)
+                    var requestDto = new ContactProfileRequestDto()
                     {
-                        _logger.LogDebug("current list is:{list}", JsonConvert.SerializeObject(feed));
-                    }
-
-                    result.List.Remove(item);
-                    _logger.LogDebug("after remove list is {list}", result.List.Count);
-                    var pinList = new List<ListFeedResponseItemDto>();
-                    var noPinList = new List<ListFeedResponseItemDto>();
-                    foreach (var feed in result.List)
+                        RelationId = _chatBotBasicInfoOptions.RelationId
+                    };
+                    var bot = await _contactAppService.GetContactProfileAsync(requestDto);
+                    _logger.LogDebug("bot info is {bot}", JsonConvert.SerializeObject(bot));
+                    item.BotChannel = true;
+                    item.DisplayName = !bot.Name.IsNullOrEmpty() ? bot.Name : _chatBotBasicInfoOptions.Name;
+                    if (item is { Pin: false })
                     {
-                        if (feed.Pin)
+                        foreach (var feed in result.List)
                         {
-                            pinList.Add(feed);
+                            _logger.LogDebug("current list is:{list}", JsonConvert.SerializeObject(feed));
                         }
 
-                        noPinList.Add(feed);
-                    }
+                        result.List.Remove(item);
+                        _logger.LogDebug("after remove list is {list}", result.List.Count);
+                        var pinList = new List<ListFeedResponseItemDto>();
+                        var noPinList = new List<ListFeedResponseItemDto>();
+                        foreach (var feed in result.List)
+                        {
+                            if (feed.Pin)
+                            {
+                                pinList.Add(feed);
+                            }
 
-                    if (item.LastPostAt == null)
-                    {
-                        item.IsInit = true;
-                    }
+                            noPinList.Add(feed);
+                        }
 
-                    pinList.AddLast(item);
-                    pinList.AddRange(noPinList);
-                    result.List = pinList;
+                        if (item.LastPostAt == null)
+                        {
+                            item.IsInit = true;
+                        }
+
+                        pinList.AddLast(item);
+                        pinList.AddRange(noPinList);
+                        result.List = pinList;
+                    }
                 }
             }
         }
