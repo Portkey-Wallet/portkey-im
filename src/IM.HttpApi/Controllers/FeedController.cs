@@ -29,7 +29,7 @@ public class FeedController : ImController
     public async Task<ListFeedResponseDto> ListFeedAsync(ListFeedRequestDto input)
     {
         var header = Request.Headers;
-        string userAgent = header["user-aegnt"];
+        string userAgent = header["user-agent"];
         _logger.LogDebug("Header agent is {agent}",userAgent);
         return await _feedAppService.ListFeedAsync(input, new Dictionary<string, string>());
     }
