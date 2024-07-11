@@ -187,7 +187,10 @@ public class FeedAppService : ImAppService, IFeedAppService
             }
             else
             {
-                var item = result.List.Where(t => t.ChannelUuid == botChannel.Uuid).ToList().FirstOrDefault();
+                var currentResult = await FetchFeedListAsync(input, headers);   
+                var channelBot = await _channelProvider.GetBotChannelUuidAsync(userIndex.RelationId,
+                    _chatBotBasicInfoOptions.RelationId);
+                var item = currentResult.List.Where(t => t.ChannelUuid == channelBot.Uuid).ToList().FirstOrDefault();
                 _logger.LogDebug("item is {item}", JsonConvert.SerializeObject(item));
                 var requestDto = new ContactProfileRequestDto()
                 {
