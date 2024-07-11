@@ -60,6 +60,7 @@ public class ContactAppService : ImAppService, IContactAppService
 
     public async Task<ContactInfoDto> GetContactProfileAsync(ContactProfileRequestDto input)
     {
+        _logger.LogDebug("profile query param is {input}",JsonConvert.SerializeObject(input));
         var contactProfileDto = new ContactProfileDto();
 
         var token = _httpContextAccessor.HttpContext?.Request.Headers[CommonConstant.AuthHeader];
