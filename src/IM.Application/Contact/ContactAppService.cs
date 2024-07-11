@@ -115,22 +115,25 @@ public class ContactAppService : ImAppService, IContactAppService
             if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
             {
                 var result = await GetByRelationIdAsync(input.RelationId);
-                _logger.LogDebug("Get contact from CAServer :{contact}",JsonConvert.SerializeObject(result));
-                return new ContactInfoDto
+                if (null != result)
                 {
-                    Id = result.Id.ToString(),
-                    Name = result.Name,
-                    Index = result.Index,
-                    UserId = result.UserId.ToString(),
-                    Avatar = _chatBotBasicInfoOptions.Avatar,
-                    ImInfo = new ImInfoDto
+                    _logger.LogDebug("Get contact from CAServer :{contact}",JsonConvert.SerializeObject(result));
+                    return new ContactInfoDto
                     {
-                        Name = result.ImInfo.Name,
-                        RelationId = _chatBotBasicInfoOptions.RelationId,
-                        PortkeyId = result.ImInfo.PortkeyId
-                    },
-                    ContactType = 1
-                };
+                        Id = result.Id.ToString(),
+                        Name = result.Name,
+                        Index = result.Index,
+                        UserId = result.UserId.ToString(),
+                        Avatar = _chatBotBasicInfoOptions.Avatar,
+                        ImInfo = new ImInfoDto
+                        {
+                            Name = result.ImInfo.Name,
+                            RelationId = _chatBotBasicInfoOptions.RelationId,
+                            PortkeyId = result.ImInfo.PortkeyId
+                        },
+                        ContactType = 1
+                    };
+                }
             }
 
             contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
