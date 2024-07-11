@@ -134,6 +134,21 @@ public class ContactAppService : ImAppService, IContactAppService
                         ContactType = 1
                     };
                 }
+                return new ContactInfoDto
+                {
+                    //Id = result.Id.ToString(),
+                    Name = "",
+                    Index = "K",
+                    UserId = _chatBotBasicInfoOptions.UserId,
+                    Avatar = _chatBotBasicInfoOptions.Avatar,
+                    ImInfo = new ImInfoDto
+                    {
+                        Name = _chatBotBasicInfoOptions.Name,
+                        RelationId = _chatBotBasicInfoOptions.RelationId,
+                        //PortkeyId = _chatBotBasicInfoOptions.PortkeyId
+                    },
+                    ContactType = 1
+                };
             }
 
             contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
