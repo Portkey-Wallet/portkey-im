@@ -466,14 +466,6 @@ public class ContactAppService : ImAppService, IContactAppService
         var contactProfileDto = await _httpClientProvider.PostAsync<ContactProfileDto>(
             _caServerOptions.BaseUrl + CAServerConstant.ContactsGetByRelationId, param, headers);
         _logger.LogDebug("Query from CAServer Contact is {contact}", JsonConvert.SerializeObject(contactProfileDto));
-        if (contactProfileDto.CaHolderInfo == null || contactProfileDto.CaHolderInfo.UserId == Guid.Empty)
-        {
-            return contactProfileDto;
-        }
-
-        contactProfileDto.LoginAccounts =
-            await GetPermissionsAsync(contactProfileDto.CaHolderInfo.UserId.ToString(), headers);
-
         return contactProfileDto;
     }
 
