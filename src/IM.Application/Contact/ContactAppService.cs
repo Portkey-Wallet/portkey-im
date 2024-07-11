@@ -167,7 +167,9 @@ public class ContactAppService : ImAppService, IContactAppService
         }
 
         contactProfileDto.Addresses = contactProfileDto.Addresses.OrderBy(t => t.ChainId).ToList();
-        return ObjectMapper.Map<ContactProfileDto, ContactInfoDto>(contactProfileDto);
+        var dto = ObjectMapper.Map<ContactProfileDto, ContactInfoDto>(contactProfileDto);
+        _logger.LogDebug("Contact From Profile : {contact}", JsonConvert.SerializeObject(dto));
+        return dto;
     }
 
     private async Task<List<PermissionSetting>> GetPermissionsAsync(string userId, Dictionary<string, string> headers)
