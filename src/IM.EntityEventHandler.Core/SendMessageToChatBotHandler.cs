@@ -51,7 +51,7 @@ public class SendMessageToChatBotHandler : IDistributedEventHandler<BotMessageEt
 
         for (var i = 0; i < response.Length; i += 400)
         {
-            var content = response.Substring(i, Math.Min(300, response.Length - i));
+            var content = response.Substring(i, Math.Min(400, response.Length - i));
             var message = new SendMessageRequestDto
             {
                 ChannelUuid = eventData.ChannelUuid,
