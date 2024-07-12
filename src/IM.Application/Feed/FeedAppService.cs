@@ -188,7 +188,6 @@ public class FeedAppService : ImAppService, IFeedAppService
             else
             {
                 var item = result.List.Where(t => t.ChannelUuid == botChannel.Uuid).ToList().FirstOrDefault();
-                _logger.LogDebug("item is {item}", JsonConvert.SerializeObject(item));
                 if (item != null)
                 {
                     var requestDto = new ContactProfileRequestDto()
@@ -201,13 +200,7 @@ public class FeedAppService : ImAppService, IFeedAppService
                     item.DisplayName = !bot.Name.IsNullOrEmpty() ? bot.Name : _chatBotBasicInfoOptions.Name;
                     if (item is { Pin: false })
                     {
-                        foreach (var feed in result.List)
-                        {
-                            _logger.LogDebug("current list is:{list}", JsonConvert.SerializeObject(feed));
-                        }
-
                         result.List.Remove(item);
-                        _logger.LogDebug("after remove list is {list}", result.List.Count);
                         var pinList = new List<ListFeedResponseItemDto>();
                         var noPinList = new List<ListFeedResponseItemDto>();
                         foreach (var feed in result.List)
