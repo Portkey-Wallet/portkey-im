@@ -85,6 +85,7 @@ public class SendMessageToChatBotHandler : IDistributedEventHandler<BotMessageEt
         var client = await GetClient();
         var response = await client.PostAsync(url, requestContent);
         var content = await response.Content.ReadAsStringAsync();
+        _logger.LogDebug("Content is {content}",content);
         if (response.StatusCode != HttpStatusCode.OK)
         {
             _logger.LogError("Response status code not good, code:{code}, message: {message}, params:{param}",
