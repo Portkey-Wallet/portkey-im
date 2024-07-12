@@ -106,8 +106,8 @@ public class UserController : ImController
         var headers = Request.Headers;
         var platform = headers["platform"];
         var version = headers["version"];
-        _logger.LogDebug("version is {version},bot relationId is {id}", _chatBotBasicInfoOptions.Version,
-            _chatBotBasicInfoOptions.RelationId);
+        _logger.LogDebug("version is {version},bot relationId is {id},request param is {param}", _chatBotBasicInfoOptions.Version,
+            _chatBotBasicInfoOptions.RelationId,input.Keywords);
         if (!string.IsNullOrEmpty(platform) && !string.IsNullOrEmpty(version))
         {
             var curVersion = new Version(version.ToString().Replace("v", ""));
