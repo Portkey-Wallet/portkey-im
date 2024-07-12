@@ -123,7 +123,8 @@ public class MessageAppService : ImAppService, IMessageAppService
             return responseDto;
         }
 
-        if (input.ToRelationId == _chatBotBasicInfoOptions.RelationId)
+        var channelInfo = await _channelProvider.GetChannelInfoByUUIDAsync(input.ChannelUuid);
+        if (input.ToRelationId == _chatBotBasicInfoOptions.RelationId || channelInfo.ToRelationId == _chatBotBasicInfoOptions.RelationId)
         {
             var response = await _chatBotAppService.SendMessageToChatBotAsync(input.Content, input.From);
             _logger.LogDebug("Response from gpt is {response}", response);
