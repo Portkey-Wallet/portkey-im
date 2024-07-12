@@ -108,6 +108,7 @@ public class SendMessageToChatBotHandler : IDistributedEventHandler<BotMessageEt
     {
         var client = _httpClientFactory.CreateClient(RelationOneConstant.ClientName);
         var auth = await _cacheProvider.Get(RelationTokenCacheKey);
+        _logger.LogDebug("bot auth is {auth}",auth);
         if (auth.HasValue)
         {
             client.DefaultRequestHeaders.Add(HeaderNames.Authorization, $"{CommonConstant.JwtPrefix} {auth}");
