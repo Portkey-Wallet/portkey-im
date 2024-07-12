@@ -49,7 +49,7 @@ public class SendMessageToChatBotHandler : IDistributedEventHandler<BotMessageEt
         var response = await _chatBotAppService.SendMessageToChatBotAsync(eventData.Content, eventData.From);
         _logger.LogDebug("Response from ChatGpt is {response}", response);
 
-        for (var i = 0; i < response.Length; i += 300)
+        for (var i = 0; i < response.Length; i += 400)
         {
             var content = response.Substring(i, Math.Min(300, response.Length - i));
             var message = new SendMessageRequestDto
