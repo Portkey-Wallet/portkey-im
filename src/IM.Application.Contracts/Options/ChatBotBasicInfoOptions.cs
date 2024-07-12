@@ -16,5 +16,7 @@ public class ChatBotBasicInfoOptions
 
     public string Pubkey { get; set; }
 
+    public string Version { get; set; }
+
 
 }

@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using IM.Options;
 using IM.User;
 using IM.User.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using Microsoft.Extensions.Options;
 using Volo.Abp;
 using Volo.Abp.DistributedLocking;
 
@@ -26,13 +27,17 @@ public class UserController : ImController
     private readonly ILogger<UserController> _logger;
     private IAbpDistributedLock _distributedLock;
     private readonly string _lockKeyPrefix = "Portkey:IM:ReportUser:";
+    private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
 
-    public UserController(IUserAppService userAppService, IBlockUserAppService blockUserAppService, ILogger<UserController> logger, IAbpDistributedLock distributedLock)
+    public UserController(IUserAppService userAppService, IBlockUserAppService blockUserAppService,
+        ILogger<UserController> logger, IAbpDistributedLock distributedLock,
+        IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions)
     {
         _userAppService = userAppService;
         _blockUserAppService = blockUserAppService;
         _logger = logger;
         _distributedLock = distributedLock;
+        _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
 
     [HttpPost("token")]
@@ -58,7 +63,7 @@ public class UserController : ImController
     {
         return await _userAppService.GetImUserInfoAsync(relationId);
     }
-    
+
     [HttpGet("imUser")]
     public async Task<ImUserDto> GetImUserAsync([Required] string address)
     {
@@ -74,71 +79,73 @@ public class UserController : ImController
     [HttpPost("report")]
     public async Task<string> ReportUserImMessage(ReportUserImMessageCmd reportUserImMessageCmd)
     {
-        await using var handle = await _distributedLock.TryAcquireAsync(name: _lockKeyPrefix 
-                                                                              + reportUserImMessageCmd.UserId + ":" 
+        await using var handle = await _distributedLock.TryAcquireAsync(name: _lockKeyPrefix
+                                                                              + reportUserImMessageCmd.UserId + ":"
                                                                               + reportUserImMessageCmd.ReportType + ":"
                                                                               + reportUserImMessageCmd.MessageId);
         if (handle == null)
         {
             return "failed reason: reporting too frequently";
         }
+
         await _userAppService.ReportUserImMessage(reportUserImMessageCmd);
         return "success";
     }
-    
+
     [HttpPost("userInfo/update"), Authorize]
     public async Task<string> UpdateImUserAsync(ImUsrUpdateDto input)
     {
         await _userAppService.UpdateImUserAsync(input);
         return "success";
     }
-    
+
     [HttpGet("userInfo/list"), Authorize]
     public async Task<List<UserInfoListDto>> ListUserInfoAsync(UserInfoListRequestDto input)
     {
         var result = await _userAppService.ListUserInfoAsync(input);
-         var headers = Request.Headers;
-         var platform = headers["platform"];
-         var version = headers["version"];
-         _logger.LogDebug("platform is {platform},version is {version}",platform,version);
-         if (!string.IsNullOrEmpty(platform) && !string.IsNullOrEmpty(version))
-         {
-             var curVersion = new Version(version.ToString().Replace("v",""));
-             var preVersion = new Version("v1.19.00".Replace("v",""));
-             if (platform == "app" && curVersion >= preVersion)
-             {
-                 return result;
-             }
-         }
-         var finalList = result.Where(t => t.RelationId != "jkhct-2aaaa-aaaaa-aaczq-cai").ToList();
+        var headers = Request.Headers;
+        var platform = headers["platform"];
+        var version = headers["version"];
+        _logger.LogDebug("version is {version},bot relationId is {id}", _chatBotBasicInfoOptions.Version,
+            _chatBotBasicInfoOptions.RelationId);
+        if (!string.IsNullOrEmpty(platform) && !string.IsNullOrEmpty(version))
+        {
+            var curVersion = new Version(version.ToString().Replace("v", ""));
+            var preVersion = new Version(_chatBotBasicInfoOptions.Version.Replace("v", ""));
+            if (platform == "app" && curVersion >= preVersion)
+            {
+                return result;
+            }
+        }
+
+        var finalList = result.Where(t => t.RelationId != _chatBotBasicInfoOptions.RelationId).ToList();
         return finalList;
     }
-    
+
     [HttpPost("block")]
     public async Task<string> BlockUserAsync(BlockUserRequestDto input)
     {
         await _blockUserAppService.BlockUserAsync(input);
         return "success";
     }
-    
+
     [HttpPost("unBlock")]
     public async Task<string> UnBlockUserAsync(UnBlockUserRequestDto input)
     {
         await _blockUserAppService.UnBlockUserAsync(input);
         return "success";
     }
-    
+
     [HttpPost("isBlocked")]
     public async Task<bool> IsBlockedAsync(BlockUserRequestDto input)
     {
         await _blockUserAppService.IsBlockedAsync(input);
         return true;
     }
-    
+
     [HttpGet("blockList")]
     public async Task<List<string>> BlockListAsync()
     {
         return await _blockUserAppService.BlockListAsync();
     }
-    
 }
