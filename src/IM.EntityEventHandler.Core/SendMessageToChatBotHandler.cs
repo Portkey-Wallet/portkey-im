@@ -62,7 +62,7 @@ public class SendMessageToChatBotHandler : IDistributedEventHandler<BotMessageEt
                 Type = "TEXT"
             };
             await SendBotMessageAsync(message);
-            Thread.Sleep(500);
+            Thread.Sleep(1000);
             _logger.Debug("Bot send user message is {message}", JsonConvert.SerializeObject(message));
         }
     }
