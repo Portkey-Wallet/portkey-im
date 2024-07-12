@@ -117,28 +117,39 @@ public class MessageAppService : ImAppService, IMessageAppService
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)
     {
         var responseDto = await _proxyMessageAppService.SendMessageAsync(input);
-        _logger.LogDebug("Send Message to user {message}",JsonConvert.SerializeObject(input));
+        _logger.LogDebug("Send Message to user {message}", JsonConvert.SerializeObject(input));
         if (responseDto == null || responseDto.ChannelUuid.IsNullOrEmpty())
         {
             return responseDto;
         }
 
         var channelInfo = await _channelProvider.GetChannelInfoByUUIDAsync(input.ChannelUuid);
-        if (input.ToRelationId == _chatBotBasicInfoOptions.RelationId || channelInfo.ToRelationId == _chatBotBasicInfoOptions.RelationId)
+        if (input.ToRelationId == _chatBotBasicInfoOptions.RelationId ||
+            channelInfo.ToRelationId == _chatBotBasicInfoOptions.RelationId)
         {
-            var response = await _chatBotAppService.SendMessageToChatBotAsync(input.Content, input.From);
-            _logger.LogDebug("Response from gpt is {response}", response);
-            var message = new SendMessageRequestDto
+            var botMessage = new BotMessageEto
             {
                 ChannelUuid = input.ChannelUuid,
-                SendUuid = BuildSendUUid(input.ToRelationId, input.ChannelUuid),
-                Content = response,
-                From = input.ToRelationId,
-                Type = "TEXT"
+                Content = input.Content,
+                From = input.From,
+                ToRelationId = _chatBotBasicInfoOptions.RelationId
             };
-            await SendBotMessageAsync(message);
-            _logger.Debug("Bot send user message is {message}",JsonConvert.SerializeObject(message));
+            await _distributedEventBus.PublishAsync(botMessage);
             return responseDto;
+            
+            // var response = await _chatBotAppService.SendMessageToChatBotAsync(input.Content, input.From);
+            // _logger.LogDebug("Response from gpt is {response}", response);
+            // var message = new SendMessageRequestDto
+            // {
+            //     ChannelUuid = input.ChannelUuid,
+            //     SendUuid = BuildSendUUid(input.ToRelationId, input.ChannelUuid),
+            //     Content = response,
+            //     From = input.ToRelationId,
+            //     Type = "TEXT"
+            // };
+            // await SendBotMessageAsync(message);
+            // _logger.Debug("Bot send user message is {message}", JsonConvert.SerializeObject(message));
+            // return responseDto;
         }
 
         var authToken = GetAuthFromHeader();
@@ -672,6 +683,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         {
             return url;
         }
+
         return $"{_relationOneOptions.UrlPrefix.TrimEnd('/')}/{url}";
     }
 
@@ -684,6 +696,7 @@ public class MessageAppService : ImAppService, IMessageAppService
         {
             client.DefaultRequestHeaders.Add(HeaderNames.Authorization, $"{CommonConstant.JwtPrefix} {auth}");
         }
+
         return client;
     }
 }

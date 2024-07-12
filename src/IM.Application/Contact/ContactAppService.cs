@@ -424,6 +424,14 @@ public class ContactAppService : ImAppService, IContactAppService
         };
 
         await FollowAsync(followsRequestDto);
+        if (addResult.ImInfo.RelationId != _chatBotBasicInfoOptions.RelationId)
+        {
+            return addResult;
+        }
+
+        addResult.Addresses = new List<ContactAddressDto>();
+        addResult.CaHolderInfo = null;
+        addResult.ContactType = 1;
 
         return addResult;
     }
