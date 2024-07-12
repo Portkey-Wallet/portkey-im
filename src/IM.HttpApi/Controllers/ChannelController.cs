@@ -54,20 +54,6 @@ public class ChannelController : ImController
     public async Task<ContactResultDto> GetContactsAsync(ContactRequestDto requestDto)
     {
         var result = await _channelContactAppService.GetContactsAsync(requestDto);
-        var headers = Request.Headers;
-        var platform = headers["platform"];
-        var version = headers["version"];
-        var curVersion = new Version(version.ToString().Replace("v", ""));
-        var preVersion = new Version(_chatBotBasicInfoOptions.Version.Replace("v", ""));
-        _logger.LogDebug("cVersion compare Pversion : {result}",curVersion >= preVersion);
-        _logger.LogDebug("currentVersion is {version},platform is {platform},preVerison is {preVersion}",version,platform,_chatBotBasicInfoOptions.Version);
-        if (!string.IsNullOrEmpty(platform) && !string.IsNullOrEmpty(version))
-        {
-            if (platform != "extension" && curVersion >= preVersion)
-            {
-                return result;
-            }
-        }
         var finalResult = result.Contacts.Where(t => t.ImInfo.RelationId != _chatBotBasicInfoOptions.RelationId)
             .ToList();
         result.Contacts = finalResult;
