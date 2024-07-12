@@ -112,7 +112,7 @@ public class UserController : ImController
         {
             var curVersion = new Version(version.ToString().Replace("v", ""));
             var preVersion = new Version(_chatBotBasicInfoOptions.Version.Replace("v", ""));
-            if (platform == "app" && curVersion >= preVersion)
+            if (platform != "extension" && curVersion >= preVersion)
             {
                 return result;
             }
