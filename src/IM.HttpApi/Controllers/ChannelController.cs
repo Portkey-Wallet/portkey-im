@@ -6,6 +6,7 @@ using IM.ChannelContact.Dto;
 using IM.Options;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Volo.Abp;
 
@@ -20,10 +21,13 @@ public class ChannelController : ImController
 {
     private readonly IChannelContactV2AppService _channelContactAppService;
     private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
+    private readonly ILogger<ChannelController> _logger;
 
-    public ChannelController(IChannelContactV2AppService channelContactAppService, IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions)
+    public ChannelController(IChannelContactV2AppService channelContactAppService,
+        IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions, ILogger<ChannelController> logger)
     {
         _channelContactAppService = channelContactAppService;
+        _logger = logger;
         _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
 
@@ -45,7 +49,7 @@ public class ChannelController : ImController
     {
         return await _channelContactAppService.SearchMembersAsync(requestDto);
     }
-    
+
     [HttpGet, Route("/api/v1/channelContacts/contacts")]
     public async Task<ContactResultDto> GetContactsAsync(ContactRequestDto requestDto)
     {
@@ -53,16 +57,19 @@ public class ChannelController : ImController
         var headers = Request.Headers;
         var platform = headers["platform"];
         var version = headers["version"];
+        var curVersion = new Version(version.ToString().Replace("v", ""));
+        var preVersion = new Version(_chatBotBasicInfoOptions.Version.Replace("v", ""));
+        _logger.LogDebug("cVersion compare Pversion : {result}",curVersion >= preVersion);
+        _logger.LogDebug("currentVersion is {version},platform is {platform},preVerison is {preVersion}",version,platform,_chatBotBasicInfoOptions.Version);
         if (!string.IsNullOrEmpty(platform) && !string.IsNullOrEmpty(version))
         {
-            var curVersion = new Version(version.ToString().Replace("v", ""));
-            var preVersion = new Version(_chatBotBasicInfoOptions.Version.Replace("v", ""));
             if (platform != "extension" && curVersion >= preVersion)
             {
                 return result;
             }
         }
-        var finalResult = result.Contacts.Where(t => t.ImInfo.RelationId != _chatBotBasicInfoOptions.RelationId).ToList();
+        var finalResult = result.Contacts.Where(t => t.ImInfo.RelationId != _chatBotBasicInfoOptions.RelationId)
+            .ToList();
         result.Contacts = finalResult;
         result.TotalCount = finalResult.Count;
         return result;
