@@ -97,21 +97,22 @@ public class UserController : ImController
     public async Task<List<UserInfoListDto>> ListUserInfoAsync(UserInfoListRequestDto input)
     {
         var result = await _userAppService.ListUserInfoAsync(input);
-        var headers = Request.Headers;
-        var platform = headers["platform"];
-        var version = headers["version"];
-        _logger.LogDebug("platform is {platform},version is {version}",platform,version);
-        if (!string.IsNullOrEmpty(platform) && !string.IsNullOrEmpty(version))
-        {
-            var curVersion = new Version(version.ToString().Replace("v",""));
-            var preVersion = new Version("v1.19.00".Replace("v",""));
-            if (platform == "app" && curVersion >= preVersion)
-            {
-                return result;
-            }
-        }
-        var finalList = result.Where(t => t.RelationId != "jkhct-2aaaa-aaaaa-aaczq-cai").ToList();
-        return finalList;
+        // var headers = Request.Headers;
+        // var platform = headers["platform"];
+        // var version = headers["version"];
+        // _logger.LogDebug("platform is {platform},version is {version}",platform,version);
+        // if (!string.IsNullOrEmpty(platform) && !string.IsNullOrEmpty(version))
+        // {
+        //     var curVersion = new Version(version.ToString().Replace("v",""));
+        //     var preVersion = new Version("v1.19.00".Replace("v",""));
+        //     if (platform == "app" && curVersion >= preVersion)
+        //     {
+        //         return result;
+        //     }
+        // }
+        // var finalList = result.Where(t => t.RelationId != "jkhct-2aaaa-aaaaa-aaczq-cai").ToList();
+        //return finalList;
+        return result;
     }
     
     [HttpPost("block")]
