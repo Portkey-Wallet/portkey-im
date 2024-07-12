@@ -51,25 +51,17 @@ public class SendMessageToChatBotHandler : IDistributedEventHandler<BotMessageEt
 
         var start = 0;
         var increase = 500;
-        while (true)
+        
+        var message = new SendMessageRequestDto
         {
-            var content = response.Substring(start, increase);
-            if (content.Length == 0)
-            {
-                break;
-            }
-            var message = new SendMessageRequestDto
-            {
-                ChannelUuid = eventData.ChannelUuid,
-                SendUuid = BuildSendUUid(eventData.ToRelationId, eventData.ChannelUuid),
-                Content = content,
-                From = eventData.ToRelationId,
-                Type = "TEXT"
-            };
-            await SendBotMessageAsync(message);
-            _logger.Debug("Bot send user message is {message}", JsonConvert.SerializeObject(message));
-            start += increase;
-        }
+            ChannelUuid = eventData.ChannelUuid,
+            SendUuid = BuildSendUUid(eventData.ToRelationId, eventData.ChannelUuid),
+            Content = response,
+            From = eventData.ToRelationId,
+            Type = "TEXT"
+        };
+        await SendBotMessageAsync(message);
+        _logger.Debug("Bot send user message is {message}", JsonConvert.SerializeObject(message));
     }
 
     private string BuildSendUUid(string toRelationId, string channelUuid)
