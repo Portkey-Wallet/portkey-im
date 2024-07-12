@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Mime;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using IM.Cache;
 using IM.ChatBot;
@@ -61,7 +62,7 @@ public class SendMessageToChatBotHandler : IDistributedEventHandler<BotMessageEt
                 Type = "TEXT"
             };
             await SendBotMessageAsync(message);
-            await Task.Delay(500);
+            Thread.Sleep(500);
             _logger.Debug("Bot send user message is {message}", JsonConvert.SerializeObject(message));
         }
     }
