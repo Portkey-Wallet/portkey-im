@@ -49,19 +49,20 @@ public class SendMessageToChatBotHandler : IDistributedEventHandler<BotMessageEt
         var response = await _chatBotAppService.SendMessageToChatBotAsync(eventData.Content, eventData.From);
         _logger.LogDebug("Response from ChatGpt is {response}", response);
 
-        var start = 0;
-        var increase = 500;
-        
-        var message = new SendMessageRequestDto
+        for (var i = 0; i < response.Length; i += 300)
         {
-            ChannelUuid = eventData.ChannelUuid,
-            SendUuid = BuildSendUUid(eventData.ToRelationId, eventData.ChannelUuid),
-            Content = response,
-            From = eventData.ToRelationId,
-            Type = "TEXT"
-        };
-        await SendBotMessageAsync(message);
-        _logger.Debug("Bot send user message is {message}", JsonConvert.SerializeObject(message));
+            var content = response.Substring(i, Math.Min(300, response.Length - i));
+            var message = new SendMessageRequestDto
+            {
+                ChannelUuid = eventData.ChannelUuid,
+                SendUuid = BuildSendUUid(eventData.ToRelationId, eventData.ChannelUuid),
+                Content = content,
+                From = eventData.ToRelationId,
+                Type = "TEXT"
+            };
+            await SendBotMessageAsync(message);
+            _logger.Debug("Bot send user message is {message}", JsonConvert.SerializeObject(message));
+        }
     }
 
     private string BuildSendUUid(string toRelationId, string channelUuid)
