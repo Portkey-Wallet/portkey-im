@@ -107,7 +107,6 @@ public class HttpClientProvider : IHttpClientProvider, ISingletonDependency
 
         var response = await client.PostAsync(url, requestContent);
         var content = await response.Content.ReadAsStringAsync();
-
         if (!ResponseSuccess(response.StatusCode))
         {
             _logger.LogError(

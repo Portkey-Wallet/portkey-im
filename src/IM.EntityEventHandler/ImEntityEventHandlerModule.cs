@@ -3,12 +3,15 @@ using AElf.Indexing.Elasticsearch.Options;
 using GraphQL.Client.Abstractions;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
+using IM.Cache;
 using IM.Common;
 using IM.Commons;
 using IM.EntityEventHandler.Core;
+using IM.EntityEventHandler.Core.Worker;
 using IM.Grains;
 using IM.MongoDB;
 using IM.Options;
+using IM.Redis;
 using Medallion.Threading;
 using Medallion.Threading.Redis;
 using Microsoft.Extensions.Caching.Distributed;
@@ -22,6 +25,7 @@ using StackExchange.Redis;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
+using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Caching;
 using Volo.Abp.Caching.StackExchangeRedis;
 using Volo.Abp.EventBus.RabbitMq;
@@ -50,6 +54,7 @@ public class ImEntityEventHandlerModule : AbpModule
         AddProxyClient(context, configuration);
         ConfigureDistributedLocking(context, configuration);
         ConfigureGraphQl(context, configuration);
+        ConfigureRedisCacheProvider(context, configuration);
         context.Services.AddSingleton(o =>
         {
             return new ClientBuilder()
@@ -73,6 +78,10 @@ public class ImEntityEventHandlerModule : AbpModule
 
         AddMessagePushService(context, configuration);
         Configure<MessagePushOptions>(configuration.GetSection("MessagePush"));
+        Configure<ChatBotBasicInfoOptions>(configuration.GetSection("ChatBotBasicInfo"));
+        Configure<ChatBotConfigOptions>(configuration.GetSection("ChatBotConfig"));
+        Configure<RelationOneOptions>(configuration.GetSection("RelationOne"));
+        
     }
 
     private void ConfigureGraphQl(ServiceConfigurationContext context,
@@ -104,6 +113,16 @@ public class ImEntityEventHandlerModule : AbpModule
             return new RedisDistributedSynchronizationProvider(connection.GetDatabase());
         });
     }
+    
+    private void ConfigureRedisCacheProvider(
+        ServiceConfigurationContext context,
+        IConfiguration configuration)
+    {
+        var multiplexer = ConnectionMultiplexer
+            .Connect(configuration["Redis:Configuration"]);
+        context.Services.AddSingleton<IConnectionMultiplexer>(multiplexer);
+        context.Services.AddSingleton<ICacheProvider,RedisCacheProvider>();
+    }
 
 
     private void ConfigureCache(IConfiguration configuration)
@@ -126,6 +145,12 @@ public class ImEntityEventHandlerModule : AbpModule
     
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
+        var backgroundWorkerManger = context.ServiceProvider.GetRequiredService<IBackgroundWorkerManager>();
+        
+        //backgroundWorkerManger.AddAsync(context.ServiceProvider.GetService<InitReferralRankWorker>());
+        backgroundWorkerManger.AddAsync(context.ServiceProvider.GetService<AuthTokenRefreshWorker>());
+        backgroundWorkerManger.AddAsync(context.ServiceProvider.GetService<InitChatBotUsageRankWorker>());
+        
         ConfigurationProvidersHelper.DisplayConfigurationProviders(context);
     }
 

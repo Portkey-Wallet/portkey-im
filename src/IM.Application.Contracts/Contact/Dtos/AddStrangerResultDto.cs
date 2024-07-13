@@ -17,6 +17,7 @@ public class AddStrangerResultDto
     public bool IsImputation { get; set; }
     public DateTime CreateTime { get; set; }
     public long ModificationTime { get; set; }
+    public int ContactType { get; set; } = 0;
 }
 public class CaHolderInfo
 {
