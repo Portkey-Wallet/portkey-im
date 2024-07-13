@@ -51,6 +51,8 @@ public class ImApplicationModule : AbpModule
         Configure<PinMessageOptions>(configuration.GetSection("PinMessageOptions"));
         Configure<UserAddressOptions>(configuration.GetSection("UserAddress"));
         Configure<ImDbOptions>(configuration.GetSection("ImDb"));
+        Configure<ChatBotBasicInfoOptions>(configuration.GetSection("ChatBotBasicInfo"));
+        Configure<ChatBotConfigOptions>(configuration.GetSection("ChatBotConfig"));
         
     }
 }

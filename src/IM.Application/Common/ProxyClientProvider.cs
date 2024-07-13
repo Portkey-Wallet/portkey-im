@@ -14,6 +14,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Orleans.Runtime;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 
@@ -136,7 +137,6 @@ public class ProxyClientProvider : IProxyClientProvider, ISingletonDependency
 
         var response = await client.PostAsync(url, requestContent);
         var content = await response.Content.ReadAsStringAsync();
-
         if (response.StatusCode != HttpStatusCode.OK)
         {
             _logger.LogError("Response status code not good, code:{code}, message: {message}, params:{param}",
@@ -185,7 +185,6 @@ public class ProxyClientProvider : IProxyClientProvider, ISingletonDependency
     private HttpClient GetClient()
     {
         var client = _httpClientFactory.CreateClient(RelationOneConstant.ClientName);
-
         var auth = _httpContextAccessor?.HttpContext?.Request?.Headers[RelationOneConstant.AuthHeader]
             .FirstOrDefault();
         var authToken = _httpContextAccessor?.HttpContext?.Request?.Headers["Authorization"]

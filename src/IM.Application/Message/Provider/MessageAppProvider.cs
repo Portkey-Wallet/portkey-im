@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using AElf.Indexing.Elasticsearch;
 using Dapper;
+using IM.Cache;
 using IM.ChannelContact;
+using IM.Common;
 using IM.Commons;
 using IM.Dapper.Repository;
 using IM.Entities.Es;
@@ -33,9 +35,11 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
     private readonly IMessageAppService _messageAppService;
     private readonly IUserProvider _userProvider;
 
+
     public MessageAppProvider(IChannelContactAppService channelContactAppService, IImRepository imRepository,
         IRefreshRepository<PinMessageIndex, string> pinMessageRepository,
-        IOptionsSnapshot<PinMessageOptions> pinMessageOptions, INESTRepository<UserIndex, Guid> userRepository, IMessageAppService messageAppService, IUserProvider userProvider)
+        IOptionsSnapshot<PinMessageOptions> pinMessageOptions, INESTRepository<UserIndex, Guid> userRepository,
+        IMessageAppService messageAppService, IUserProvider userProvider)
     {
         _channelContactAppService = channelContactAppService;
         _imRepository = imRepository;
@@ -69,6 +73,7 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
             {
                 return;
             }
+
             await DeleteMessageManuallyAsync(input.MessageId);
         }
 
@@ -123,6 +128,7 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
 
             await _messageAppService.SendMessageAsync(messageRequest);
         }
+
         await DeleteMessageManuallyAsync(input.MessageId);
         if (pinMessageIndexQuote.Count > 0)
         {
@@ -153,7 +159,7 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
 
     public async Task<bool> IsMessageInChannelAsync(string channelUuid, string messageId)
     {
-        var messageInfo = await GetMessageByIdAsync(channelUuid,messageId);
+        var messageInfo = await GetMessageByIdAsync(channelUuid, messageId);
         return messageInfo is { Status: 0 };
     }
 
@@ -181,7 +187,7 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
         parameters.Add("@type", input.Type);
         //parameters.Add("@mentionedUser", input.MentionedUser);
         parameters.Add("@blockRelationId", input.BlockRelationId);
-        parameters.Add("@from",userIndex.RelationId);
+        parameters.Add("@from", userIndex.RelationId);
         var sql =
             "INSERT INTO im_message (id,send_uuid, `from`,channel_uuid,content,type,block_relation_id) VALUES (@id,@sendUuid,@from ,@channelUuid,@content,@type,@blockRelationId);";
         await _imRepository.ExecuteAsync(sql, parameters);
@@ -198,8 +204,10 @@ public class MessageAppProvider : ImAppService, IMessageAppProvider, ISingletonD
             {
                 continue;
             }
+
             result.Add(dto);
         }
+
         return result;
     }
 

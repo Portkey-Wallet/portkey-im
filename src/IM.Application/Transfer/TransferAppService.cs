@@ -1,14 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using IM.ChannelContact;
-using IM.ChannelContact.Dto;
+using IM.ChannelContactService.Provider;
 using IM.Common;
 using IM.Commons;
 using IM.Options;
+using IM.RedPackage.Provider;
 using IM.Transfer.Dtos;
+using IM.User.Provider;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Volo.Abp;
 using Volo.Abp.Auditing;
@@ -22,18 +24,24 @@ public class TransferAppService : ImAppService, ITransferAppService
     private readonly IHttpClientProvider _httpClientProvider;
     private readonly CAServerOptions _caServerOptions;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly IChannelContactAppService _channelContactAppAppService;
+    private readonly IRedPackageProvider _packageProvider;
+    private readonly IChannelProvider _channelProvider;
+    private readonly IUserProvider _userProvider;
 
     public TransferAppService(
         IHttpClientProvider httpClientProvider,
         IOptionsSnapshot<CAServerOptions> caServerOptions,
         IHttpContextAccessor httpContextAccessor,
-        IChannelContactAppService channelContactAppAppService)
+        IRedPackageProvider packageProvider,
+        IChannelProvider channelProvider,
+        IUserProvider userProvider)
     {
         _httpClientProvider = httpClientProvider;
         _caServerOptions = caServerOptions.Value;
         _httpContextAccessor = httpContextAccessor;
-        _channelContactAppAppService = channelContactAppAppService;
+        _packageProvider = packageProvider;
+        _channelProvider = channelProvider;
+        _userProvider = userProvider;
     }
 
     public async Task<TransferOutputDto> SendTransferAsync(TransferInputDto input)
@@ -72,36 +80,46 @@ public class TransferAppService : ImAppService, ITransferAppService
 
     private async Task CheckChannelAsync(string channelUuid, string toUserId)
     {
-        var result = await _channelContactAppAppService.GetChannelDetailInfoAsync(new ChannelDetailInfoRequestDto()
-        {
-            ChannelUuid = channelUuid
-        });
-
-        if (result == null || result.Uuid != channelUuid)
+        if (!await CheckChannelAsync(channelUuid))
         {
             throw new UserFriendlyException("channel not exists, channelUuid:{channelUuid}", channelUuid);
         }
 
-        var members = result.Members?.Select(t => t.UserId).ToList();
-
-        if (members.IsNullOrEmpty())
-        {
-            throw new UserFriendlyException(
-                "channel members is empty, channelUuid:{channelUuid}", channelUuid);
-        }
-
-        if (!members.Contains(CurrentUser.GetId()))
+        var currentUser = await _userProvider.GetUserInfoByIdAsync(CurrentUser.GetId());
+        if (!await CheckUserAsync(channelUuid, currentUser.RelationId))
         {
             throw new UserFriendlyException(
                 "sender is not in channel, channelUuid:{channelUuid}, userId{userId}",
                 channelUuid, CurrentUser.GetId().ToString());
         }
 
-        if (!members.Contains(Guid.Parse(toUserId)))
+        var toUser = await _userProvider.GetUserInfoByIdAsync(Guid.Parse(toUserId));
+
+        if (!await CheckUserAsync(channelUuid, toUser.RelationId))
         {
             throw new UserFriendlyException(
                 "to user is not in channel, channelUuid:{channelUuid}, toUserId:{toUserId}", channelUuid,
                 toUserId);
+        }
+    }
+
+    private async Task<bool> CheckUserAsync(string channelUuid, string relationId)
+    {
+        var memberInfo = await _packageProvider.GetMemberAsync(channelUuid, relationId);
+        return memberInfo != null;
+    }
+
+    private async Task<bool> CheckChannelAsync(string channelUuid)
+    {
+        try
+        {
+            var result = await _channelProvider.GetChannelInfoByUUIDAsync(channelUuid);
+            return result != null && result.Uuid == channelUuid;
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "check channel error, channelUuid:{channelUuid}", channelUuid);
+            return false;
         }
     }
 }
