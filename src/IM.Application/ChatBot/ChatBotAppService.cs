@@ -220,6 +220,10 @@ public class ChatBotAppService : ImAppService, IChatBotAppService
         var botKeys = _chatBotConfigOptions.BotKeys;
         foreach (var key in botKeys)
         {
+            _logger.LogDebug("Botkey is {key}",key);
+        }
+        foreach (var key in botKeys)
+        {
             await _cacheProvider.AddScoreAsync(BotUsageRankKey, key, 0);
         }
 
