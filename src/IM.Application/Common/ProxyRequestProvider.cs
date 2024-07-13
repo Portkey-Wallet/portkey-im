@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using IM.Commons;
 using IM.RelationOne.Dtos;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 
@@ -10,10 +12,12 @@ namespace IM.Common;
 public class ProxyRequestProvider : IProxyRequestProvider, ISingletonDependency
 {
     private readonly IProxyClientProvider _proxyClientProvider;
+    private readonly ILogger<ProxyRequestProvider> _logger;
 
-    public ProxyRequestProvider(IProxyClientProvider proxyClientProvider)
+    public ProxyRequestProvider(IProxyClientProvider proxyClientProvider, ILogger<ProxyRequestProvider> logger)
     {
         _proxyClientProvider = proxyClientProvider;
+        _logger = logger;
     }
 
     public async Task<T> GetAsync<T>(string url)

@@ -18,6 +18,7 @@ namespace IM.Controllers;
 public class ContactController : ImController
 {
     private readonly IContactAppService _contactAppService;
+    
 
     public ContactController(IContactAppService contactAppService)
     {

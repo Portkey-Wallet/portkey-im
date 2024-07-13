@@ -1,10 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Mime;
+using System.Text;
 using System.Threading.Tasks;
 using AElf.Indexing.Elasticsearch;
+using IM.Cache;
 using IM.ChannelContactService.Provider;
 using IM.Chat;
+using IM.ChatBot;
 using IM.Commons;
 using IM.Dtos;
 using IM.Entities.Es;
@@ -13,14 +19,12 @@ using IM.Grains.Grain.Message;
 using IM.Grains.Grain.RedPackage;
 using IM.Message.Dtos;
 using IM.Message.Etos;
-using IM.Message.Provider;
 using IM.Options;
 using IM.PinMessage;
 using IM.PinMessage.Dtos;
 using IM.RedPackage;
 using IM.Repository;
 using IM.User;
-using IM.User.Provider;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -29,6 +33,7 @@ using Nest;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Orleans;
+using Orleans.Runtime;
 using Volo.Abp;
 using Volo.Abp.Auditing;
 using Volo.Abp.EventBus.Distributed;
@@ -55,7 +60,12 @@ public class MessageAppService : ImAppService, IMessageAppService
     private readonly MessagePushOptions _messagePushOptions;
     private readonly IUserAppService _userAppService;
     private readonly IChannelProvider _channelProvider;
-
+    private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
+    private readonly RelationOneOptions _relationOneOptions;
+    private readonly ICacheProvider _cacheProvider;
+    private readonly IChatBotAppService _chatBotAppService;
+    private const string RelationTokenCacheKey = "IM:RelationTokenKey:";
+    private readonly IHttpClientFactory _httpClientFactory;
 
 
     public MessageAppService(IProxyMessageAppService proxyMessageAppService,
@@ -71,7 +81,10 @@ public class MessageAppService : ImAppService, IMessageAppService
         IOptionsSnapshot<PinMessageOptions> pinMessageOptions,
         INESTRepository<UserIndex, Guid> userRepository,
         IRefreshRepository<PinMessageIndex, string> pinMessageRepository,
-        IUserAppService userAppService, IChannelProvider channelProvider)
+        IUserAppService userAppService, IChannelProvider channelProvider,
+        IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions,
+        ICacheProvider cacheProvider, IOptionsSnapshot<RelationOneOptions> relationOneOptions,
+        IChatBotAppService chatBotAppService, IHttpClientFactory httpClientFactory)
     {
         _proxyMessageAppService = proxyMessageAppService;
         _encryptionService = encryptionService;
@@ -89,6 +102,11 @@ public class MessageAppService : ImAppService, IMessageAppService
         _messagePushOptions = messagePushOptions.Value;
         _userAppService = userAppService;
         _channelProvider = channelProvider;
+        _cacheProvider = cacheProvider;
+        _chatBotAppService = chatBotAppService;
+        _httpClientFactory = httpClientFactory;
+        _relationOneOptions = relationOneOptions.Value;
+        _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
 
     public async Task<int> ReadMessageAsync(ReadMessageRequestDto input)
@@ -99,14 +117,50 @@ public class MessageAppService : ImAppService, IMessageAppService
     public async Task<SendMessageResponseDto> SendMessageAsync(SendMessageRequestDto input)
     {
         var responseDto = await _proxyMessageAppService.SendMessageAsync(input);
+        _logger.LogDebug("Send Message to user {message}", JsonConvert.SerializeObject(input));
         if (responseDto == null || responseDto.ChannelUuid.IsNullOrEmpty())
         {
             return responseDto;
         }
 
+        var channelInfo = await _channelProvider.GetChannelInfoByUUIDAsync(input.ChannelUuid);
+        if (input.ToRelationId == _chatBotBasicInfoOptions.RelationId ||
+            channelInfo.ToRelationId == _chatBotBasicInfoOptions.RelationId)
+        {
+            var botMessage = new BotMessageEto
+            {
+                ChannelUuid = input.ChannelUuid,
+                Content = input.Content,
+                From = input.From,
+                ToRelationId = _chatBotBasicInfoOptions.RelationId
+            };
+            await _distributedEventBus.PublishAsync(botMessage);
+            return responseDto;
+            
+            // var response = await _chatBotAppService.SendMessageToChatBotAsync(input.Content, input.From);
+            // _logger.LogDebug("Response from gpt is {response}", response);
+            // var message = new SendMessageRequestDto
+            // {
+            //     ChannelUuid = input.ChannelUuid,
+            //     SendUuid = BuildSendUUid(input.ToRelationId, input.ChannelUuid),
+            //     Content = response,
+            //     From = input.ToRelationId,
+            //     Type = "TEXT"
+            // };
+            // await SendBotMessageAsync(message);
+            // _logger.Debug("Bot send user message is {message}", JsonConvert.SerializeObject(message));
+            // return responseDto;
+        }
+
         var authToken = GetAuthFromHeader();
         _ = PublishMessageAsync(input, CurrentUser.GetId(), authToken);
         return responseDto;
+    }
+
+    private string BuildSendUUid(string toRelationId, string channelUuid)
+    {
+        return toRelationId + "-" + channelUuid + "-" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + "-" +
+               Guid.NewGuid().ToString("N");
     }
 
 
@@ -169,7 +223,6 @@ public class MessageAppService : ImAppService, IMessageAppService
                 SendUuid = sendUuid,
                 Content = JsonConvert.SerializeObject(pinMessageSysInfo, settings)
             };
-
             await SendMessageAsync(messageRequest);
         }
 
@@ -596,5 +649,54 @@ public class MessageAppService : ImAppService, IMessageAppService
             _logger.LogError(e, "BuildTransferMessage error,Content:{Content}", message.Content);
             return null;
         }
+    }
+
+    private async Task SendBotMessageAsync(SendMessageRequestDto message)
+    {
+        var url = GetRealUrl("api/v1/message/send");
+        var serializerSettings = new JsonSerializerSettings
+        {
+            ContractResolver = new CamelCasePropertyNamesContractResolver()
+        };
+        var requestInput = message == null
+            ? string.Empty
+            : JsonConvert.SerializeObject(message, Formatting.None, serializerSettings);
+
+        var requestContent = new StringContent(
+            requestInput,
+            Encoding.UTF8,
+            MediaTypeNames.Application.Json);
+        var client = await GetClient();
+        var response = await client.PostAsync(url, requestContent);
+        var content = await response.Content.ReadAsStringAsync();
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            _logger.LogError("Response status code not good, code:{code}, message: {message}, params:{param}",
+                response.StatusCode, content, JsonConvert.SerializeObject(message));
+            throw new UserFriendlyException(content, ((int)response.StatusCode).ToString());
+        }
+    }
+
+    private string GetRealUrl(string url)
+    {
+        if (_relationOneOptions == null || _relationOneOptions.UrlPrefix.IsNullOrWhiteSpace())
+        {
+            return url;
+        }
+
+        return $"{_relationOneOptions.UrlPrefix.TrimEnd('/')}/{url}";
+    }
+
+
+    private async Task<HttpClient> GetClient()
+    {
+        var client = _httpClientFactory.CreateClient(RelationOneConstant.ClientName);
+        var auth = await _cacheProvider.Get(RelationTokenCacheKey);
+        if (auth.HasValue)
+        {
+            client.DefaultRequestHeaders.Add(HeaderNames.Authorization, $"{CommonConstant.JwtPrefix} {auth}");
+        }
+
+        return client;
     }
 }

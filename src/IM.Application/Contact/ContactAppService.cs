@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using IM.ChatBot;
 using IM.Common;
 using IM.Commons;
 using IM.Contact.Dtos;
@@ -15,6 +16,7 @@ using IM.User.Provider;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Auditing;
@@ -32,13 +34,17 @@ public class ContactAppService : ImAppService, IContactAppService
     private readonly CAServerOptions _caServerOptions;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserProvider _userProvider;
+    private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
+    private readonly ILogger<ContactAppService> _logger;
+
 
     public ContactAppService(IHttpClientProvider httpClientProvider, IProxyContactAppService proxyContactAppService,
         IUserAppService userAppService, IOptions<VariablesOptions> variablesOptions,
         IOptions<CAServerOptions> caServerOptions,
         IHttpContextAccessor httpContextAccessor,
         IProxyUserAppService proxyUserAppService,
-        IUserProvider userProvider)
+        IUserProvider userProvider, IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions,
+        ILogger<ContactAppService> logger)
     {
         _httpClientProvider = httpClientProvider;
         _proxyContactAppService = proxyContactAppService;
@@ -48,10 +54,13 @@ public class ContactAppService : ImAppService, IContactAppService
         _httpContextAccessor = httpContextAccessor;
         _proxyUserAppService = proxyUserAppService;
         _userProvider = userProvider;
+        _logger = logger;
+        _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
 
     public async Task<ContactInfoDto> GetContactProfileAsync(ContactProfileRequestDto input)
     {
+        _logger.LogDebug("profile query param is {input}",JsonConvert.SerializeObject(input));
         var contactProfileDto = new ContactProfileDto();
 
         var token = _httpContextAccessor.HttpContext?.Request.Headers[CommonConstant.AuthHeader];
@@ -63,14 +72,94 @@ public class ContactAppService : ImAppService, IContactAppService
         if (input.Id != Guid.Empty)
         {
             contactProfileDto = await GetContactByContactIdAsync(input.Id, headers);
+            if (contactProfileDto.ImInfo.RelationId == _chatBotBasicInfoOptions.RelationId)
+            {
+                return new ContactInfoDto
+                {
+                    Id = contactProfileDto.Id.ToString(),
+                    Name = contactProfileDto.Name,
+                    Avatar = _chatBotBasicInfoOptions.Avatar,
+                    UserId = contactProfileDto.UserId.ToString(),
+                    ImInfo = new ImInfoDto
+                    {
+                        Name = _chatBotBasicInfoOptions.Name,
+                        RelationId = _chatBotBasicInfoOptions.RelationId,
+                        PortkeyId = contactProfileDto.ImInfo.PortkeyId
+                    },
+                    ContactType = 1
+                };
+            }
         }
         else if (input.PortkeyId != Guid.Empty)
         {
             contactProfileDto = await GetContactByPortkeyIdAsync(input.PortkeyId, headers);
+            if (contactProfileDto.ImInfo.RelationId == _chatBotBasicInfoOptions.RelationId)
+            {
+                return new ContactInfoDto
+                {
+                    Id = contactProfileDto.Id.ToString(),
+                    Name = contactProfileDto.Name,
+                    Avatar = _chatBotBasicInfoOptions.Avatar,
+                    ImInfo = new ImInfoDto
+                    {
+                        Name = _chatBotBasicInfoOptions.Name,
+                        RelationId = _chatBotBasicInfoOptions.RelationId,
+                        PortkeyId = contactProfileDto.ImInfo.PortkeyId
+                    },
+                    ContactType = 1
+                };
+            }
         }
         else
         {
+            if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
+            {
+                var result = await GetByRelationIdAsync(input.RelationId);
+                if (null != result)
+                {
+                    _logger.LogDebug("Get contact from CAServer :{contact}",JsonConvert.SerializeObject(result));
+                    return new ContactInfoDto
+                    {
+                        Id = result.Id.ToString(),
+                        Name = result.Name,
+                        Index = result.Index,
+                        UserId = result.UserId.ToString(),
+                        Avatar = _chatBotBasicInfoOptions.Avatar,
+                        ImInfo = new ImInfoDto
+                        {
+                            Name = result.ImInfo.Name,
+                            RelationId = _chatBotBasicInfoOptions.RelationId,
+                            PortkeyId = result.ImInfo.PortkeyId
+                        },
+                        ContactType = 1
+                    };
+                }
+                return new ContactInfoDto
+                {
+                    //Id = result.Id.ToString(),
+                    Name = "",
+                    Index = "K",
+                    UserId = _chatBotBasicInfoOptions.UserId,
+                    Avatar = _chatBotBasicInfoOptions.Avatar,
+                    ImInfo = new ImInfoDto
+                    {
+                        Name = _chatBotBasicInfoOptions.Name,
+                        RelationId = _chatBotBasicInfoOptions.RelationId,
+                        //PortkeyId = _chatBotBasicInfoOptions.PortkeyId
+                    },
+                    ContactType = 1
+                };
+            }
+
             contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
+            // if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
+            // {
+            //     contactProfileDto.Addresses = new List<ContactAddressDto>();
+            //     contactProfileDto.CaHolderInfo = null;
+            //     contactProfileDto.ContactType = 1;
+            // }
+
+            _logger.LogDebug("Contact is {Contact}", JsonConvert.SerializeObject(contactProfileDto));
         }
 
         Logger.LogDebug(
@@ -98,7 +187,9 @@ public class ContactAppService : ImAppService, IContactAppService
         }
 
         contactProfileDto.Addresses = contactProfileDto.Addresses.OrderBy(t => t.ChainId).ToList();
-        return ObjectMapper.Map<ContactProfileDto, ContactInfoDto>(contactProfileDto);
+        var dto = ObjectMapper.Map<ContactProfileDto, ContactInfoDto>(contactProfileDto);
+        _logger.LogDebug("Contact From Profile : {contact}", JsonConvert.SerializeObject(dto));
+        return dto;
     }
 
     private async Task<List<PermissionSetting>> GetPermissionsAsync(string userId, Dictionary<string, string> headers)
@@ -138,6 +229,7 @@ public class ContactAppService : ImAppService, IContactAppService
         var contactProfileDto = new ContactProfileDto();
 
         var contact = await _userAppService.GetContactAsync(portkeyId);
+        _logger.LogDebug("query by porytkey id contact is {contact}", JsonConvert.SerializeObject(contact));
 
         if (contact != null)
         {
@@ -193,6 +285,7 @@ public class ContactAppService : ImAppService, IContactAppService
         };
 
         var user = await _userProvider.GetUserInfoAsync(relationId);
+        _logger.LogDebug("query from userIndex contact is {contact}", JsonConvert.SerializeObject(user));
 
         var userInfo = await _proxyUserAppService.GetUserInfoAsync(userInfoRequestDto);
 
@@ -331,6 +424,14 @@ public class ContactAppService : ImAppService, IContactAppService
         };
 
         await FollowAsync(followsRequestDto);
+        if (addResult.ImInfo.RelationId != _chatBotBasicInfoOptions.RelationId)
+        {
+            return addResult;
+        }
+
+        addResult.Addresses = new List<ContactAddressDto>();
+        addResult.CaHolderInfo = null;
+        addResult.ContactType = 1;
 
         return addResult;
     }
@@ -355,5 +456,53 @@ public class ContactAppService : ImAppService, IContactAppService
         if (stranger != null && !stranger.RelationId.IsNullOrWhiteSpace()) return;
 
         throw new UserFriendlyException("Invalid input");
+    }
+
+    private async Task<ContactProfileDto> GetByRelationIdAsync(string contactId)
+    {
+        var token = _httpContextAccessor.HttpContext?.Request.Headers[CommonConstant.AuthHeader];
+        var headers = new Dictionary<string, string>
+        {
+            { CommonConstant.AuthHeader, token }
+        };
+        _logger.LogDebug("Relation is {relationId}", contactId);
+        var param = new ChatBotRequestDto
+        {
+            RelationId = contactId,
+            UserId = (Guid)CurrentUser.Id
+        };
+        var contactProfileDto = await _httpClientProvider.PostAsync<ContactProfileDto>(
+            _caServerOptions.BaseUrl + CAServerConstant.ContactsGetByRelationId, param, headers);
+        _logger.LogDebug("Query from CAServer Contact is {contact}", JsonConvert.SerializeObject(contactProfileDto));
+        return contactProfileDto;
+    }
+
+    private async Task<ContactProfileDto> GetByPortkeyIdAsync(Guid contactId, Dictionary<string, string> headers)
+    {
+        var contactProfileDto = await _httpClientProvider.GetAsync<ContactProfileDto>(
+            _caServerOptions.BaseUrl + CAServerConstant.ContactsGetByPortkeyId + contactId, headers);
+
+        if (contactProfileDto.CaHolderInfo == null || contactProfileDto.CaHolderInfo.UserId == Guid.Empty)
+        {
+            return contactProfileDto;
+        }
+
+        contactProfileDto.LoginAccounts =
+            await GetPermissionsAsync(contactProfileDto.CaHolderInfo.UserId.ToString(), headers);
+
+        return contactProfileDto;
+    }
+
+    private Dictionary<string, string> BuildReqHeader()
+    {
+        var authToken = _httpContextAccessor.HttpContext?.Request.Headers[CommonConstant.AuthHeader];
+        var relationAuthToken = _httpContextAccessor.HttpContext?.Request.Headers[RelationOneConstant.AuthHeader];
+
+        var headers = new Dictionary<string, string>
+        {
+            { CommonConstant.AuthHeader, authToken },
+            { RelationOneConstant.AuthHeader, relationAuthToken }
+        };
+        return headers;
     }
 }

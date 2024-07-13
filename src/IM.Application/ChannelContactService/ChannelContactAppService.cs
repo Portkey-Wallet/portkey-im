@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using IM.ChannelContact;
 using IM.ChannelContact.Dto;
@@ -7,6 +8,8 @@ using IM.ChannelContactService.Provider;
 using IM.Commons;
 using Microsoft.AspNetCore.Http;
 using IM.Message.Provider;
+using IM.Options;
+using Microsoft.Extensions.Options;
 using Volo.Abp;
 using Volo.Abp.Auditing;
 using Volo.Abp.Users;
@@ -21,15 +24,18 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
     private readonly IGroupProvider _groupProvider;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUnreadMessageUpdateProvider _unreadMessageUpdateProvider;
+    private readonly ChatBotBasicInfoOptions _chatBotBasicInfoOptions;
 
     public ChannelContactAppService(IProxyChannelContactAppService proxyChannelContactAppService,
         IGroupProvider groupProvider, IHttpContextAccessor httpContextAccessor,
-        IUnreadMessageUpdateProvider unreadMessageUpdateProvider)
+        IUnreadMessageUpdateProvider unreadMessageUpdateProvider,
+        IOptionsSnapshot<ChatBotBasicInfoOptions> chatBotBasicInfoOptions)
     {
         _proxyChannelContactAppService = proxyChannelContactAppService;
         _groupProvider = groupProvider;
         _httpContextAccessor = httpContextAccessor;
         _unreadMessageUpdateProvider = unreadMessageUpdateProvider;
+        _chatBotBasicInfoOptions = chatBotBasicInfoOptions.Value;
     }
 
 
@@ -40,6 +46,12 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
 
         // add group information asynchronously
         _ = _groupProvider.AddGroupAsync(responseDto?.ChannelUuid, authToken);
+        var chatBot = requestDto.Members.Select(t=>t == _chatBotBasicInfoOptions.RelationId).FirstOrDefault();
+        if (chatBot)
+        {
+            responseDto.BotChannel = true;
+        }
+
         return responseDto;
     }
 
@@ -91,6 +103,11 @@ public class ChannelContactAppService : ImAppService, IChannelContactAppService
 
     public async Task<string> ChannelOwnerTransferAsync(OwnerTransferRequestDto ownerTransferRequestDto)
     {
+        if (ownerTransferRequestDto.RelationId == _chatBotBasicInfoOptions.RelationId)
+        {
+            throw new UserFriendlyException("You can not transfer group owner to AI!");
+        }
+
         return await _proxyChannelContactAppService.ChannelOwnerTransferAsync(ownerTransferRequestDto);
     }
 

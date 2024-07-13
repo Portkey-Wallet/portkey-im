@@ -35,6 +35,7 @@ public interface IChannelProvider
     Task<ChannelDetailInfoResponseDto> GetBlockChannelUuidAsync(string relationId, string blockRelationId);
 
     Task<List<string>> GetMuteMembersAsync(string channelUuid);
+    Task<ChannelDetailInfoResponseDto> GetBotChannelUuidAsync(string userIndexRelationId, string relationId);
 }
 
 public class ChannelProvider : IChannelProvider, ISingletonDependency
@@ -199,6 +200,18 @@ public class ChannelProvider : IChannelProvider, ISingletonDependency
 
         var userIds = await _imRepository.QueryAsync<string>(sql, parameters);
         return userIds == null ? new List<string>() : userIds.ToList();
+    }
+
+    public async Task<ChannelDetailInfoResponseDto> GetBotChannelUuidAsync(string from, string botRelationId)
+    {
+        var parameters = new DynamicParameters();
+        parameters.Add("@fromRelationId", from);
+        parameters.Add("@toRelationId", botRelationId);
+   
+        var sql =
+            "select uuid as Uuid ,status as Status from im_channel where from_relation_id = @fromRelationId and to_relation_id = @toRelationId;";
+        var channelDetail = await _imRepository.QueryFirstOrDefaultAsync<ChannelDetailInfoResponseDto>(sql, parameters);
+        return channelDetail;
     }
 
     public async Task<List<ContactDto>> GetContactsAsync(Guid userId)
