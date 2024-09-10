@@ -72,84 +72,84 @@ public class ContactAppService : ImAppService, IContactAppService
         if (input.Id != Guid.Empty)
         {
             contactProfileDto = await GetContactByContactIdAsync(input.Id, headers);
-            if (contactProfileDto.ImInfo.RelationId == _chatBotBasicInfoOptions.RelationId)
-            {
-                return new ContactInfoDto
-                {
-                    Id = contactProfileDto.Id.ToString(),
-                    Name = contactProfileDto.Name,
-                    Avatar = _chatBotBasicInfoOptions.Avatar,
-                    UserId = contactProfileDto.UserId.ToString(),
-                    ImInfo = new ImInfoDto
-                    {
-                        Name = _chatBotBasicInfoOptions.Name,
-                        RelationId = _chatBotBasicInfoOptions.RelationId,
-                        PortkeyId = contactProfileDto.ImInfo.PortkeyId
-                    },
-                    ContactType = 1
-                };
-            }
+            // if (contactProfileDto.ImInfo.RelationId == _chatBotBasicInfoOptions.RelationId)
+            // {
+            //     return new ContactInfoDto
+            //     {
+            //         Id = contactProfileDto.Id.ToString(),
+            //         Name = contactProfileDto.Name,
+            //         Avatar = _chatBotBasicInfoOptions.Avatar,
+            //         UserId = contactProfileDto.UserId.ToString(),
+            //         ImInfo = new ImInfoDto
+            //         {
+            //             Name = _chatBotBasicInfoOptions.Name,
+            //             RelationId = _chatBotBasicInfoOptions.RelationId,
+            //             PortkeyId = contactProfileDto.ImInfo.PortkeyId
+            //         },
+            //         ContactType = 1
+            //     };
+            // }
         }
         else if (input.PortkeyId != Guid.Empty)
         {
             contactProfileDto = await GetContactByPortkeyIdAsync(input.PortkeyId, headers);
-            if (contactProfileDto.ImInfo.RelationId == _chatBotBasicInfoOptions.RelationId)
-            {
-                return new ContactInfoDto
-                {
-                    Id = contactProfileDto.Id.ToString(),
-                    Name = contactProfileDto.Name,
-                    Avatar = _chatBotBasicInfoOptions.Avatar,
-                    ImInfo = new ImInfoDto
-                    {
-                        Name = _chatBotBasicInfoOptions.Name,
-                        RelationId = _chatBotBasicInfoOptions.RelationId,
-                        PortkeyId = contactProfileDto.ImInfo.PortkeyId
-                    },
-                    ContactType = 1
-                };
-            }
+            // if (contactProfileDto.ImInfo.RelationId == _chatBotBasicInfoOptions.RelationId)
+            // {
+            //     return new ContactInfoDto
+            //     {
+            //         Id = contactProfileDto.Id.ToString(),
+            //         Name = contactProfileDto.Name,
+            //         Avatar = _chatBotBasicInfoOptions.Avatar,
+            //         ImInfo = new ImInfoDto
+            //         {
+            //             Name = _chatBotBasicInfoOptions.Name,
+            //             RelationId = _chatBotBasicInfoOptions.RelationId,
+            //             PortkeyId = contactProfileDto.ImInfo.PortkeyId
+            //         },
+            //         ContactType = 1
+            //     };
+            // }
         }
         else
         {
-            if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
-            {
-                var result = await GetByRelationIdAsync(input.RelationId);
-                if (null != result)
-                {
-                    _logger.LogDebug("Get contact from CAServer :{contact}",JsonConvert.SerializeObject(result));
-                    return new ContactInfoDto
-                    {
-                        Id = result.Id.ToString(),
-                        Name = result.Name,
-                        Index = result.Index,
-                        UserId = result.UserId.ToString(),
-                        Avatar = _chatBotBasicInfoOptions.Avatar,
-                        ImInfo = new ImInfoDto
-                        {
-                            Name = result.ImInfo.Name,
-                            RelationId = _chatBotBasicInfoOptions.RelationId,
-                            PortkeyId = result.ImInfo.PortkeyId
-                        },
-                        ContactType = 1
-                    };
-                }
-                return new ContactInfoDto
-                {
-                    //Id = result.Id.ToString(),
-                    Name = "",
-                    Index = "K",
-                    UserId = _chatBotBasicInfoOptions.UserId,
-                    Avatar = _chatBotBasicInfoOptions.Avatar,
-                    ImInfo = new ImInfoDto
-                    {
-                        Name = _chatBotBasicInfoOptions.Name,
-                        RelationId = _chatBotBasicInfoOptions.RelationId,
-                        //PortkeyId = _chatBotBasicInfoOptions.PortkeyId
-                    },
-                    ContactType = 1
-                };
-            }
+            // if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
+            // {
+            //     var result = await GetByRelationIdAsync(input.RelationId);
+            //     if (null != result)
+            //     {
+            //         _logger.LogDebug("Get contact from CAServer :{contact}",JsonConvert.SerializeObject(result));
+            //         return new ContactInfoDto
+            //         {
+            //             Id = result.Id.ToString(),
+            //             Name = result.Name,
+            //             Index = result.Index,
+            //             UserId = result.UserId.ToString(),
+            //             Avatar = _chatBotBasicInfoOptions.Avatar,
+            //             ImInfo = new ImInfoDto
+            //             {
+            //                 Name = result.ImInfo.Name,
+            //                 RelationId = _chatBotBasicInfoOptions.RelationId,
+            //                 PortkeyId = result.ImInfo.PortkeyId
+            //             },
+            //             ContactType = 1
+            //         };
+            //     }
+            //     return new ContactInfoDto
+            //     {
+            //         //Id = result.Id.ToString(),
+            //         Name = "",
+            //         Index = "K",
+            //         UserId = _chatBotBasicInfoOptions.UserId,
+            //         Avatar = _chatBotBasicInfoOptions.Avatar,
+            //         ImInfo = new ImInfoDto
+            //         {
+            //             Name = _chatBotBasicInfoOptions.Name,
+            //             RelationId = _chatBotBasicInfoOptions.RelationId,
+            //             //PortkeyId = _chatBotBasicInfoOptions.PortkeyId
+            //         },
+            //         ContactType = 1
+            //     };
+            // }
 
             contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
             // if (input.RelationId == _chatBotBasicInfoOptions.RelationId)

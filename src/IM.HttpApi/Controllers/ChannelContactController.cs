@@ -4,6 +4,8 @@ using IM.ChannelContact;
 using IM.ChannelContact.Dto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Volo.Abp;
 
 namespace IM.Controllers;
@@ -16,11 +18,13 @@ namespace IM.Controllers;
 public class ChannelContactController : ImController
 {
     private readonly IChannelContactAppService _channelContactAppAppService;
+    private readonly ILogger<ChannelContactController> _logger;
 
-
-    public ChannelContactController(IChannelContactAppService channelContactAppAppService)
+    public ChannelContactController(IChannelContactAppService channelContactAppAppService,
+        ILogger<ChannelContactController> logger)
     {
         _channelContactAppAppService = channelContactAppAppService;
+        _logger = logger;
     }
 
 
@@ -87,7 +91,9 @@ public class ChannelContactController : ImController
     [HttpGet("members")]
     public async Task<List<MemberInfo>> GetChannelMembersAsync(ChannelMembersRequestDto requestDto)
     {
-        return await _channelContactAppAppService.GetChannelMembersAsync(requestDto);
+        var result = await _channelContactAppAppService.GetChannelMembersAsync(requestDto);
+        _logger.LogDebug("=====GetChannelMembersAsync request:{0} response:{1}", JsonConvert.SerializeObject(requestDto), JsonConvert.SerializeObject(result));
+        return result;
     }
 
     [HttpPost("update"), Authorize]

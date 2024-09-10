@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Volo.Abp;
 
 namespace IM.Controllers;
@@ -47,7 +48,9 @@ public class ChannelController : ImController
     [HttpGet, Route("/api/v1/channelContacts/searchMembers")]
     public async Task<MembersInfoResponseDto> SearchMembersAsync(SearchMembersRequestDto requestDto)
     {
-        return await _channelContactAppService.SearchMembersAsync(requestDto);
+        var result = await _channelContactAppService.SearchMembersAsync(requestDto);
+        _logger.LogDebug("=====SearchMembersAsync request:{0} response:{1}", JsonConvert.SerializeObject(requestDto), JsonConvert.SerializeObject(result));
+        return result;
     }
 
     [HttpGet, Route("/api/v1/channelContacts/contacts")]
