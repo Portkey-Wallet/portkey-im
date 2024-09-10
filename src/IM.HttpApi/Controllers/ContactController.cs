@@ -1,9 +1,11 @@
+using System.Linq;
 using System.Threading.Tasks;
 using IM.Contact;
 using IM.Contact.Dtos;
 using IM.RelationOne.Dtos.Contact;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 
@@ -48,7 +50,12 @@ public class ContactController : ImController
     [HttpGet("list")]
     public async Task<PagedResultDto<ContactProfileDto>> GetListAsync(ContactGetListRequestDto input)
     {
-        return await _contactAppService.GetListAsync(input);
+        var result = await _contactAppService.GetListAsync(input);
+        if (!result.Items.IsNullOrEmpty())
+        {
+            result.Items = result.Items.Where(contract => !"KeyGenie".Equals(contract.Name)).ToList();
+        }
+        return result;
     }
 
     [HttpPost("stranger")]
