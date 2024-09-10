@@ -5,6 +5,7 @@ using IM.Feed.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Volo.Abp;
 
 namespace IM.Controllers;
@@ -28,7 +29,9 @@ public class FeedController : ImController
     [HttpGet("list")]
     public async Task<ListFeedResponseDto> ListFeedAsync(ListFeedRequestDto input)
     {
-        return await _feedAppService.ListFeedAsync(input, new Dictionary<string, string>());
+        var result = await _feedAppService.ListFeedAsync(input, new Dictionary<string, string>());
+        _logger.LogDebug("=====ListFeedAsync request:{0} response:{1}", JsonConvert.SerializeObject(input), JsonConvert.SerializeObject(result));
+        return result;
     }
 
     [HttpPost("pin")]

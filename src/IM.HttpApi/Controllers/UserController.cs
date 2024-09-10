@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Volo.Abp;
 using Volo.Abp.DistributedLocking;
 
@@ -119,6 +120,7 @@ public class UserController : ImController
         }
 
         var finalList = result.Where(t => t.RelationId != _chatBotBasicInfoOptions.RelationId).ToList();
+        _logger.LogDebug("=====ListUserInfoAsync request:{0} response:{1}", JsonConvert.SerializeObject(input), JsonConvert.SerializeObject(finalList));
         return finalList;
     }
 
