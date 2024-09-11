@@ -58,7 +58,7 @@ public class ContactController : ImController
         _logger.LogDebug("=====GetListAsync request:{0} response:{1}", JsonConvert.SerializeObject(input), JsonConvert.SerializeObject(result));
         if (!result.Items.IsNullOrEmpty())
         {
-            result.Items = result.Items.Where(contract => !"KeyGenie".Equals(contract.Name)).ToList();
+            result.Items = result.Items.Where(contract => !"KeyGenie".Equals(contract?.ImInfo?.Name)).ToList();
         }
         return result;
     }
