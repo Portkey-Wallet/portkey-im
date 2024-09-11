@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using IM.ChatBot;
 using IM.Feed;
 using IM.Feed.Dtos;
 using Microsoft.AspNetCore.Authorization;
@@ -31,6 +33,7 @@ public class FeedController : ImController
     {
         var result = await _feedAppService.ListFeedAsync(input, new Dictionary<string, string>());
         _logger.LogDebug("=====ListFeedAsync request:{0} response:{1}", JsonConvert.SerializeObject(input), JsonConvert.SerializeObject(result));
+        result.List = result.List.Where(item => ChatConstant.ChatDisplayName.Equals(item.DisplayName)).ToList();
         return result;
     }
 

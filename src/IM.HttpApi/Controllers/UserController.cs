@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using IM.ChatBot;
 using IM.Options;
 using IM.User;
 using IM.User.Dtos;
@@ -116,11 +117,11 @@ public class UserController : ImController
             if (platform != "extension" && curVersion >= preVersion)
             {
                 _logger.LogDebug("=====ListUserInfoAsync version logic request:{0} response:{1}", JsonConvert.SerializeObject(input), JsonConvert.SerializeObject(result));
-                return result.Where(t => t.RelationId != _chatBotBasicInfoOptions.RelationId).ToList();
+                return result.Where(t => !ChatConstant.ChatDisplayName.Equals(t.Name)).ToList();
             }
         }
 
-        var finalList = result.Where(t => t.RelationId != _chatBotBasicInfoOptions.RelationId).ToList();
+        var finalList = result.Where(t => !ChatConstant.ChatDisplayName.Equals(t.Name)).ToList();
         _logger.LogDebug("=====ListUserInfoAsync request:{0} response:{1}", JsonConvert.SerializeObject(input), JsonConvert.SerializeObject(finalList));
         return finalList;
     }
