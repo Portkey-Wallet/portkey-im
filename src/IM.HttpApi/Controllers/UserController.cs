@@ -115,7 +115,8 @@ public class UserController : ImController
             var preVersion = new Version(_chatBotBasicInfoOptions.Version.Replace("v", ""));
             if (platform != "extension" && curVersion >= preVersion)
             {
-                return result;
+                _logger.LogDebug("=====ListUserInfoAsync version logic request:{0} response:{1}", JsonConvert.SerializeObject(input), JsonConvert.SerializeObject(result));
+                return result.Where(t => t.RelationId != _chatBotBasicInfoOptions.RelationId).ToList();
             }
         }
 
