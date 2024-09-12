@@ -4,6 +4,8 @@ using IM.ChannelContact;
 using IM.ChannelContact.Dto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Volo.Abp;
 
 namespace IM.Controllers;
@@ -16,7 +18,6 @@ namespace IM.Controllers;
 public class ChannelContactController : ImController
 {
     private readonly IChannelContactAppService _channelContactAppAppService;
-
 
     public ChannelContactController(IChannelContactAppService channelContactAppAppService)
     {

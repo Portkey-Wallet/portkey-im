@@ -1,10 +1,13 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using IM.ChatBot;
 using IM.Feed;
 using IM.Feed.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Volo.Abp;
 
 namespace IM.Controllers;
@@ -28,7 +31,9 @@ public class FeedController : ImController
     [HttpGet("list")]
     public async Task<ListFeedResponseDto> ListFeedAsync(ListFeedRequestDto input)
     {
-        return await _feedAppService.ListFeedAsync(input, new Dictionary<string, string>());
+        var result = await _feedAppService.ListFeedAsync(input, new Dictionary<string, string>());
+        result.List = result.List.Where(item => !ChatConstant.ChatDisplayName.Equals(item.DisplayName)).ToList();
+        return result;
     }
 
     [HttpPost("pin")]

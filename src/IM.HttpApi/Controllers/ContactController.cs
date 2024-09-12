@@ -1,9 +1,13 @@
+using System.Linq;
 using System.Threading.Tasks;
+using IM.ChatBot;
 using IM.Contact;
 using IM.Contact.Dtos;
 using IM.RelationOne.Dtos.Contact;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 
@@ -18,7 +22,6 @@ namespace IM.Controllers;
 public class ContactController : ImController
 {
     private readonly IContactAppService _contactAppService;
-    
 
     public ContactController(IContactAppService contactAppService)
     {
@@ -48,7 +51,12 @@ public class ContactController : ImController
     [HttpGet("list")]
     public async Task<PagedResultDto<ContactProfileDto>> GetListAsync(ContactGetListRequestDto input)
     {
-        return await _contactAppService.GetListAsync(input);
+        var result = await _contactAppService.GetListAsync(input);
+        if (!result.Items.IsNullOrEmpty())
+        {
+            result.Items = result.Items.Where(contract => !ChatConstant.ChatDisplayName.Equals(contract?.ImInfo?.Name)).ToList();
+        }
+        return result;
     }
 
     [HttpPost("stranger")]

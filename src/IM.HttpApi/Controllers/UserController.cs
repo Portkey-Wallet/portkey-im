@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using IM.ChatBot;
 using IM.Options;
 using IM.User;
 using IM.User.Dtos;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Volo.Abp;
 using Volo.Abp.DistributedLocking;
 
@@ -114,12 +116,11 @@ public class UserController : ImController
             var preVersion = new Version(_chatBotBasicInfoOptions.Version.Replace("v", ""));
             if (platform != "extension" && curVersion >= preVersion)
             {
-                return result;
+                return result.Where(t => !ChatConstant.ChatDisplayName.Equals(t.Name)).ToList();
             }
         }
 
-        var finalList = result.Where(t => t.RelationId != _chatBotBasicInfoOptions.RelationId).ToList();
-        return finalList;
+        return result.Where(t => !ChatConstant.ChatDisplayName.Equals(t.Name)).ToList();
     }
 
     [HttpPost("block")]

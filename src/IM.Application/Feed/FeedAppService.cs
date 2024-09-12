@@ -147,7 +147,7 @@ public class FeedAppService : ImAppService, IFeedAppService
                     userIndex.RelationId,
                     _chatBotBasicInfoOptions.RelationId
                 };
-
+        
                 var botChannelCreate = new CreateChannelRequestDto
                 {
                     Name = _chatBotBasicInfoOptions.Name,
@@ -177,11 +177,11 @@ public class FeedAppService : ImAppService, IFeedAppService
                     {
                         pinList.Add(feed);
                     }
-
+        
                     noPinList.Add(feed);
                 }
-
-                pinList.Add(item);
+        
+                // pinList.Add(item);
                 pinList.AddRange(noPinList);
                 result.List = pinList;
             }
@@ -209,15 +209,15 @@ public class FeedAppService : ImAppService, IFeedAppService
                             {
                                 pinList.Add(feed);
                             }
-
+        
                             noPinList.Add(feed);
                         }
-
+        
                         if (item.LastPostAt == null)
                         {
                             item.IsInit = true;
                         }
-
+        
                         pinList.AddLast(item);
                         pinList.AddRange(noPinList);
                         result.List = pinList;
