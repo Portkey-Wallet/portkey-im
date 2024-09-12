@@ -48,9 +48,7 @@ public class ChannelController : ImController
     [HttpGet, Route("/api/v1/channelContacts/searchMembers")]
     public async Task<MembersInfoResponseDto> SearchMembersAsync(SearchMembersRequestDto requestDto)
     {
-        var result = await _channelContactAppService.SearchMembersAsync(requestDto);
-        _logger.LogDebug("=====SearchMembersAsync request:{0} response:{1}", JsonConvert.SerializeObject(requestDto), JsonConvert.SerializeObject(result));
-        return result;
+        return await _channelContactAppService.SearchMembersAsync(requestDto);
     }
 
     [HttpGet, Route("/api/v1/channelContacts/contacts")]
