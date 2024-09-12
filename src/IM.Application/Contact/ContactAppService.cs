@@ -120,7 +120,7 @@ public class ContactAppService : ImAppService, IContactAppService
                     _logger.LogDebug("Get contact from CAServer :{contact}",JsonConvert.SerializeObject(result));
                     return new ContactInfoDto
                     {
-            //             Id = result.Id.ToString(),
+                        Id = result.Id.ToString(),
                         Name = result.Name,
                         Index = result.Index,
                         UserId = result.UserId.ToString(),
@@ -152,12 +152,12 @@ public class ContactAppService : ImAppService, IContactAppService
             }
 
             contactProfileDto = await GetContactByRelationIdAsync(input.RelationId, headers);
-            if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
-            {
-                contactProfileDto.Addresses = new List<ContactAddressDto>();
-                contactProfileDto.CaHolderInfo = null;
-                contactProfileDto.ContactType = 1;
-            }
+            // if (input.RelationId == _chatBotBasicInfoOptions.RelationId)
+            // {
+            //     contactProfileDto.Addresses = new List<ContactAddressDto>();
+            //     contactProfileDto.CaHolderInfo = null;
+            //     contactProfileDto.ContactType = 1;
+            // }
 
             _logger.LogDebug("Contact is {Contact}", JsonConvert.SerializeObject(contactProfileDto));
         }

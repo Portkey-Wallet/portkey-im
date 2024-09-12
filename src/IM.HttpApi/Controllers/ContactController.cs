@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using IM.ChatBot;
 using IM.Contact;
 using IM.Contact.Dtos;
 using IM.RelationOne.Dtos.Contact;
@@ -7,7 +8,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 
@@ -22,13 +22,10 @@ namespace IM.Controllers;
 public class ContactController : ImController
 {
     private readonly IContactAppService _contactAppService;
-    private readonly ILogger<ContactController> _logger;
 
-    public ContactController(IContactAppService contactAppService,
-        ILogger<ContactController> logger)
+    public ContactController(IContactAppService contactAppService)
     {
         _contactAppService = contactAppService;
-        _logger = logger;
     }
 
     [HttpGet("profile")]
@@ -55,10 +52,9 @@ public class ContactController : ImController
     public async Task<PagedResultDto<ContactProfileDto>> GetListAsync(ContactGetListRequestDto input)
     {
         var result = await _contactAppService.GetListAsync(input);
-        _logger.LogDebug("=====GetListAsync request:{0} response:{1}", JsonConvert.SerializeObject(input), JsonConvert.SerializeObject(result));
         if (!result.Items.IsNullOrEmpty())
         {
-            result.Items = result.Items.Where(contract => !"KeyGenie".Equals(contract?.ImInfo?.Name)).ToList();
+            result.Items = result.Items.Where(contract => !ChatConstant.ChatDisplayName.Equals(contract?.ImInfo?.Name)).ToList();
         }
         return result;
     }

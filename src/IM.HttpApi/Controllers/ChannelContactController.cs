@@ -18,13 +18,10 @@ namespace IM.Controllers;
 public class ChannelContactController : ImController
 {
     private readonly IChannelContactAppService _channelContactAppAppService;
-    private readonly ILogger<ChannelContactController> _logger;
 
-    public ChannelContactController(IChannelContactAppService channelContactAppAppService,
-        ILogger<ChannelContactController> logger)
+    public ChannelContactController(IChannelContactAppService channelContactAppAppService)
     {
         _channelContactAppAppService = channelContactAppAppService;
-        _logger = logger;
     }
 
 
@@ -91,9 +88,7 @@ public class ChannelContactController : ImController
     [HttpGet("members")]
     public async Task<List<MemberInfo>> GetChannelMembersAsync(ChannelMembersRequestDto requestDto)
     {
-        var result = await _channelContactAppAppService.GetChannelMembersAsync(requestDto);
-        _logger.LogDebug("=====GetChannelMembersAsync request:{0} response:{1}", JsonConvert.SerializeObject(requestDto), JsonConvert.SerializeObject(result));
-        return result;
+        return await _channelContactAppAppService.GetChannelMembersAsync(requestDto);
     }
 
     [HttpPost("update"), Authorize]

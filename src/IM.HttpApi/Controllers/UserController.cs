@@ -116,15 +116,11 @@ public class UserController : ImController
             var preVersion = new Version(_chatBotBasicInfoOptions.Version.Replace("v", ""));
             if (platform != "extension" && curVersion >= preVersion)
             {
-                var finalResult = result.Where(t => !ChatConstant.ChatDisplayName.Equals(t.Name)).ToList();
-                _logger.LogDebug("=====ListUserInfoAsync version logic request:{0} response:{1}", JsonConvert.SerializeObject(input), JsonConvert.SerializeObject(finalResult));
-                return finalResult;
+                return result.Where(t => !ChatConstant.ChatDisplayName.Equals(t.Name)).ToList();
             }
         }
 
-        var finalList = result.Where(t => !ChatConstant.ChatDisplayName.Equals(t.Name)).ToList();
-        _logger.LogDebug("=====ListUserInfoAsync request:{0} response:{1}", JsonConvert.SerializeObject(input), JsonConvert.SerializeObject(finalList));
-        return finalList;
+        return result.Where(t => !ChatConstant.ChatDisplayName.Equals(t.Name)).ToList();
     }
 
     [HttpPost("block")]
