@@ -32,8 +32,8 @@ public class FeedController : ImController
     public async Task<ListFeedResponseDto> ListFeedAsync(ListFeedRequestDto input)
     {
         var result = await _feedAppService.ListFeedAsync(input, new Dictionary<string, string>());
-        _logger.LogDebug("=====ListFeedAsync request:{0} response:{1}", JsonConvert.SerializeObject(input), JsonConvert.SerializeObject(result));
         result.List = result.List.Where(item => ChatConstant.ChatDisplayName.Equals(item.DisplayName)).ToList();
+        _logger.LogDebug("=====ListFeedAsync request:{0} response:{1}", JsonConvert.SerializeObject(input), JsonConvert.SerializeObject(result));
         return result;
     }
 
