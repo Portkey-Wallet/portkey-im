@@ -54,7 +54,7 @@ public class ContactController : ImController
         var result = await _contactAppService.GetListAsync(input);
         if (!result.Items.IsNullOrEmpty())
         {
-            result.Items = result.Items.Where(contract => !ChatConstant.ChatDisplayName.Equals(contract?.ImInfo?.Name)).ToList();
+            result.Items = result.Items.Where(contract => !"KeyGenie".Equals(contract.Name)).ToList();
         }
         return result;
     }

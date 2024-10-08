@@ -135,96 +135,96 @@ public class FeedAppService : ImAppService, IFeedAppService
     {
         var result = await FetchFeedListAsync(input, headers);
         var userIndex = await _userProvider.GetUserInfoByIdAsync((Guid)CurrentUser.Id);
-        var botChannel = await _channelProvider.GetBotChannelUuidAsync(userIndex.RelationId,
-            _chatBotBasicInfoOptions.RelationId);
-        _logger.LogDebug("AI Channel is {channel}", JsonConvert.SerializeObject(botChannel));
-        if (result.List.Count > 0)
-        {
-            if (botChannel == null)
-            {
-                var membersList = new List<string>
-                {
-                    userIndex.RelationId,
-                    _chatBotBasicInfoOptions.RelationId
-                };
-        
-                var botChannelCreate = new CreateChannelRequestDto
-                {
-                    Name = _chatBotBasicInfoOptions.Name,
-                    ChannelIcon = _chatBotBasicInfoOptions.Avatar,
-                    Type = "P",
-                    Members = membersList
-                };
-                await _channelContactAppAppService.CreateChannelAsync(botChannelCreate);
-                var channelBot = await _channelProvider.GetBotChannelUuidAsync(userIndex.RelationId,
-                    _chatBotBasicInfoOptions.RelationId);
-                _logger.LogDebug("No Bot Channel,Create a new one {channel}", JsonConvert.SerializeObject(channelBot));
-                var item = new ListFeedResponseItemDto
-                {
-                    ChannelUuid = channelBot.Uuid,
-                    DisplayName = _chatBotBasicInfoOptions.Name,
-                    ChannelIcon = _chatBotBasicInfoOptions.Avatar,
-                    ChannelType = "P",
-                    ToRelationId = _chatBotBasicInfoOptions.RelationId,
-                    BotChannel = true,
-                    IsInit = true
-                };
-                var pinList = new List<ListFeedResponseItemDto>();
-                var noPinList = new List<ListFeedResponseItemDto>();
-                foreach (var feed in result.List)
-                {
-                    if (feed.Pin)
-                    {
-                        pinList.Add(feed);
-                    }
-        
-                    noPinList.Add(feed);
-                }
-        
-                // pinList.Add(item);
-                pinList.AddRange(noPinList);
-                result.List = pinList;
-            }
-            else
-            {
-                var item = result.List.Where(t => t.ChannelUuid == botChannel.Uuid).ToList().FirstOrDefault();
-                if (item != null)
-                {
-                    var requestDto = new ContactProfileRequestDto()
-                    {
-                        RelationId = _chatBotBasicInfoOptions.RelationId
-                    };
-                    var bot = await _contactAppService.GetContactProfileAsync(requestDto);
-                    _logger.LogDebug("bot info is {bot}", JsonConvert.SerializeObject(bot));
-                    item.BotChannel = true;
-                    item.DisplayName = !bot.Name.IsNullOrEmpty() ? bot.Name : _chatBotBasicInfoOptions.Name;
-                    if (item is { Pin: false })
-                    {
-                        result.List.Remove(item);
-                        var pinList = new List<ListFeedResponseItemDto>();
-                        var noPinList = new List<ListFeedResponseItemDto>();
-                        foreach (var feed in result.List)
-                        {
-                            if (feed.Pin)
-                            {
-                                pinList.Add(feed);
-                            }
-        
-                            noPinList.Add(feed);
-                        }
-        
-                        if (item.LastPostAt == null)
-                        {
-                            item.IsInit = true;
-                        }
-        
-                        pinList.AddLast(item);
-                        pinList.AddRange(noPinList);
-                        result.List = pinList;
-                    }
-                }
-            }
-        }
+        // var botChannel = await _channelProvider.GetBotChannelUuidAsync(userIndex.RelationId,
+        //     _chatBotBasicInfoOptions.RelationId);
+        // _logger.LogDebug("AI Channel is {channel}", JsonConvert.SerializeObject(botChannel));
+        // if (result.List.Count > 0)
+        // {
+        //     if (botChannel == null)
+        //     {
+        //         var membersList = new List<string>
+        //         {
+        //             userIndex.RelationId,
+        //             _chatBotBasicInfoOptions.RelationId
+        //         };
+        //
+        //         var botChannelCreate = new CreateChannelRequestDto
+        //         {
+        //             Name = _chatBotBasicInfoOptions.Name,
+        //             ChannelIcon = _chatBotBasicInfoOptions.Avatar,
+        //             Type = "P",
+        //             Members = membersList
+        //         };
+        //         await _channelContactAppAppService.CreateChannelAsync(botChannelCreate);
+        //         var channelBot = await _channelProvider.GetBotChannelUuidAsync(userIndex.RelationId,
+        //             _chatBotBasicInfoOptions.RelationId);
+        //         _logger.LogDebug("No Bot Channel,Create a new one {channel}", JsonConvert.SerializeObject(channelBot));
+        //         var item = new ListFeedResponseItemDto
+        //         {
+        //             ChannelUuid = channelBot.Uuid,
+        //             DisplayName = _chatBotBasicInfoOptions.Name,
+        //             ChannelIcon = _chatBotBasicInfoOptions.Avatar,
+        //             ChannelType = "P",
+        //             ToRelationId = _chatBotBasicInfoOptions.RelationId,
+        //             BotChannel = true,
+        //             IsInit = true
+        //         };
+        //         var pinList = new List<ListFeedResponseItemDto>();
+        //         var noPinList = new List<ListFeedResponseItemDto>();
+        //         foreach (var feed in result.List)
+        //         {
+        //             if (feed.Pin)
+        //             {
+        //                 pinList.Add(feed);
+        //             }
+        //
+        //             noPinList.Add(feed);
+        //         }
+        //
+        //         // pinList.Add(item);
+        //         pinList.AddRange(noPinList);
+        //         result.List = pinList;
+        //     }
+        //     else
+        //     {
+        //         var item = result.List.Where(t => t.ChannelUuid == botChannel.Uuid).ToList().FirstOrDefault();
+        //         if (item != null)
+        //         {
+        //             var requestDto = new ContactProfileRequestDto()
+        //             {
+        //                 RelationId = _chatBotBasicInfoOptions.RelationId
+        //             };
+        //             var bot = await _contactAppService.GetContactProfileAsync(requestDto);
+        //             _logger.LogDebug("bot info is {bot}", JsonConvert.SerializeObject(bot));
+        //             item.BotChannel = true;
+        //             item.DisplayName = !bot.Name.IsNullOrEmpty() ? bot.Name : _chatBotBasicInfoOptions.Name;
+        //             if (item is { Pin: false })
+        //             {
+        //                 result.List.Remove(item);
+        //                 var pinList = new List<ListFeedResponseItemDto>();
+        //                 var noPinList = new List<ListFeedResponseItemDto>();
+        //                 foreach (var feed in result.List)
+        //                 {
+        //                     if (feed.Pin)
+        //                     {
+        //                         pinList.Add(feed);
+        //                     }
+        //
+        //                     noPinList.Add(feed);
+        //                 }
+        //
+        //                 if (item.LastPostAt == null)
+        //                 {
+        //                     item.IsInit = true;
+        //                 }
+        //
+        //                 pinList.AddLast(item);
+        //                 pinList.AddRange(noPinList);
+        //                 result.List = pinList;
+        //             }
+        //         }
+        //     }
+        // }
 
         var blockUserList = await _blockUserProvider.GetBlockUserListAsync(userIndex.RelationId);
 
