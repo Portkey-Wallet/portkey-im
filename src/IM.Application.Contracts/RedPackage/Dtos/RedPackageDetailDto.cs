@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
+using IM.Commons;
 
 namespace IM.RedPackage.Dtos;
 
-public class RedPackageDetailDto
+public class RedPackageDetailDto : ChainDisplayNameDto
 {
     public Guid Id { get; set; }
     public string TotalAmount { get; set; }
     public string GrabbedAmount { get; set; }
     public string MinAmount { get; set; }
     public string Memo { get; set; } = string.Empty;
-    public string ChainId { get; set; }
     public string PublicKey { get; set; } = string.Empty;
     public Guid SenderId { get; set; }
     public Guid LuckKingId { get; set; } = Guid.Empty;

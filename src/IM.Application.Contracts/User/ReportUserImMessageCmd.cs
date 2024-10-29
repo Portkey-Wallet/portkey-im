@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using IM.Commons;
 using IM.Message;
 using JetBrains.Annotations;
 
@@ -44,9 +45,7 @@ public class ReportUserImMessageCmd : IValidatableObject
 	}
 }
 
-public class AddressInfo
+public class AddressInfo : ChainDisplayNameDto
 {
 	public string CaAddress { get; set; }
-	
-	public string ChainId { get; set; }
 }

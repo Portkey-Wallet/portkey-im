@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using IM.Commons;
 
 namespace IM.User.Dtos;
 
@@ -10,13 +11,12 @@ public class CaHolderInfoDto
 
 public class GuardianDto : GuardianBase
 {
-    public string ChainId { get; set; }
     public string OriginChainId { get; set; }
     public GuardianBaseListDto GuardianList { get; set; }
     public List<ManagerInfoDBase> ManagerInfos { get; set; }
 }
 
-public class GuardianBase
+public class GuardianBase : ChainDisplayNameDto
 {
     public string CaHash { get; set; }
     public string CaAddress { get; set; }
