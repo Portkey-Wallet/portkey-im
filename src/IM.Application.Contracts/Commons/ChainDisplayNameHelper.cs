@@ -60,6 +60,11 @@ public static class ChainDisplayNameHelper
     
     public static void SetDisplayName (ChainDisplayNameDto obj, string chainId)
     {
+        if (null == chainId || !(DisplayNameMap.ContainsKey(chainId)))
+        {
+            return;
+        }
+        
         obj.DisplayChainName = MustGetChainDisplayName(chainId);
         obj.ChainImageUrl = MustGetChainUrl(chainId);
     }
