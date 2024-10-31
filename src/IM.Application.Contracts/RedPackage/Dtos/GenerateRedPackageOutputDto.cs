@@ -1,8 +1,9 @@
 using System;
+using IM.Commons;
 
 namespace IM.RedPackage.Dtos;
 
-public class GenerateRedPackageOutputDto
+public class GenerateRedPackageOutputDto : ChainDisplayNameDto
 {
     public Guid Id { get; set; }
     public string PublicKey { get; set; }
@@ -10,7 +11,6 @@ public class GenerateRedPackageOutputDto
     public string MinAmount { get; set; }
     public string Symbol { get; set; }
     public int Decimal { get; set; }
-    public string ChainId { get; set; }
     public long ExpireTime { get; set; }
     public string RedPackageContractAddress { get; set; }
 }

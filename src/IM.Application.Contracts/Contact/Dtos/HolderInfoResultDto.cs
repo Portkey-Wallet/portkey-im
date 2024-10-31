@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using IM.Commons;
 
 namespace IM.Contact.Dtos;
 
@@ -12,9 +13,8 @@ public class HolderInfoResultDto
     public List<AddressResultDto> AddressInfos { get; set; }
 }
 
-public class AddressResultDto
+public class AddressResultDto : ChainDisplayNameDto
 {
-    public string ChainId { get; set; }
     public string ChainName { get; set; }
     public string Address { get; set; }
 }

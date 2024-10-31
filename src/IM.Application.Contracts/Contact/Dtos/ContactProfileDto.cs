@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using IM.Commons;
 
 namespace IM.Contact.Dtos;
 
@@ -21,9 +22,8 @@ public class ContactProfileDto
     public int ContactType { get; set; } = 0;
 }
 
-public class ContactAddressDto
+public class ContactAddressDto: ChainDisplayNameDto
 {
-    public string ChainId { get; set; }
     public string Address { get; set; }
     public string ChainName { get; set; }
     public string Image { get; set; }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using IM.Commons;
 
 namespace IM.RedPackage.Dtos;
 

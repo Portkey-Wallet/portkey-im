@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using IM.Commons;
 
 namespace IM.RedPackage.Dtos;
 
@@ -9,16 +10,14 @@ public class RedPackageConfigOutput
 
 }
 
-public class RedPackageTokenInfo
+public class RedPackageTokenInfo : ChainDisplayNameDto
 {
-    public string ChainId { get; set; }
     public string Symbol { get; set; }
     public int Decimal { get; set; }
     public string MinAmount { get; set; }
 }
 
-public class ContractAddressInfo
+public class ContractAddressInfo : ChainDisplayNameDto
 {
-    public string ChainId{ get; set; }
     public string ContractAddress{ get; set; }
 }

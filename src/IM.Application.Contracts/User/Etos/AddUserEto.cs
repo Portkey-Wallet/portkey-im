@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using IM.Commons;
 using Volo.Abp.EventBus;
 
 namespace IM.User.Etos;
@@ -16,9 +17,8 @@ public class AddUserEto
     public long CreateTime { get; set; }
 }
 
-public class CaAddressInfoDto
+public class CaAddressInfoDto : ChainDisplayNameDto
 {
-    public string ChainId { get; set; }
     public string ChainName { get; set; }
     public string Address { get; set; }
 }
